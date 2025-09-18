@@ -1,20 +1,38 @@
-package com.reader.Novel.Reader;
+package com.reader.Novel.Reader.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Data;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
+@Component
 @Entity
+@Scope("prototype")
+@Data
 @Table(name = "users")
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
     private String email;
     private String password;
     private String user_type;
+
+    public User() {
+
+    }
+
+    public User(Long id, String name, String email, String password, String user_type) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.user_type = user_type;
+    }
+
 
     // Getters and Setters
     public Long getId() { return id; }

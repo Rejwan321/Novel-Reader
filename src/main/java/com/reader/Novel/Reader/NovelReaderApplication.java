@@ -1,22 +1,25 @@
 package com.reader.Novel.Reader;
 
-<<<<<<< HEAD
-=======
+import com.reader.Novel.Reader.model.User;
+import com.reader.Novel.Reader.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
->>>>>>> 6305f00 (Initial project upload)
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Configuration;
 
 @SpringBootApplication
-<<<<<<< HEAD
-public class NovelReaderApplication {
+@Configuration
+/*public class NovelReaderApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(NovelReaderApplication.class, args);
+	    ApplicationContext context = SpringApplication.run(NovelReaderApplication.class, args);
+
+        User user1 = context.getBean(User.class);
 	}
 
-=======
+*/
 public class NovelReaderApplication implements CommandLineRunner {
 
     @Autowired
@@ -31,5 +34,4 @@ public class NovelReaderApplication implements CommandLineRunner {
         System.out.println("🔍 Fetching all users from the database:");
         userRepository.findAll().forEach(System.out::println);
     }
->>>>>>> 6305f00 (Initial project upload)
 }
