@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Entity
 @Scope("prototype")
 @Data
-@Table(name = "users")
+@Table(name = "reader")
 public class User {
 
     @Id

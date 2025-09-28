@@ -32,12 +32,12 @@
             <input class="insert" type="text" placeholder="Name">
             <input class="insert" type="email" placeholder="Email">
             <input class="insert" type="password" placeholder="Password">
-            <button class="sign-in">Sign up</button>
+            <button class="log-button">Sign up</button>
         </form>
     </div>
 
     <div class="form-container login-container">
-        <form class="form-con" action = "/" method="post">
+        <form class="form-con" th:action="@{/reader}" method="get">
             <h1>Login</h1>
             <div class="social-container">
                 <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
@@ -48,7 +48,7 @@
             <input class="insert" type="text" placeholder="Email">
             <input class="insert" type="password" placeholder="Password">
             <a href="#" class="social">Forgot your password?</a>
-            <button>Login</button>
+            <button class="log-button">Login</button>
         </form>
     </div>
 

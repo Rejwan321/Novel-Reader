@@ -58,7 +58,7 @@ span { font-size: .75rem; }
     margin: 15px 0;
 }
 
-button {
+.log-button, .ghost {
     border-radius: 20px;
     -webkit-border-radius: 20px;
     -moz-border-radius: 20px;
@@ -80,11 +80,11 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+.log-button:hover {
     background-color: #37DFB8;
 }
 
-button:active {
+.log-button:active, .ghost:active {
     transform: scale(.95);
     -webkit-transform: scale(.95rem);
     -moz-transform: scale(.95);
@@ -92,11 +92,11 @@ button:active {
     -o-transform: scale(.95);
 }
 
-button:focus {
+.log-button:focus, .ghost:focus {
     outline: none;
 }
 
-button.ghost {
+.ghost {
     background-color: transparent;
     border-color: #FFFFFF;
 }

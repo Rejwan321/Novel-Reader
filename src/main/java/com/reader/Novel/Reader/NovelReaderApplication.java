@@ -1,6 +1,6 @@
 package com.reader.Novel.Reader;
 
-import com.reader.Novel.Reader.model.User;
+//import com.reader.Novel.Reader.model.User;
 import com.reader.Novel.Reader.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -11,15 +11,14 @@ import org.springframework.context.annotation.Configuration;
 
 @SpringBootApplication
 @Configuration
-/*public class NovelReaderApplication {
+/*
+public class NovelReaderApplication {
 
 	public static void main(String[] args) {
 	    ApplicationContext context = SpringApplication.run(NovelReaderApplication.class, args);
-
-        User user1 = context.getBean(User.class);
 	}
+ */
 
-*/
 public class NovelReaderApplication implements CommandLineRunner {
 
     @Autowired
