@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Library · WebNovel</title>
+  <link rel="stylesheet" href="/css/library.css" />
+</head>
+<body>
+  <div th:replace="fragments/Navbar :: *"></div>
+
+  <main class="container">
+    <h1>My Library</h1>
+    <div id="libGrid" class="books-grid"></div>
+    <div id="libEmpty" class="empty" hidden>Nothing saved yet.</div>
+  </main>
+
+  <script type="module">
+    import { apiGet, apiDelete, imgOrPlaceholder } from '/scripts/api.js';
+
+    const USER_ID = 0; // replace with authenticated principal ID after backend auth integration
+    const grid = document.getElementById('libGrid');
+    const empty = document.getElementById('libEmpty');
+
+    function card(item) {
+      const b = item.book;
+      return `
+      <article class="book-card">
+        <a href="/book?id=${b.bookId}" class="thumb">
+          <img src="${imgOrPlaceholder(b.coverImageUrl)}" alt="${b.title}" loading="lazy"/>
+        </a>
+        <div class="meta">
+          <h3><a href="/book?id=${b.bookId}">${b.title}</a></h3>
+          <p class="genre">${b.genre ?? ''}</p>
+          <button class="remove" data-book="${b.bookId}">Remove</button>
+        </div>
+      </article>`;
+    }
+
+    async function load() {
+      const list = await apiGet(`/library/user/${USER_ID}`);
+      if (!list?.length) { empty.hidden = false; grid.innerHTML = ''; return; }
+      empty.hidden = true;
+      grid.innerHTML = list.map(card).join('');
+      grid.querySelectorAll('button.remove').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const bookId = btn.getAttribute('data-book');
+          await apiDelete(`/library/user/${USER_ID}/book/${bookId}`);
+          await load();
+        });
+      });
+    }
+    load();
+  </script>
+</body>
+</html>

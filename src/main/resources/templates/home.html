@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/search.css}">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link rel="stylesheet" th:href="@{/css/toggler.css}">
+    <link rel="stylesheet" th:href="@{/css/books.css}">
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <title>Home · WebNovel</title>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <div th:replace="~{fragments/Navbar :: navbar}"></div>
+
+    <!-- Login/Signup Popup -->
+    <div th:replace="~{fragments/Signup :: signupForm}"></div>
+
+    <!-- Home Content -->
+    <div th:replace="~{fragments/HomeContent :: homeContent}"></div>
+
+</body>
+</html>

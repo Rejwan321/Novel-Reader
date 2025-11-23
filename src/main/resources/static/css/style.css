@@ -1,0 +1,130 @@
+
+.body{
+    background-color:#a393eb
+}
+
+nav{
+    background-color:#5e63b6;
+}
+
+.nav-link{
+    color:white;
+}
+
+#footer{
+    text-align: center;
+    position: absolute;
+    width: 100%;
+    left: 0px;
+    bottom: 0px;
+    padding: 10px;
+}
+
+.dropdown-item{
+    color: white;
+}
+
+
+.log {
+    cursor: pointer;
+    border: 0;
+    border-radius: 30px;
+    font-weight: 600;
+    margin: 0 10px;
+    width: 100px;
+    padding: 10px 0;
+    box-shadow: 0 0 20px rgba(104, 85, 224, 0.2);
+    transition: 0.4s;
+}
+
+.reg {
+    color: white;
+    background-color: rgba(104, 85, 224, 1);
+}
+
+.log {
+    color: rgb(104, 85, 224);
+    background-color: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(104, 85, 224, 1);
+}
+
+.log:hover {
+    color: white;
+    box-shadow: 0 0 20px rgba(104, 85, 224, 0.6);
+    background-color: rgba(104, 85, 224, 1);
+}
+
+.popup-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+body.show-popup .popup-container {
+    display: flex;
+}
+
+.main-content {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    padding: 40px 20px;
+    min-height: 80vh;
+}
+
+body.show-popup .main-content {
+    filter: blur(2px);
+}
+
+.discover-gallery {
+  margin-top: 20px;
+}
+
+.discover-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.discover-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.discover-img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.discover-link p {
+  margin-top: 10px;
+  font-weight: 500;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.discover-link:hover p {
+  color: #4e54c8;
+}
+
+.navbar .dropdown-menu {
+  z-index: 1050 !important; 
+  position: absolute !important; 
+}
+
+.dropdown-menu.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
