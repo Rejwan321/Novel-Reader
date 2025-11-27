@@ -1,5 +1,6 @@
 package com.reader.Novel.Reader.controller;
 
+import com.reader.Novel.Reader.repository.UserRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,9 @@ import java.util.List;
 
 @RestController
 public class UserController {
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     UserService service;
