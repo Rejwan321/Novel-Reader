@@ -37,10 +37,18 @@ span { font-size: .75rem; }
     position:fixed;
     top:0;
     left:0;
+    opacity:0;
+    pointer-events:none;
     max-width:100%;
     width:100%;
     height:100%;
     backdrop-filter: blur(5px);
+    transition:0.1s ease;
+}
+
+.show-popup .blur-bg-overlay{
+    opacity:1;
+    pointer-events:auto;
 }
 
 .social {
@@ -50,7 +58,7 @@ span { font-size: .75rem; }
     margin: 15px 0;
 }
 
-button {
+.log-button, .ghost {
     border-radius: 20px;
     -webkit-border-radius: 20px;
     -moz-border-radius: 20px;
@@ -72,11 +80,11 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+.log-button:hover {
     background-color: #37DFB8;
 }
 
-button:active {
+.log-button:active, .ghost:active {
     transform: scale(.95);
     -webkit-transform: scale(.95rem);
     -moz-transform: scale(.95);
@@ -84,11 +92,11 @@ button:active {
     -o-transform: scale(.95);
 }
 
-button:focus {
+.log-button:focus, .ghost:focus {
     outline: none;
 }
 
-button.ghost {
+.ghost {
     background-color: transparent;
     border-color: #FFFFFF;
 }
@@ -124,9 +132,19 @@ button.ghost {
     box-shadow: 0 14px 28px rgba(0, 0, 0, .25), 0 10px 10px rgba(0, 0, 0, .22);
     position: relative;
     overflow: hidden;
+    opacity:0;
+    pointer-events:none;
     width: 768px;
     max-width: 100%;
     min-height: 450px;
+    transform:translate(-50%,-100%);
+}
+
+.show-popup .container {
+    opacity:1;
+    pointer-events:auto;
+    transform:translate(0,0);
+    transition:transform 0.3s ease, opacity 0.1s;
 }
 
 .form-container {

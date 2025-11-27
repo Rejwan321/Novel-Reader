@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +18,7 @@
 </head>
 <body class="registration">
 <div th:fragment="signupForm">
-    <div class="blur-bg-overlay"></div>
+<div class="blur-bg-overlay"></div>
 <div class="container" id="container">
     <div class="form-container signup-container">
         <form class="form-con" action="#">
@@ -32,12 +32,12 @@
             <input class="insert" type="text" placeholder="Name">
             <input class="insert" type="email" placeholder="Email">
             <input class="insert" type="password" placeholder="Password">
-            <button class="sign-in">Sign up</button>
+            <button class="log-button">Sign up</button>
         </form>
     </div>
 
     <div class="form-container login-container">
-        <form class="form-con" action="#">
+        <form class="form-con" th:action="@{/reader}" method="get">
             <h1>Login</h1>
             <div class="social-container">
                 <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
@@ -48,7 +48,7 @@
             <input class="insert" type="text" placeholder="Email">
             <input class="insert" type="password" placeholder="Password">
             <a href="#" class="social">Forgot your password?</a>
-            <button>Login</button>
+            <button class="log-button">Login</button>
         </form>
     </div>
 
@@ -57,18 +57,17 @@
             <div class="overlay-panel overlay-left">
                 <h1>Welcome Back</h1>
                 <p>To keep connected with us please login with your personal info</p>
-                <button class="ghost">Login</button>
+                <button class="ghost" id="login">Login</button>
             </div>
 
             <div class="overlay-panel overlay-right">
                 <h1>Hello Friend</h1>
                 <p>Enter your personal details and start journey with us</p>
-                <button class="ghost">Signup</button>
+                <button class="ghost" id="signup">Signup</button>
             </div>
         </div>
     </div>
 </div>
-    <script src="scripts/Script.js"></script>
 </div>
 </body>
 </html>
