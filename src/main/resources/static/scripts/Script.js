@@ -32,3 +32,21 @@ signUp.addEventListener('click', () => {
 login.addEventListener('click', () => {
     container.classList.remove('right-panel-active');
 });
+
+(function () {
+  // Mark active nav link based on path
+  const path = window.location.pathname;
+  const links = document.querySelectorAll('a[data-nav]');
+  links.forEach(a => {
+    const match = a.getAttribute('href');
+    if (match && path.startsWith(match)) {
+      a.classList.add('active');
+    }
+  });
+
+  // Scroll to top button example (if you want)
+  const toTop = document.querySelector('#toTop');
+  if (toTop) {
+    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  }
+})();
