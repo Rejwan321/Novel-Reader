@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rankings · WebNovel</title>
+  <link rel="stylesheet" href="/css/rankings.css" />
+</head>
+<body>
+  <div th:replace="fragments/Navbar :: *"></div>
+
+  <main class="container">
+    <h1>Top Rankings</h1>
+    <div class="tabs">
+      <button data-type="weekly" class="active">Weekly</button>
+      <button data-type="monthly">Monthly</button>
+      <button data-type="overall">Overall</button>
+    </div>
+    <ol id="rankList" class="rank-list"></ol>
+  </main>
+
+  <script type="module">
+    import { apiGet, imgOrPlaceholder } from '/scripts/api.js';
+    const list = document.getElementById('rankList');
+    const tabs = document.querySelectorAll('.tabs button');
+
+    tabs.forEach(b => b.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      load(b.dataset.type);
+    }));
+
+    function row(r) {
+      const b = r.book;
+      return `
+        <li>
+          <span class="pos">#${r.rankPosition}</span>
+          <img src="${imgOrPlaceholder(b.coverImageUrl)}" alt="${b.title}" />
+          <a href="/book?id=${b.bookId}">${b.title}</a>
+          <span class="genre">${b.genre ?? ''}</span>
+        </li>`;
+    }
+
+    async function load(type = 'weekly') {
+      const data = await apiGet(`/rankings/${type}`);
+      list.innerHTML = data.map(row).join('');
+    }
+
+    load('weekly');
+  </script>
+</body>
+</html>
