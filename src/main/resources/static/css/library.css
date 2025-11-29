@@ -1,0 +1,5 @@
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.book-card .meta { display: grid; gap: 6px; }
+.book-card .remove { background: #ef4444; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; }
+.book-card .remove:hover { background:#dc2626; }
+.empty { color:#777; }
