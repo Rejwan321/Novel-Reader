@@ -9,7 +9,6 @@ Yuki Tales is a premium, highly responsive web application designed for reading 
 * **Responsive Reader Layout:** Seamless reading layout on mobile and desktop viewports, locking canvas zoom to guarantee layout stability.
 * **Snow Flakes Purchase System:** Premium chapters can be unlocked using digital flakes (mock checkout system).
 * **Multi-Role User Authentication:** Supports multiple role configurations:
-  * **OWNER:** God-mode master permissions. Accesses a toggleable "Self-Destruct" button to secure all site content and database data (analytics, chapters, and stories) from lower roles.
   * **ADMIN:** Complete dashboard management.
   * **EDITOR / PROOFREADER:** Create and modify chapters/novels.
   * **READER:** Normal browsing, reading, rating, bookmarking, and purchasing.
