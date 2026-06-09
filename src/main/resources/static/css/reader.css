@@ -1,0 +1,143 @@
+/* Reader Page Stylesheet - Green Theme */
+
+#reader-body {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.reader-toolbar {
+    position: sticky;
+    top: 68px;
+    background: rgba(24, 24, 41, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 1000;
+}
+
+/* Settings Panel */
+.reader-settings-panel {
+    position: fixed;
+    top: 120px;
+    right: 50px;
+    width: 320px;
+    background: rgba(24, 24, 41, 0.95);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(94, 99, 182, 0.3);
+    z-index: 1050;
+    transition: all 0.3s ease;
+}
+
+.theme-preset-btn {
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: transform 0.2s;
+}
+
+.theme-preset-btn:hover {
+    transform: scale(1.05);
+}
+
+.theme-preset-btn.active {
+    border-color: #5e63b6 !important;
+    box-shadow: 0 0 10px rgba(94, 99, 182, 0.3);
+}
+
+.btn-xs {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border-radius: 3px;
+}
+
+.font-selector-btn.active {
+    background-color: #5e63b6 !important;
+    border-color: #5e63b6 !important;
+    color: white !important;
+}
+
+/* Novel Reader Container */
+.novel-reader-container {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    transition: background-color 0.3s, border-color 0.3s;
+    background: #181829;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reader-content-text {
+    font-size: 18px; /* default */
+    line-height: 1.8;
+    letter-spacing: 0.02em;
+    transition: font-size 0.2s;
+    white-space: pre-wrap;
+}
+
+.reader-content-text p {
+    margin-bottom: 1.5rem;
+}
+
+/* Comic Reader Container */
+.comic-reader-container {
+    margin: 0 auto;
+}
+
+.max-width-comic {
+    max-width: 750px !important;
+}
+
+.comic-panel-img {
+    border-radius: 2px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.max-width-reader {
+    max-width: 800px;
+}
+
+/* Theme Classes applied to novel-reading-frame and body */
+body.theme-light {
+    background-color: #f5f6fa !important;
+    color: #2f3640 !important;
+}
+body.theme-light .novel-reader-container {
+    background-color: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #2f3640 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+}
+body.theme-light .novel-reader-container h2 {
+    color: #2f3640 !important;
+}
+
+body.theme-sepia {
+    background-color: #f4edd8 !important;
+    color: #5d4037 !important;
+}
+body.theme-sepia .novel-reader-container {
+    background-color: #fbf6eb !important;
+    border-color: #e4d7ba !important;
+    color: #5d4037 !important;
+    box-shadow: 0 4px 15px rgba(93, 64, 55, 0.05) !important;
+}
+body.theme-sepia .novel-reader-container h2 {
+    color: #5d4037 !important;
+}
+
+/* Custom Scrollable Chapter Dropdown */
+.dropdown-scrollable {
+    max-height: 250px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+.dropdown-scrollable::-webkit-scrollbar {
+    width: 5px;
+}
+.dropdown-scrollable::-webkit-scrollbar-thumb {
+    background-color: rgba(94, 99, 182, 0.4);
+    border-radius: 3px;
+}

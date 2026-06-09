@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Read chapters of your favorite novels or comics online. View descriptions, ratings, status, and track your progress.">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/details.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <title th:text="${novel.title} + ' - Yuki Tales'">Details - Yuki Tales</title>
+</head>
+<body class="dark-theme">
+    <!-- Navbar -->
+    <div th:replace="~{fragments/Navbar :: navbar}"></div>
+
+    <!-- Main Container -->
+    <main class="container py-4 my-5" style="min-height: 80vh;">
+        
+        <!-- Novel Info Main Container -->
+        <section id="novel_info">
+            <!-- Left Info Panel: Cover, Status, Reading Progress & Actions -->
+            <div id="novel_info_left">
+                <div class="blur_cover" th:style="'background-image: url(' + ${novel.coverUrl} + ');'"></div>
+                <img id="novel_cover" th:src="${novel.coverUrl}" th:alt="${novel.title}">
+                
+                <div id="novel_status" class="green_status" th:text="${novel.status}">ONGOING</div>
+                
+                <!-- CTA Action buttons -->
+                <a th:if="${chapters != null and !chapters.isEmpty()}" 
+                   th:href="@{'/novel/' + ${novel.id} + '/read/' + ${(progress != null and progress > 0.0) ? progress : chapters.get(0).chapterNumber}}" 
+                   id="start-reading">
+                    <i class="fa-solid me-2" th:classappend="${(progress != null and progress > 0.0) ? 'fa-play' : 'fa-book-open'}"></i>
+                    <span th:text="${(progress != null and progress > 0.0) ? 'Resume Ch ' + progress : 'Start Reading'}">Start Reading</span>
+                </a>
+                
+                <button id="add-novel-collection-btn" th:data-id="${novel.id}">
+                    <i class="fa me-2" th:classappend="${isBookmarked ? 'fa-bookmark text-violet' : 'fa-bookmark-o'}"></i>
+                    <span th:text="${isBookmarked ? (progress > 0.0 ? 'Reading' : 'Bookmarked') : 'Add Bookmark'}">Add Bookmark</span>
+                </button>
+            </div>
+
+            <!-- Right Info Panel: Metadata, Synopsis & Chapters Index -->
+            <div id="novel_info_right">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="badge" th:classappend="${novel.type == 'NOVEL' ? 'bg-violet' : 'bg-coral'}" th:text="${novel.type}">NOVEL</span>
+                </div>
+                <h1 class="display-6 fw-bold text-white mb-2" th:text="${novel.title}">Solo Leveling: Ragnarok</h1>
+                <p class="fs-5 text-gray mb-3">By <span class="fw-bold text-white-50" th:text="${novel.author}">Chugong</span></p>
+                
+                <!-- Novel Stats Block -->
+                <div class="novel_stats">
+                    <div>
+                        <i class="fa fa-star text-warning me-1"></i>Rating: <strong id="novel-average-rating-display" th:text="${novel.rating}">4.9</strong>
+                    </div>
+                    <div>
+                        <i class="fa-solid fa-list-ol text-success me-1"></i>Chapters: <strong th:text="${chapters != null ? chapters.size() : 0}">0</strong>
+                    </div>
+                </div>
+
+                <!-- Interactive Rating Block -->
+                <div class="interactive-rating mb-4" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px 18px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;">
+                    <span class="text-gray me-2 font-size-sm" style="font-weight: 500;">Rate this:</span>
+                    <div class="star-rating d-inline-flex gap-1" th:data-user-rating="${userRating}">
+                        <th:block th:each="i : ${#numbers.sequence(1, 5)}">
+                            <i class="star-btn" 
+                               th:classappend="${i <= userRating ? 'fa-solid fa-star text-warning' : 'fa-regular fa-star'}"
+                               th:data-value="${i}"></i>
+                        </th:block>
+                    </div>
+                    <span id="user-rating-text" class="text-success ms-2 small" th:classappend="${userRating > 0 ? '' : 'd-none'}">
+                        You rated: <span id="user-rating-val" th:text="${userRating}">0</span>/5
+                    </span>
+                </div>
+
+                <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-align-left text-success me-2"></i>Synopsis</h3>
+                <div class="desc_div">
+                    <p class="text-gray lh-lg" th:text="${novel.description}">Synopsis content goes here...</p>
+                </div>
+                
+                <!-- Genres -->
+                <div id="tags_div" class="mb-4">
+                    <span class="novel_genre" th:each="genreItem : ${novel.genre.split(',')}" th:text="${genreItem.trim()}">Action</span>
+                </div>
+
+                <!-- Chapters Selection Tab -->
+                <h3 class="h5 fw-bold text-white mt-4 mb-2"><i class="fa-solid fa-list text-success me-2"></i>Story Chapters</h3>
+                
+                <div id="chapter_selection_div">
+                    <p id="tab-free-chaps" class="active" onclick="switchDetailChapters('free')">Free Chapters</p>
+                    <p id="tab-emerald-chaps" onclick="switchDetailChapters('emerald')">Snow Flakes Chapters</p>
+                </div>
+
+                <!-- Reverse Sorting Button -->
+                <div class="chapter_reverse_button" onclick="reverseChapters()">
+                    Sort Order: <span id="sort-direction">Ascending ⇅</span>
+                </div>
+
+                <!-- List of Chapters -->
+                <div class="novel_index" id="chapters-list-container">
+                    <th:block th:each="chapter : ${chapters}" th:with="isUnlocked=${chapter.price == 0 or (session.user != null and (session.user.user_type == 'OWNER' or session.user.user_type == 'ADMIN' or session.user.user_type == 'PROOFREADER' or (session.user.user_type == 'EDITOR' and novel.creatorId == session.user.id) or purchasedChapterIds.contains(chapter.id)))}">
+                        <!-- Unlocked Chapter Link -->
+                        <a th:if="${isUnlocked}"
+                           th:href="@{'/novel/' + ${novel.id} + '/read/' + ${chapter.chapterNumber}}"
+                           class="chap d-flex justify-content-between align-items-center"
+                           th:classappend="${(chapter.price > 0 ? 'premium_chap' : 'free_chap') + (chapter.chapterNumber <= progress ? ' chapter-read' : '')}"
+                           th:style="${chapter.price > 0 ? 'display: none;' : ''}">
+                            <span>
+                                <span class="fw-bold text-success font-size-sm" th:text="'Ch ' + ${chapter.chapterNumber} + ': '">Ch 1: </span>
+                                <span th:text="${chapter.title}">Chapter Title</span>
+                                <span th:if="${chapter.price > 0}" class="badge bg-success ms-2 text-dark" style="font-size: 0.75rem;">Unlocked</span>
+                            </span>
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-lock-open text-success me-2" th:if="${chapter.price > 0}"></i>
+                                <i class="fa-solid fa-circle-check text-success check-icon" th:if="${chapter.chapterNumber <= progress}"></i>
+                            </div>
+                        </a>
+
+                        <!-- Locked Chapter Clickable Row -->
+                        <div th:if="${!isUnlocked}"
+                             class="chap locked-chap d-flex justify-content-between align-items-center"
+                             style="cursor: pointer;"
+                             th:data-id="${chapter.id}"
+                             th:data-price="${chapter.price}"
+                             th:data-title="${chapter.title}"
+                             th:classappend="${(chapter.price > 0 ? 'premium_chap' : 'free_chap')}"
+                             th:style="${chapter.price > 0 ? 'display: none;' : ''}">
+                            <span>
+                                <span class="fw-bold text-success font-size-sm" th:text="'Ch ' + ${chapter.chapterNumber} + ': '">Ch 1: </span>
+                                <span th:text="${chapter.title}" class="text-white-50">Chapter Title</span>
+                            </span>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-warning text-dark me-2" style="font-weight: 600; font-size: 0.75rem;">
+                                    <span th:text="${chapter.price}">10</span> <i class="fa-solid fa-snowflake ms-1"></i>
+                                </span>
+                                <i class="fa-solid fa-lock text-warning"></i>
+                            </div>
+                        </div>
+                    </th:block>
+                    
+                    <div class="text-center py-4 text-muted" th:if="${chapters == null or chapters.isEmpty()}">
+                        <i class="fa-regular fa-folder-open display-6 mb-2"></i>
+                        <p>No chapters available yet.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Inline JavaScript for Sorting and Toggling chapters -->
+        <script>
+            let currentSort = 'asc';
+
+            function switchDetailChapters(type) {
+                const freeChaps = document.querySelectorAll('.free_chap');
+                const emeraldChaps = document.querySelectorAll('.premium_chap');
+                const freeTab = document.getElementById('tab-free-chaps');
+                const emeraldTab = document.getElementById('tab-emerald-chaps');
+
+                if (type === 'free') {
+                    freeChaps.forEach(el => {
+                        el.style.setProperty('display', 'flex', 'important');
+                    });
+                    emeraldChaps.forEach(el => {
+                        el.style.setProperty('display', 'none', 'important');
+                    });
+                    freeTab.classList.add('active');
+                    emeraldTab.classList.remove('active');
+                } else {
+                    freeChaps.forEach(el => {
+                        el.style.setProperty('display', 'none', 'important');
+                    });
+                    emeraldChaps.forEach(el => {
+                        el.style.setProperty('display', 'flex', 'important');
+                    });
+                    freeTab.classList.remove('active');
+                    emeraldTab.classList.add('active');
+                }
+            }
+
+            function reverseChapters() {
+                const container = document.getElementById('chapters-list-container');
+                if (!container) return;
+                
+                // Get only chapter links, filter out empty state message if exists
+                const chapters = Array.from(container.querySelectorAll('.chap'));
+                if (chapters.length === 0) return;
+                
+                chapters.reverse();
+                
+                // Clear and append again
+                container.innerHTML = '';
+                chapters.forEach(ch => container.appendChild(ch));
+
+                currentSort = currentSort === 'asc' ? 'desc' : 'asc';
+                document.getElementById('sort-direction').innerText = currentSort === 'asc' ? 'Ascending ⇅' : 'Descending ⇅';
+            }
+        </script>
+        </div>
+    </main>
+
+    <!-- Chapter Purchase Confirmation Modal -->
+    <div class="modal fade" id="chapterPurchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white" style="background-color: #1a1a2e; border: 1px solid #5e63b6; border-radius: 12px; backdrop-filter: blur(10px);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="purchaseModalLabel"><i class="fa-solid fa-cart-shopping text-warning me-2"></i>Unlock Chapter</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="mb-3">You are about to unlock chapter: <strong id="purchase-chapter-title" class="text-warning">Chapter Title</strong></p>
+                    <div class="p-3 rounded mb-3" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Chapter Price:</span>
+                            <span class="fw-bold text-warning"><span id="purchase-chapter-price">10</span> <i class="fa-solid fa-snowflake"></i></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Your Balance:</span>
+                            <span class="fw-bold text-info"><span id="purchase-user-balance">100</span> <i class="fa-solid fa-snowflake"></i></span>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger d-none" id="purchase-error-msg" role="alert" style="background-color: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.2); color: #ea868f;">
+                        Insufficient balance to unlock this chapter.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-premium px-4" id="btn-confirm-purchase">Unlock Chapter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login/Signup modal -->
+    <div th:replace="~{fragments/Signup :: signupForm}"></div>
+
+    <!-- Footer -->
+    <footer id="footer" class="py-4 mt-auto">
+        <h4 style="font-size:12px; color: #8c8c9e;">&copy; 2026 Yuki Tales. All Rights Reserved. Crafted with visual excellence.</h4>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/scripts/Script.js}"></script>
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            let chapterToBuy = null;
+
+            $(document).on('click', '.locked-chap', function() {
+                const id = $(this).data('id');
+                const price = parseInt($(this).data('price'));
+                const title = $(this).data('title');
+                
+                // Check if user is logged in
+                const isLoggedIn = /*[[${session.user != null}]]*/ false;
+                if (!isLoggedIn) {
+                    // Trigger sign in modal
+                    var loginModal = new bootstrap.Modal(document.getElementById('signupModal'));
+                    loginModal.show();
+                    return;
+                }
+
+                // Populate and show purchase modal
+                chapterToBuy = { id, price, title };
+                $('#purchase-chapter-title').text(title);
+                $('#purchase-chapter-price').text(price);
+                
+                const userBalance = parseInt($('#navbar-user-balance').text()) || 0;
+                $('#purchase-user-balance').text(userBalance);
+
+                if (userBalance < price) {
+                    $('#purchase-error-msg').removeClass('d-none');
+                    $('#btn-confirm-purchase').prop('disabled', true);
+                } else {
+                    $('#purchase-error-msg').addClass('d-none');
+                    $('#btn-confirm-purchase').prop('disabled', false);
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('chapterPurchaseModal'));
+                modal.show();
+            });
+
+            $('#btn-confirm-purchase').click(function() {
+                if (!chapterToBuy) return;
+                
+                $.post('/api/chapters/' + chapterToBuy.id + '/purchase')
+                    .done(function(res) {
+                        // Update navbar balance
+                        $('#navbar-user-balance').text(res.newBalance);
+                        
+                        // Close modal
+                        bootstrap.Modal.getInstance(document.getElementById('chapterPurchaseModal')).hide();
+                        
+                        // Show success message
+                        showToast("Chapter unlocked successfully!");
+
+                        // Reload details page to update lock badges and styles
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1000);
+                    })
+                    .fail(function(xhr) {
+                        const err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Failed to purchase chapter.";
+                        $('#purchase-error-msg').text(err).removeClass('d-none');
+                    });
+            });
+
+            // Helper to show custom toast in details page
+            function showToast(message, type = "success") {
+                var toastEl = document.getElementById('actionToast');
+                if (!toastEl) return;
+                var toastBody = document.getElementById('toast-message-body');
+                toastBody.innerText = message;
+                toastEl.className = "toast align-items-center text-white border-0";
+                if (type === "success") {
+                    toastEl.classList.add("bg-toast-success");
+                } else if (type === "error") {
+                    toastEl.classList.add("bg-toast-error");
+                } else {
+                    toastEl.classList.add("bg-toast-info");
+                }
+                var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
+
+            // Check for URL errors
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('error') === 'purchase_required') {
+                showToast("Please purchase the chapter to read it.", "error");
+            } else if (urlParams.get('error') === 'login_required') {
+                showToast("Please log in to access this chapter.", "error");
+            }
+
+            // --- RATINGS SYSTEM JS ---
+            
+            // Star rating click handler
+            $(document).on('click', '.star-btn', function() {
+                const isLoggedIn = /*[[${session.user != null}]]*/ false;
+                if (!isLoggedIn) {
+                    var loginModal = new bootstrap.Modal(document.getElementById('signupModal'));
+                    loginModal.show();
+                    return;
+                }
+
+                const ratingValue = parseInt($(this).data('value'));
+                const novelId = /*[[${novel.id}]]*/ null;
+
+                $.post('/api/novels/' + novelId + '/rate', { ratingValue: ratingValue })
+                    .done(function(res) {
+                        showToast(res.message);
+                        
+                        // Update container attribute for state persistence
+                        const starContainer = $('.star-rating');
+                        starContainer.attr('data-user-rating', ratingValue);
+                        
+                        // Update visual stars
+                        starContainer.find('.star-btn').each(function() {
+                            const val = parseInt($(this).data('value'));
+                            if (val <= ratingValue) {
+                                $(this).removeClass('fa-regular').addClass('fa-solid text-warning');
+                            } else {
+                                $(this).removeClass('fa-solid text-warning').addClass('fa-regular');
+                            }
+                        });
+
+                        // Show/update rating text
+                        $('#user-rating-val').text(ratingValue);
+                        $('#user-rating-text').removeClass('d-none');
+
+                        // Update average rating
+                        $('#novel-average-rating-display').text(res.newRating.toFixed(1));
+                    })
+                    .fail(function(xhr) {
+                        const err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Failed to submit rating.";
+                        showToast(err, "error");
+                    });
+            });
+
+            // Hover preview effect
+            $(document).on('mouseenter', '.star-btn', function() {
+                const hoverVal = parseInt($(this).data('value'));
+                $(this).parent().find('.star-btn').each(function() {
+                    const val = parseInt($(this).data('value'));
+                    if (val <= hoverVal) {
+                        $(this).removeClass('fa-regular').addClass('fa-solid text-warning');
+                    } else {
+                        $(this).removeClass('fa-solid text-warning').addClass('fa-regular');
+                    }
+                });
+            });
+
+            $(document).on('mouseleave', '.star-rating', function() {
+                const currentRating = parseInt($(this).attr('data-user-rating')) || 0;
+                $(this).find('.star-btn').each(function() {
+                    const val = parseInt($(this).data('value'));
+                    if (val <= currentRating) {
+                        $(this).removeClass('fa-regular').addClass('fa-solid text-warning');
+                    } else {
+                        $(this).removeClass('fa-solid text-warning').addClass('fa-regular');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

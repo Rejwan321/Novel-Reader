@@ -1,0 +1,2443 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Yuki Tales admin dashboard for managing users and story series.">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <title th:text="${userRole == 'OWNER' ? 'Owner Panel - Yuki Tales' : (userRole == 'ADMIN' ? 'Admin Panel - Yuki Tales' : 'Editor Panel - Yuki Tales')}">Dashboard - Yuki Tales</title>
+
+    <style>
+        .admin-sidebar {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(46, 204, 113, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .admin-tab-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: var(--text-gray);
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+        .admin-tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+        .admin-tab-btn.active {
+            color: white;
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid var(--theme-primary);
+        }
+        .admin-tab-btn i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+        .admin-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            min-height: 500px;
+        }
+        .table-admin {
+            color: var(--text-gray);
+        }
+        .table-admin th {
+            color: white;
+            border-bottom: 2px solid rgba(46, 204, 113, 0.3);
+        }
+        .table-admin td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+        .form-select-admin {
+            background-color: #12121e;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            outline: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: border-color 0.2s;
+        }
+        .form-select-admin:focus {
+            border-color: var(--theme-primary);
+        }
+        .form-input-admin {
+            background-color: #12121e;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input-admin:focus {
+            border-color: var(--theme-primary);
+        }
+        .form-label-admin {
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+        }
+        /* Excel-like Sheet Styling */
+        .excel-toolbar {
+            background-color: #1e1e30;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: none;
+            padding: 8px 16px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .excel-toolbar-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #b2bec3;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .excel-toolbar-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+        .excel-table-container {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+        .excel-table {
+            border-collapse: collapse !important;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin: 0;
+            width: 100%;
+        }
+        .excel-table th, .excel-table td {
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            padding: 6px 12px !important;
+            position: relative;
+            outline: none;
+            color: #b2bec3;
+            background-color: #12121e;
+        }
+        .excel-table th {
+            background-color: #1e1e30 !important;
+            color: white !important;
+            font-weight: 500;
+            text-align: left;
+            user-select: none;
+        }
+        .excel-index-col {
+            background-color: #1e1e30 !important;
+            color: #a29bfe !important;
+            font-weight: 600;
+            text-align: center;
+            user-select: none;
+            width: 40px;
+        }
+        .excel-table td.active-cell {
+            outline: 2px solid #2ecc71 !important;
+            outline-offset: -2px;
+            z-index: 10;
+            background-color: rgba(46, 204, 113, 0.05) !important;
+        }
+        .excel-table tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .excel-table th.excel-sortable {
+            cursor: pointer;
+        }
+        .excel-table th.excel-sortable:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #2ecc71 !important;
+        }
+        .excel-text-success {
+            color: #2ecc71 !important;
+            font-weight: bold;
+        }
+        /* Premium Table Styles for approachable look */
+        .table-premium tbody tr {
+            transition: background-color 0.25s, transform 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .table-premium tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.015) !important;
+        }
+        .cover-img-premium {
+            width: 46px;
+            height: 62px;
+            object-fit: cover;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.25s;
+        }
+        .cover-img-premium:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
+        }
+        /* Custom role/format badges */
+        .badge-format {
+            padding: 4px 10px !important;
+            font-size: 0.72rem !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-radius: 6px !important;
+        }
+        .badge-format-novel {
+            background-color: rgba(52, 152, 219, 0.1) !important;
+            color: #3498db !important;
+            border: 1px solid rgba(52, 152, 219, 0.2) !important;
+        }
+        .badge-format-comic {
+            background-color: rgba(155, 89, 182, 0.1) !important;
+            color: #9b59b6 !important;
+            border: 1px solid rgba(155, 89, 182, 0.2) !important;
+        }
+        .badge-format-manga {
+            background-color: rgba(46, 204, 113, 0.1) !important;
+            color: #2ecc71 !important;
+            border: 1px solid rgba(46, 204, 113, 0.2) !important;
+        }
+        .badge-format-manhwa {
+            background-color: rgba(230, 126, 34, 0.1) !important;
+            color: #e67e22 !important;
+            border: 1px solid rgba(230, 126, 34, 0.2) !important;
+        }
+        /* Styled genres tag pills */
+        .genre-pill {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: #a29bfe;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.72rem;
+            display: inline-block;
+            margin: 2px;
+            font-weight: 500;
+        }
+        /* Sleek Status badges */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #b2bec3;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot-ongoing {
+            background-color: #2ecc71;
+            box-shadow: 0 0 8px #2ecc71;
+            animation: pulse-dot 2s infinite;
+        }
+        .status-dot-completed {
+            background-color: #9b59b6;
+            box-shadow: 0 0 8px #9b59b6;
+        }
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 12px #2ecc71; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        /* Sleek Action Buttons */
+        .btn-action-premium {
+            padding: 6px 12px !important;
+            font-size: 0.78rem !important;
+            font-weight: 500 !important;
+            border-radius: 6px !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-action-edit {
+            background-color: rgba(241, 196, 15, 0.08) !important;
+            color: #f1c40f !important;
+            border: 1px solid rgba(241, 196, 15, 0.25) !important;
+        }
+        .btn-action-edit:hover {
+            background-color: rgba(241, 196, 15, 0.18) !important;
+            border-color: #f1c40f !important;
+        }
+        .btn-action-chapters {
+            background-color: rgba(52, 152, 219, 0.08) !important;
+            color: #3498db !important;
+            border: 1px solid rgba(52, 152, 219, 0.25) !important;
+        }
+        .btn-action-chapters:hover {
+            background-color: rgba(52, 152, 219, 0.18) !important;
+            border-color: #3498db !important;
+        }
+        .btn-action-delete {
+            background-color: rgba(231, 76, 60, 0.08) !important;
+            color: #e74c3c !important;
+            border: 1px solid rgba(231, 76, 60, 0.25) !important;
+            padding: 6px 10px !important;
+        }
+        .btn-action-delete:hover {
+            background-color: #e74c3c !important;
+            color: white !important;
+            border-color: #e74c3c !important;
+        }
+        .btn-self-destruct {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(231, 76, 60, 0.3) !important;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.05);
+        }
+        .btn-self-destruct:hover {
+            background-color: rgba(231, 76, 60, 0.15) !important;
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.15);
+        }
+        .btn-self-destruct:active {
+            transform: scale(0.98);
+        }
+        .btn-self-destruct.active {
+            background-color: rgba(46, 204, 113, 0.1) !important;
+            border-color: rgba(46, 204, 113, 0.4) !important;
+            color: #2ecc71 !important;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.05);
+        }
+        .btn-self-destruct.active:hover {
+            background-color: rgba(46, 204, 113, 0.15) !important;
+            box-shadow: 0 4px 20px rgba(46, 204, 113, 0.15);
+        }
+        .btn-self-destruct.active .btn-self-destruct-bg {
+            background-color: #2ecc71 !important;
+        }
+        .animate-spin {
+            animation: fa-spin 2s linear infinite;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <!-- Navbar -->
+    <div th:replace="~{fragments/Navbar :: navbar}"></div>
+
+    <!-- Secured Mode Banner (OWNER only) -->
+    <div th:if="${securedMode and userRole == 'OWNER'}" class="container mt-5 pt-3">
+        <div class="alert alert-danger border border-danger bg-opacity-10 d-flex align-items-center justify-content-between p-3 rounded-3" style="background-color: rgba(231, 76, 60, 0.08);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-20 text-danger rounded-circle p-2" style="width: 42px; height: 42px;">
+                    <i class="fa-solid fa-shield-halved fa-lg"></i>
+                </div>
+                <div>
+                    <h4 class="h6 fw-bold text-white mb-1">Secured Mode Active</h4>
+                    <p class="text-muted mb-0 small">All novel listings, chapter reads, bookmarks, and revenue statistics are hidden from non-owner accounts.</p>
+                </div>
+            </div>
+            <span class="badge bg-danger px-3 py-2 text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Secured</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-4 my-5" style="min-height: 80vh;">
+        <div class="row g-4">
+            <!-- Sidebar Panel Selector -->
+            <div class="col-lg-3 col-md-4">
+                <div class="admin-sidebar">
+                    <h2 class="h5 fw-bold text-white mb-4">
+                        <i class="fa-solid fa-crown text-warning me-2"></i>
+                        <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : (userRole == 'EDITOR' ? 'Editor Panel' : 'Proofreader Panel'))}">Dashboard</span>
+                    </h2>
+                    
+                    <button class="admin-tab-btn active" id="tab-stories-btn" onclick="switchTab('stories')">
+                        <i class="fa-solid fa-book-open"></i>Manage Stories
+                    </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-analytics-btn" onclick="switchTab('analytics')">
+                        <i class="fa-solid fa-chart-line"></i>Analytics
+                    </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-users-btn" onclick="switchTab('users')">
+                        <i class="fa-solid fa-users-gear"></i>User Roles
+                    </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-flakes-btn" onclick="switchTab('flakes')">
+                        <i class="fa-solid fa-snowflake text-info"></i>Snow Flakes Price
+                    </button>
+
+                    <!-- Self-Destruct / Recovery Button (OWNER only) -->
+                    <div th:if="${userRole == 'OWNER'}" class="mt-4 pt-3 border-top border-secondary">
+                        <!-- If normal mode: show self-destruct -->
+                        <div th:if="${!securedMode}">
+                            <label class="form-label-admin d-block text-danger mb-2" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> System Security
+                            </label>
+                            <button type="button" id="btn-self-destruct" 
+                                    class="w-100 btn-self-destruct position-relative overflow-hidden" 
+                                    style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.4); border-radius: 8px; color: #e74c3c; font-weight: 700; font-size: 0.85rem; padding: 12px; transition: all 0.3s; cursor: pointer; user-select: none;">
+                                <span class="btn-self-destruct-bg position-absolute top-0 start-0 h-100 bg-danger" style="width: 0%; opacity: 0.25; transition: width 0.1s linear;"></span>
+                                <span class="position-relative z-index-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-radiation animate-spin"></i>
+                                    <span>TRIGGER SELF-DESTRUCT</span>
+                                </span>
+                            </button>
+                            <small class="text-muted d-block mt-2 text-center" style="font-size: 0.72rem; line-height: 1.2;">
+                                Press and hold for 3 seconds to hide all content from public view.
+                            </small>
+                        </div>
+
+                        <!-- If secured mode: show recovery -->
+                        <div th:if="${securedMode}">
+                            <label class="form-label-admin d-block text-success mb-2" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                                <i class="fa-solid fa-shield-heart me-1"></i> System Recovery
+                            </label>
+                            <button type="button" id="btn-self-destruct" 
+                                    class="w-100 btn-self-destruct active position-relative overflow-hidden" 
+                                    style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 8px; color: #2ecc71; font-weight: 700; font-size: 0.85rem; padding: 12px; transition: all 0.3s; cursor: pointer; user-select: none;">
+                                <span class="btn-self-destruct-bg position-absolute top-0 start-0 h-100 bg-success" style="width: 0%; opacity: 0.25; transition: width 0.1s linear;"></span>
+                                <span class="position-relative z-index-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-shield-heart"></i>
+                                    <span>RESTORE & RECOVER SITE</span>
+                                </span>
+                            </button>
+                            <small class="text-muted d-block mt-2 text-center" style="font-size: 0.72rem; line-height: 1.2;">
+                                Press and hold for 3 seconds to restore the site and make it public.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Pane Card -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Manage Stories Pane -->
+                <div class="admin-card" id="pane-stories">
+                    <h2 class="h4 fw-bold text-white mb-3"><i class="fa-solid fa-book-open text-violet me-2"></i>Story Management</h2>
+                    <p class="text-muted small mb-4">Add new stories and chapters. Support Novels, Comics, Manhwa, and Manga formats.</p>
+
+                    <!-- Add Story Form -->
+                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                        <h3 class="h5 fw-bold text-white mb-4" id="title-add-story"><i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Story Series</h3>
+                        <form id="form-add-story" data-mode="create" data-edit-id="">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Title</label>
+                                    <input type="text" class="form-input-admin" id="story-title" required placeholder="e.g. Solo Leveling">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Author</label>
+                                    <input type="text" class="form-input-admin" id="story-author" required placeholder="e.g. Chugong">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Type Format</label>
+                                    <select class="form-input-admin" id="story-type">
+                                        <option value="NOVEL">Novel</option>
+                                        <option value="COMIC">Comic</option>
+                                        <option value="MANHWA">Manhwa</option>
+                                        <option value="MANGA">Manga</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Status</label>
+                                    <select class="form-input-admin" id="story-status">
+                                        <option value="ONGOING">Ongoing</option>
+                                        <option value="COMPLETED">Completed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Genres</label>
+                                    <input type="text" class="form-input-admin" id="story-genre" required placeholder="e.g. Action, Fantasy, System">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Rating (out of 5)</label>
+                                    <input type="number" step="0.1" max="5.0" class="form-input-admin" id="story-rating" value="4.8">
+                                </div>
+                                <div class="col-12">
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label class="form-label-admin">Cover Image URL</label>
+                                            <input type="text" class="form-input-admin" id="story-cover" required placeholder="https://images.unsplash.com/... or upload one to the right">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label-admin">Or Upload Cover File</label>
+                                            <input type="file" class="form-input-admin" id="story-cover-file" accept="image/*" style="padding: 7px 14px;">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Upload Progress Bar -->
+                                    <div id="cover-upload-progress" class="progress mt-2 d-none" style="height: 6px; background-color: #12121e;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <!-- Cover Image Preview -->
+                                    <div id="cover-preview-container" class="mt-3 d-none">
+                                        <label class="form-label-admin d-block">Cover Image Preview</label>
+                                        <div class="position-relative d-inline-block">
+                                            <img id="cover-preview-img" src="" alt="Cover Preview" class="rounded border border-secondary" style="max-height: 180px; width: auto; object-fit: cover;">
+                                            <button type="button" id="btn-remove-cover-upload" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle shadow" style="padding: 2px 6px;"><i class="fa fa-times"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label-admin">Synopsis / Description</label>
+                                    <textarea class="form-input-admin" id="story-desc" rows="4" required placeholder="In the shadows of the dimensional rift..."></textarea>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="button" id="btn-cancel-edit-story" class="btn btn-secondary px-3 py-2 me-2 d-none"><i class="fa fa-times me-1"></i>Cancel Edit</button>
+                                    <button class="btn btn-premium px-4 py-2" type="submit" id="btn-submit-story"><i class="fa fa-plus me-2"></i>Add Story</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Add Chapter Form -->
+                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                        <h3 class="h5 fw-bold text-white mb-4" id="title-add-chapter"><i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter</h3>
+                        <form id="form-add-chapter" data-mode="create" data-edit-id="">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Select Story</label>
+                                    <select class="form-input-admin" id="chapter-novel-id">
+                                        <option th:each="novel : ${novels}" th:value="${novel.id}" th:text="${novel.title} + ' [' + ${novel.type} + ']'"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Chapter Number</label>
+                                    <input type="number" step="0.1" class="form-input-admin" id="chapter-number" required placeholder="e.g. 1.0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Price (Snow Flakes)</label>
+                                    <input type="number" class="form-input-admin" id="chapter-price" required min="0" value="0" placeholder="0 for free chapters">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Or Upload Content Image</label>
+                                    <input type="file" class="form-input-admin" id="chapter-image-file" accept="image/*" style="padding: 7px 14px;">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label-admin">Chapter Title</label>
+                                    <input type="text" class="form-input-admin" id="chapter-title" required placeholder="e.g. The Awakening of Shadows">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label-admin">Chapter Content (Plain text for Novels, comma-separated image URLs for Comics)</label>
+                                    <textarea class="form-input-admin" id="chapter-content" rows="6" required placeholder="For novels: type or paste normal text here...&#10;For comics: img_url1,img_url2,img_url3"></textarea>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="button" id="btn-cancel-edit-chapter" class="btn btn-secondary px-3 py-2 me-2 d-none"><i class="fa fa-times me-1"></i>Cancel Edit</button>
+                                    <button class="btn btn-premium px-4 py-2" type="submit" id="btn-submit-chapter"><i class="fa fa-plus me-2"></i>Add Chapter</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Existing Content Management Section -->
+                    <div class="card bg-dark border-0 p-4 mt-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                        <h3 class="h5 fw-bold text-white mb-4"><i class="fa-solid fa-folder-open text-violet me-2"></i>Manage Existing Stories & Chapters</h3>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-admin table-premium align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Cover</th>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th>Genres</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="n : ${novels}">
+                                        <td>
+                                            <img th:src="${n.coverUrl}" alt="Cover" class="cover-img-premium">
+                                        </td>
+                                        <td class="text-white fw-bold" th:text="${n.title}">Story Title</td>
+                                        <td>
+                                            <span th:class="'badge badge-format ' + ${n.type == 'NOVEL' ? 'badge-format-novel' : (n.type == 'COMIC' ? 'badge-format-comic' : (n.type == 'MANGA' ? 'badge-format-manga' : 'badge-format-manhwa'))}" th:text="${n.type}">NOVEL</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <span th:each="g : ${#strings.arraySplit(n.genre, ',')}" 
+                                                      th:text="${g.trim()}" 
+                                                      class="genre-pill">Action</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="status-indicator">
+                                                <span th:class="'status-dot ' + ${n.status == 'ONGOING' ? 'status-dot-ongoing' : 'status-dot-completed'}"></span>
+                                                <span th:text="${n.status == 'ONGOING' ? 'Ongoing' : 'Completed'}">Ongoing</span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta"
+                                                        th:data-id="${n.id}"
+                                                        th:data-title="${n.title}"
+                                                        th:data-author="${n.author}"
+                                                        th:data-type="${n.type}"
+                                                        th:data-status="${n.status}"
+                                                        th:data-genre="${n.genre}"
+                                                        th:data-rating="${n.rating}"
+                                                        th:data-cover="${n.coverUrl}"
+                                                        th:data-desc="${n.description}"
+                                                        title="Edit Story Details">
+                                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-action-premium btn-action-chapters btn-manage-chapters"
+                                                        th:data-id="${n.id}"
+                                                        th:data-title="${n.title}"
+                                                        title="Manage Chapters">
+                                                    <i class="fa-solid fa-list"></i> Chapters
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-story"
+                                                        th:data-id="${n.id}"
+                                                        th:data-title="${n.title}"
+                                                        title="Delete Story">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Chapters Management Drawer -->
+                    <div id="chapters-admin-drawer" class="card bg-dark border-0 p-4 mt-4 rounded-3 d-none" style="border: 1px solid rgba(46, 204, 113, 0.2) !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="h5 fw-bold text-white mb-0">
+                                <i class="fa-solid fa-list-ol text-info me-2"></i>Chapters for: <span id="chapter-drawer-novel-title" class="text-warning">...</span>
+                            </h4>
+                            <button type="button" class="btn-close btn-close-white" onclick="$('#chapters-admin-drawer').addClass('d-none')"></button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-admin align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Chapter #</th>
+                                        <th>Chapter Title</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="chapters-drawer-list-body">
+                                    <!-- Populated dynamically via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Roles Pane (Admin only or Owner) -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-users" style="display: none;">
+                    <h2 class="h4 fw-bold text-white mb-3"><i class="fa-solid fa-users-gear text-violet me-2"></i>User Management</h2>
+                    <p class="text-muted small mb-4">Promote or demote users to manage their operational access. Change role type settings dynamically.</p>
+
+                    <!-- Add User Form -->
+                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                        <h3 class="h5 fw-bold text-white mb-4" id="title-add-user"><i class="fa-solid fa-user-plus text-success me-2"></i>Create New User Account</h3>
+                        <form id="form-add-user" data-mode="create" data-edit-id="">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">User ID (Auto-generated on creation)</label>
+                                    <input type="number" class="form-input-admin" id="user-id" placeholder="Auto-generated" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Full Name</label>
+                                    <input type="text" class="form-input-admin" id="user-fullname" required placeholder="e.g. John Doe">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Email Address</label>
+                                    <input type="email" class="form-input-admin" id="user-email" required placeholder="e.g. john@example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Password</label>
+                                    <input type="password" class="form-input-admin" id="user-password" required placeholder="Min 4 characters">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Role Assignment</label>
+                                    <select class="form-input-admin" id="user-role-assign">
+                                        <option value="READER">Standard Reader</option>
+                                        <option value="EDITOR">Story Editor</option>
+                                        <option value="ADMIN">Administrator</option>
+                                        <option value="PROOFREADER">Proof reader</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="button" id="btn-cancel-edit-user" class="btn btn-secondary px-3 py-2 me-2 d-none"><i class="fa fa-times me-1"></i>Cancel</button>
+                                    <button class="btn btn-premium px-4 py-2" type="submit" id="btn-submit-user"><i class="fa fa-plus me-2"></i>Create User</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark table-admin align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role Setting</th>
+                                    <th>Snow Flakes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="u : ${users}">
+                                    <td th:text="${u.id}">1</td>
+                                    <td th:text="${u.name}" class="text-white fw-bold">Sakura Reader</td>
+                                    <td th:text="${u.email}">sakura@sakura.com</td>
+                                    <td>
+                                        <!-- Prevent changing self -->
+                                        <select th:if="${session.user.id != u.id}" 
+                                                class="form-select-admin user-role-select" 
+                                                th:data-id="${u.id}"
+                                                th:data-original="${u.user_type}">
+                                            <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
+                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Editor</option>
+                                            <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
+                                            <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
+                                        </select>
+                                        <span th:if="${session.user.id == u.id}" class="badge bg-secondary">Current Admin</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <input type="number" class="form-input-admin user-balance-input" 
+                                                   th:value="${u.balance}" 
+                                                   th:data-id="${u.id}" 
+                                                   th:data-original="${u.balance}"
+                                                   style="width: 80px; padding: 4px 8px; font-size: 0.85rem;"
+                                                   min="0">
+                                            <button type="button" class="btn btn-sm btn-outline-success btn-update-balance" 
+                                                    th:data-id="${u.id}">
+                                                <i class="fa fa-save"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger"
+                                                    th:data-id="${u.id}"
+                                                    th:data-name="${u.name}"
+                                                    th:data-email="${u.email}"
+                                                    th:data-role="${u.user_type}">
+                                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                            </button>
+                                            <!-- Prevent deleting self -->
+                                            <button th:if="${session.user.id != u.id}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user"
+                                                    th:data-id="${u.id}"
+                                                    th:data-name="${u.name}">
+                                                <i class="fa-solid fa-trash-can me-1"></i>Delete
+                                            </button>
+                                            <span th:if="${session.user.id == u.id}" class="text-muted small">-</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Manage Snow Flakes Pricing Pane (Admin Only or Owner) -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-flakes" style="display: none;">
+                    <h2 class="h4 fw-bold text-white mb-3"><i class="fa-solid fa-snowflake text-info me-2"></i>Snow Flakes Price Settings</h2>
+                    <p class="text-muted small mb-4">Add, modify, and delete Snow Flakes packages and their respective pricing structure. These changes will reflect immediately in the purchase modal.</p>
+
+                    <!-- Add/Edit Flake Package Form -->
+                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                        <h3 class="h5 fw-bold text-white mb-4" id="title-add-flake"><i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Flake Package</h3>
+                        <form id="form-add-flake" data-mode="create" data-edit-id="">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Snow Flakes Amount</label>
+                                    <input type="number" class="form-input-admin" id="flake-amount" required placeholder="e.g. 100" min="1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Price (USD)</label>
+                                    <input type="number" step="0.01" class="form-input-admin" id="flake-price" required placeholder="e.g. 0.99" min="0.01">
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="button" id="btn-cancel-edit-flake" class="btn btn-secondary px-3 py-2 me-2 d-none"><i class="fa fa-times me-1"></i>Cancel</button>
+                                    <button class="btn btn-premium px-4 py-2" type="submit" id="btn-submit-flake"><i class="fa fa-plus me-2"></i>Create Package</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Flake Packages Table -->
+                    <div class="table-responsive">
+                        <table class="table table-dark table-admin align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Package ID</th>
+                                    <th>Snow Flakes Amount</th>
+                                    <th>Price (USD)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="pack : ${flakePackages}">
+                                    <td th:text="${pack.id}">1</td>
+                                    <td class="text-white fw-bold">
+                                        <i class="fa-solid fa-snowflake text-info me-2"></i>
+                                        <span th:text="${pack.amount}">100</span>
+                                    </td>
+                                    <td class="text-success fw-bold" th:text="'$' + ${#numbers.formatDecimal(pack.price, 1, 2)}">$0.99</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-action-premium btn-action-edit btn-edit-flake-trigger"
+                                                    th:data-id="${pack.id}"
+                                                    th:data-amount="${pack.amount}"
+                                                    th:data-price="${pack.price}">
+                                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-action-premium btn-action-delete btn-delete-flake"
+                                                    th:data-id="${pack.id}"
+                                                    th:data-amount="${pack.amount}">
+                                                <i class="fa-solid fa-trash-can me-1"></i>Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Analytics Dashboard Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-card" id="pane-analytics" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1">
+                                <i class="fa-solid fa-chart-line text-success me-2"></i>
+                                <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : 'Editor Panel')}">Analytics Dashboard</span>
+                            </h2>
+                            <p class="text-muted small mb-0">Platform-wide sales performance and user economic insights.</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success" onclick="loadAnalytics()">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>Refresh Data
+                        </button>
+                    </div>
+
+                    <!-- Overview Stats Cards -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-dark border-0 p-3 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span class="text-muted small d-block mb-1">Total Revenue</span>
+                                        <h3 class="h3 fw-bold text-white mb-0" id="stat-revenue">0</h3>
+                                    </div>
+                                    <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success">
+                                        <i class="fa-solid fa-snowflake fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-dark border-0 p-3 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span class="text-muted small d-block mb-1">Total Chapters Sold</span>
+                                        <h3 class="h3 fw-bold text-white mb-0" id="stat-sales">0</h3>
+                                    </div>
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary">
+                                        <i class="fa-solid fa-book-open-reader fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-dark border-0 p-3 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span class="text-muted small d-block mb-1">Active Readers</span>
+                                        <h3 class="h3 fw-bold text-white mb-0" id="stat-readers">0</h3>
+                                    </div>
+                                    <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info">
+                                        <i class="fa-solid fa-users fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="row g-4 mb-5">
+                        
+                        <!-- EDITOR ONLY VIEW -->
+                        <div th:if="${userRole == 'EDITOR'}" class="col-12">
+                            <div class="card bg-dark border-0 p-4 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                <h4 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-chart-bar text-warning me-2"></i>Sales Histogram (Chapters Sold)</h4>
+                                <div style="position: relative; height: 350px; width: 100%;">
+                                    <canvas id="chart-editor-sales-histogram"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ADMIN ONLY VIEW -->
+                        <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="col-12 row g-4 m-0 p-0">
+                            <!-- Revenue Timeline Chart -->
+                            <div class="col-lg-8 col-12 ps-0">
+                                <div class="card bg-dark border-0 p-4 rounded-3 h-100" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                    <h4 class="h6 fw-bold text-white mb-3">Revenue Timeline (Daily)</h4>
+                                    <div style="position: relative; height: 300px; width: 100%;">
+                                        <canvas id="chart-revenue-timeline"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Editor Revenue Share (Circle Chart / Doughnut) -->
+                            <div class="col-lg-4 col-12 pe-0">
+                                <div class="card bg-dark border-0 p-4 rounded-3 h-100" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                    <h4 class="h6 fw-bold text-white mb-3">Editor Revenue Share (Circle Chart)</h4>
+                                    <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                        <canvas id="chart-editor-share"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Story Revenue Share (Pie Chart) -->
+                            <div class="col-lg-6 col-12 ps-0">
+                                <div class="card bg-dark border-0 p-4 rounded-3 h-100" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                    <h4 class="h6 fw-bold text-white mb-3">Story Revenue Share (Pie Chart)</h4>
+                                    <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                        <canvas id="chart-story-pie"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Format Distribution (Polar Circle Chart) -->
+                            <div class="col-lg-6 col-12 pe-0">
+                                <div class="card bg-dark border-0 p-4 rounded-3 h-100" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                    <h4 class="h6 fw-bold text-white mb-3">Story Formats (Polar Circle Chart)</h4>
+                                    <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                        <canvas id="chart-story-format-polar"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sales by Story (Histogram with Page Options) -->
+                            <div class="col-12 px-0">
+                                <div class="card bg-dark border-0 p-4 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="h6 fw-bold text-white mb-0">Sales & Revenue Histogram by Story</h4>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <!-- Page size selector -->
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span class="text-muted small">Show:</span>
+                                                <select id="histogram-page-size" class="form-select-admin" style="padding: 2px 8px; width: 60px;">
+                                                    <option value="3">3</option>
+                                                    <option value="5" selected>5</option>
+                                                    <option value="10">10</option>
+                                                </select>
+                                            </div>
+                                            <!-- Pagination controls -->
+                                            <div class="btn-group btn-group-sm">
+                                                <button id="btn-histogram-prev" class="btn btn-outline-secondary px-2 py-1" type="button"><i class="fa fa-chevron-left"></i></button>
+                                                <span id="histogram-page-info" class="btn btn-dark disabled text-white px-3 py-1" style="font-size: 0.8rem;">Page 1/1</span>
+                                                <button id="btn-histogram-next" class="btn btn-outline-secondary px-2 py-1" type="button"><i class="fa fa-chevron-right"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="position: relative; height: 320px; width: 100%;">
+                                        <canvas id="chart-story-sales-histogram"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Economical Analysis (Excel-like Sheet, Admin Only or Owner) -->
+                    <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="card bg-dark border-0 p-4 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="h5 fw-bold text-white mb-0">
+                                <i class="fa-solid fa-file-excel text-success me-2"></i>User Economic Analysis (Excel Sheet)
+                            </h4>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="position-relative" style="width: 200px;">
+                                    <input type="text" id="user-analytics-search" class="form-input-admin" placeholder="Search..." style="padding: 4px 12px 4px 28px; font-size: 0.8rem;">
+                                    <i class="fa fa-search position-absolute text-muted" style="left: 8px; top: 8px; font-size: 0.8rem;"></i>
+                                </div>
+                                <select id="excel-role-filter" class="form-select-admin" style="padding: 4px 8px; font-size: 0.8rem;">
+                                    <option value="">All Roles</option>
+                                    <option value="READER">Reader</option>
+                                    <option value="EDITOR">Editor</option>
+                                    <option value="ADMIN">Admin</option>
+                                    <option value="PROOFREADER">Proof reader</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Excel Toolbar -->
+                        <div class="excel-toolbar">
+                            <button id="excel-btn-export" class="excel-toolbar-btn" type="button">
+                                <i class="fa-solid fa-file-export text-success"></i> Export CSV
+                            </button>
+                            <button id="excel-btn-sort-asc" class="excel-toolbar-btn" type="button">
+                                <i class="fa-solid fa-sort-amount-up"></i> Sort Balance Asc
+                            </button>
+                            <button id="excel-btn-sort-desc" class="excel-toolbar-btn" type="button">
+                                <i class="fa-solid fa-sort-amount-down"></i> Sort Balance Desc
+                            </button>
+                            <span class="text-muted small ms-auto" id="excel-sheet-info">Sheet1 | Active cells selectable</span>
+                        </div>
+
+                        <!-- Excel Table Grid -->
+                        <div class="excel-table-container">
+                            <table class="excel-table" id="table-user-analytics">
+                                <thead>
+                                    <!-- Alphabet Header Row like Excel -->
+                                    <tr style="text-align: center; background-color: #1e1e30; color: #8a8d93; font-size: 0.75rem;">
+                                        <th style="width: 40px; text-align: center; background-color: #2b2b3d; border: 1px solid rgba(255,255,255,0.08) !important;"></th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">A</th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">B</th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">C</th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">D</th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">E</th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">F</th>
+                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">G</th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width: 40px; text-align: center; background-color: #2b2b3d; border: 1px solid rgba(255,255,255,0.08) !important;"></th>
+                                        <th class="excel-sortable" data-col="id" style="border: 1px solid rgba(255,255,255,0.08) !important;">User ID <i class="fa-solid fa-sort-down ms-1"></i></th>
+                                        <th class="excel-sortable" data-col="name" style="border: 1px solid rgba(255,255,255,0.08) !important;">Name <i class="fa-solid fa-sort ms-1"></i></th>
+                                        <th class="excel-sortable" data-col="email" style="border: 1px solid rgba(255,255,255,0.08) !important;">Email <i class="fa-solid fa-sort ms-1"></i></th>
+                                        <th class="excel-sortable" data-col="role" style="border: 1px solid rgba(255,255,255,0.08) !important;">Role <i class="fa-solid fa-sort ms-1"></i></th>
+                                        <th class="excel-sortable" data-col="balance" style="border: 1px solid rgba(255,255,255,0.08) !important;">Balance <i class="fa-solid fa-sort ms-1"></i></th>
+                                        <th class="excel-sortable" data-col="totalSpent" style="border: 1px solid rgba(255,255,255,0.08) !important;">Total Spent <i class="fa-solid fa-sort ms-1"></i></th>
+                                        <th class="excel-sortable" data-col="chaptersUnlocked" style="border: 1px solid rgba(255,255,255,0.08) !important;">Unlocked <i class="fa-solid fa-sort ms-1"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-analytics-tbody">
+                                    <!-- Populated dynamically via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Signup Form Modal (Required in fragments) -->
+    <div th:replace="~{fragments/Signup :: signupForm}"></div>
+
+    <!-- Global Toast Notifications -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="actionToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-message-body">Notification message</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script th:inline="javascript">
+        const allNovelsMeta = /*[[${novels}]]*/ [];
+        const currentUserSession = /*[[${session.user}]]*/ null;
+        const currentRole = /*[[${userRole}]]*/ 'READER';
+    </script>
+    <script th:src="@{/scripts/Script.js}"></script>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
+            return false;
+        };
+
+        // Tab switching logic
+        function switchTab(tab) {
+            if (currentRole === 'PROOFREADER' && tab !== 'stories') {
+                tab = 'stories';
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes')) {
+                tab = 'stories';
+            } else if ((tab === 'users' || tab === 'flakes') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+                tab = 'stories';
+            }
+            localStorage.setItem('adminActiveTab', tab);
+            const panes = ['stories', 'users', 'analytics', 'flakes'];
+            panes.forEach(p => {
+                const el = document.getElementById('pane-' + p);
+                if (el) el.style.setProperty('display', 'none', 'important');
+                const btn = document.getElementById('tab-' + p + '-btn');
+                if (btn) btn.classList.remove('active');
+            });
+
+            const selectedPane = document.getElementById('pane-' + tab);
+            if (selectedPane) selectedPane.style.setProperty('display', 'block', 'important');
+            const selectedBtn = document.getElementById('tab-' + tab + '-btn');
+            if (selectedBtn) selectedBtn.classList.add('active');
+
+            if (tab === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        $(document).ready(function() {
+            // Toast Notification Helper
+            function showToast(message, type = "success") {
+                var toastEl = document.getElementById('actionToast');
+                if (!toastEl) return;
+                var toastBody = document.getElementById('toast-message-body');
+                toastBody.innerText = message;
+                toastEl.className = "toast align-items-center text-white border-0";
+                if (type === "success") {
+                    toastEl.classList.add("bg-toast-success");
+                } else if (type === "error") {
+                    toastEl.classList.add("bg-toast-error");
+                } else {
+                    toastEl.classList.add("bg-toast-info");
+                }
+                var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+            }
+
+            // AJAX: User role selection changed
+            $(".user-role-select").change(function() {
+                var select = $(this);
+                var userId = select.data("id");
+                var role = select.val();
+                var original = select.data("original");
+
+                $.post("/api/admin/users/" + userId + "/role", { role: role })
+                .done(function(res) {
+                    showToast(res.message || "User role updated successfully.");
+                    select.data("original", role);
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to update role.";
+                    showToast(msg, "error");
+                    select.val(original); // revert selection
+                });
+            });
+
+            // AJAX: Delete user click handler
+            $(document).on("click", ".btn-delete-user", function() {
+                var btn = $(this);
+                var userId = btn.data("id");
+                var name = btn.data("name");
+
+                if (confirm("Are you sure you want to delete user '" + name + "'? This action cannot be undone.")) {
+                    $.ajax({
+                        url: "/api/admin/users/" + userId,
+                        type: "DELETE",
+                        success: function(res) {
+                            showToast(res.message || "User deleted successfully.");
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1200);
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete user.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+
+            // AJAX: Delete story click handler
+            $(document).on("click", ".btn-delete-story", function() {
+                var btn = $(this);
+                var storyId = btn.data("id");
+                var title = btn.data("title");
+
+                if (confirm("Are you sure you want to delete the story '" + title + "'? All chapters, chapter purchases, and user bookmarks for this story will be permanently deleted!")) {
+                    $.ajax({
+                        url: "/api/admin/stories/" + storyId,
+                        type: "DELETE",
+                        success: function(res) {
+                            showToast(res.message || "Story deleted successfully.");
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1200);
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete story.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+
+            // Trigger Edit User details mode
+            $(document).on("click", ".btn-edit-user-trigger", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var name = btn.data("name");
+                var email = btn.data("email");
+                var role = btn.data("role");
+
+                // Populate form fields
+                $("#user-id").val(id).prop("readonly", false).attr("placeholder", "Enter new ID");
+                $("#user-fullname").val(name);
+                $("#user-email").val(email);
+                $("#user-role-assign").val(role);
+                $("#user-password").val("").prop("required", false).attr("placeholder", "Leave blank to keep current password");
+
+                // Update form state attributes
+                var form = $("#form-add-user");
+                form.attr("data-mode", "edit");
+                form.attr("data-edit-id", id);
+
+                // Change form visual styling/headings
+                $("#title-add-user").html('<i class="fa-solid fa-user-pen text-warning me-2"></i>Edit User Account (ID: ' + id + ')');
+                $("#btn-submit-user").html('<i class="fa fa-save me-2"></i>Save Changes').removeClass("btn-premium").addClass("btn-warning text-dark");
+                $("#btn-cancel-edit-user").removeClass("d-none");
+
+                // Smooth scroll to form
+                $('html, body').animate({
+                    scrollTop: $("#title-add-user").offset().top - 80
+                }, 500);
+            });
+
+            // Cancel Edit User click handler
+            $("#btn-cancel-edit-user").click(function() {
+                resetUserForm();
+            });
+
+            function resetUserForm() {
+                var form = $("#form-add-user");
+                form[0].reset();
+                form.attr("data-mode", "create");
+                form.attr("data-edit-id", "");
+
+                $("#user-id").val("").prop("readonly", true).attr("placeholder", "Auto-generated");
+                $("#user-password").prop("required", true).attr("placeholder", "Min 4 characters");
+
+                $("#title-add-user").html('<i class="fa-solid fa-user-plus text-success me-2"></i>Create New User Account');
+                $("#btn-submit-user").html('<i class="fa fa-plus me-2"></i>Create User').addClass("btn-premium").removeClass("btn-warning text-dark");
+                $("#btn-cancel-edit-user").addClass("d-none");
+            }
+
+            // AJAX: Create / Edit User form submit
+            $("#form-add-user").submit(function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var mode = form.attr("data-mode");
+                var editId = form.attr("data-edit-id");
+
+                var name = $("#user-fullname").val();
+                var email = $("#user-email").val();
+                var password = $("#user-password").val();
+                var role = $("#user-role-assign").val();
+                var newUserId = $("#user-id").val();
+
+                var endpoint = mode === "edit" ? "/api/admin/users/edit/" + editId : "/api/admin/users/add";
+                var successMsg = mode === "edit" ? "User details updated successfully!" : "User account created successfully.";
+
+                $.post(endpoint, {
+                    name: name,
+                    email: email,
+                    password: password,
+                    role: role,
+                    newUserId: newUserId
+                })
+                .done(function(res) {
+                    showToast(res.message || successMsg);
+                    resetUserForm();
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1200);
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";
+                    showToast(msg, "error");
+                });
+            });
+
+            // AJAX: Upload cover file instantly on select
+            $("#story-cover-file").change(function() {
+                var fileInput = this;
+                if (fileInput.files.length === 0) return;
+
+                var file = fileInput.files[0];
+                var formData = new FormData();
+                formData.append("file", file);
+
+                // Show progress bar
+                var progressBarContainer = $("#cover-upload-progress");
+                var progressBar = progressBarContainer.find(".progress-bar");
+                progressBarContainer.removeClass("d-none");
+                progressBar.css("width", "0%").attr("aria-valuenow", 0);
+
+                $.ajax({
+                    url: "/api/admin/stories/upload-cover",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhr: function() {
+                        var myXhr = $.ajaxSettings.xhr();
+                        if (myXhr.upload) {
+                            myXhr.upload.addEventListener('progress', function(e) {
+                                if (e.lengthComputable) {
+                                    var max = e.total;
+                                    var current = e.loaded;
+                                    var percentage = Math.round((current * 100) / max);
+                                    progressBar.css("width", percentage + "%").attr("aria-valuenow", percentage);
+                                }
+                            }, false);
+                        }
+                        return myXhr;
+                    },
+                    success: function(res) {
+                        showToast("Cover image uploaded successfully!");
+                        $("#story-cover").val(res.url);
+                        $("#cover-preview-img").attr("src", res.url);
+                        $("#cover-preview-container").removeClass("d-none");
+                        // Hide progress bar slowly
+                        setTimeout(function() {
+                            progressBarContainer.addClass("d-none");
+                        }, 1000);
+                    },
+                    error: function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to upload cover file.";
+                        showToast(msg, "error");
+                        progressBarContainer.addClass("d-none");
+                        $("#story-cover-file").val(""); // reset
+                    }
+                });
+            });
+
+             // Remove Cover Upload Preview click
+            $("#btn-remove-cover-upload").click(function() {
+                $("#story-cover-file").val("");
+                $("#story-cover").val("");
+                $("#cover-preview-container").addClass("d-none");
+                $("#cover-preview-img").attr("src", "");
+            });
+
+            // AJAX: Upload content image on select
+            $("#chapter-image-file").change(function() {
+                var fileInput = this;
+                if (fileInput.files.length === 0) return;
+
+                var file = fileInput.files[0];
+                var formData = new FormData();
+                formData.append("file", file);
+
+                $.ajax({
+                    url: "/api/admin/upload-image",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        showToast("Content image uploaded successfully!");
+                        var textarea = $("#chapter-content");
+                        var currentVal = textarea.val().trim();
+                        var toAppend = res.url;
+                        
+                        if (currentVal === "") {
+                            textarea.val(toAppend);
+                        } else {
+                            if (currentVal.indexOf("http") === 0 || currentVal.indexOf("/uploads/") === 0 || currentVal.indexOf(",") !== -1) {
+                                textarea.val(currentVal + "," + toAppend);
+                            } else {
+                                textarea.val(currentVal + "\n<img src=\"" + toAppend + "\" class=\"img-fluid my-3 d-block mx-auto\">");
+                            }
+                        }
+                        $("#chapter-image-file").val(""); // reset
+                    },
+                    error: function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to upload content image.";
+                        showToast(msg, "error");
+                        $("#chapter-image-file").val(""); // reset
+                    }
+                });
+            });
+
+
+            // --- STORY EDIT / CREATE SWITCHING ---
+            // Trigger Edit Story Details mode
+            $(document).on("click", ".btn-edit-story-meta", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var title = btn.data("title");
+                var author = btn.data("author");
+                var type = btn.data("type");
+                var status = btn.data("status");
+                var genre = btn.data("genre");
+                var rating = btn.data("rating");
+                var cover = btn.data("cover");
+                var desc = btn.data("desc");
+
+                // Populate form fields
+                $("#story-title").val(title);
+                $("#story-author").val(author);
+                $("#story-type").val(type);
+                $("#story-status").val(status);
+                $("#story-genre").val(genre);
+                $("#story-rating").val(rating);
+                $("#story-cover").val(cover);
+                $("#story-desc").val(desc);
+
+                // Show cover image preview
+                if (cover) {
+                    $("#cover-preview-img").attr("src", cover);
+                    $("#cover-preview-container").removeClass("d-none");
+                } else {
+                    $("#cover-preview-container").addClass("d-none");
+                }
+
+                // Update form state attributes
+                var form = $("#form-add-story");
+                form.attr("data-mode", "edit");
+                form.attr("data-edit-id", id);
+
+                // Change form visual styling/headings
+                $("#title-add-story").html('<i class="fa-solid fa-edit text-warning me-2"></i>Edit Story Series (ID: ' + id + ')');
+                $("#btn-submit-story").html('<i class="fa fa-save me-2"></i>Save Changes').removeClass("btn-premium").addClass("btn-warning text-dark");
+                $("#btn-cancel-edit-story").removeClass("d-none");
+
+                // Smooth scroll to form
+                $('html, body').animate({
+                    scrollTop: $("#title-add-story").offset().top - 80
+                }, 500);
+            });
+
+            // Cancel Edit Story click handler
+            $("#btn-cancel-edit-story").click(function() {
+                resetStoryForm();
+            });
+
+            function resetStoryForm() {
+                var form = $("#form-add-story");
+                form[0].reset();
+                form.attr("data-mode", "create");
+                form.attr("data-edit-id", "");
+
+                $("#cover-preview-container").addClass("d-none");
+                $("#cover-preview-img").attr("src", "");
+
+                $("#title-add-story").html('<i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Story Series');
+                $("#btn-submit-story").html('<i class="fa fa-plus me-2"></i>Add Story').addClass("btn-premium").removeClass("btn-warning text-dark");
+                $("#btn-cancel-edit-story").addClass("d-none");
+            }
+
+            // AJAX: Add / Edit Story form submit
+            $("#form-add-story").submit(function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var mode = form.attr("data-mode");
+                var editId = form.attr("data-edit-id");
+
+                var title = $("#story-title").val();
+                var author = $("#story-author").val();
+                var type = $("#story-type").val();
+                var status = $("#story-status").val();
+                var genre = $("#story-genre").val();
+                var rating = $("#story-rating").val();
+                var coverUrl = $("#story-cover").val();
+                var description = $("#story-desc").val();
+
+                var endpoint = mode === "edit" ? "/api/admin/stories/edit/" + editId : "/api/admin/stories/add";
+                var successMsg = mode === "edit" ? "Story details updated successfully!" : "Story added successfully!";
+
+                $.post(endpoint, {
+                    title: title,
+                    author: author,
+                    type: type,
+                    status: status,
+                    genre: genre,
+                    rating: rating,
+                    coverUrl: coverUrl,
+                    description: description
+                })
+                .done(function(res) {
+                    showToast(successMsg);
+                    resetStoryForm();
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1200);
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";
+                    showToast(msg, "error");
+                });
+            });
+
+
+            // --- CHAPTER EDIT / CREATE SWITCHING ---
+            
+            // Dynamic chapters fetch and render inside drawer
+            $(document).on("click", ".btn-manage-chapters", function() {
+                var btn = $(this);
+                var novelId = btn.data("id");
+                var novelTitle = btn.data("title");
+
+                $("#chapter-drawer-novel-title").text(novelTitle);
+                var drawer = $("#chapters-admin-drawer");
+                var listBody = $("#chapters-drawer-list-body");
+                listBody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-2"></i>Loading chapters...</td></tr>');
+                drawer.removeClass("d-none");
+
+                // Scroll to chapters drawer
+                $('html, body').animate({
+                    scrollTop: drawer.offset().top - 80
+                }, 500);
+
+                $.get("/api/admin/stories/" + novelId + "/chapters")
+                .done(function(chapters) {
+                    listBody.empty();
+                    if (chapters.length === 0) {
+                        listBody.html('<tr><td colspan="3" class="text-center text-muted py-3">No chapters uploaded yet for this series.</td></tr>');
+                    } else {
+                        chapters.forEach(function(chap) {
+                            var editBtn = $('<button type="button" class="btn btn-sm btn-outline-warning btn-edit-chapter-trigger me-2">')
+                                .html('<i class="fa fa-edit me-1"></i>Edit')
+                                .attr("data-id", chap.id)
+                                .attr("data-novel-id", novelId)
+                                .attr("data-number", chap.chapterNumber)
+                                .attr("data-title", chap.title)
+                                .attr("data-content", chap.content)
+                                .attr("data-price", chap.price);
+
+                            var deleteBtn = $('<button type="button" class="btn btn-sm btn-outline-danger btn-delete-chapter-trigger">')
+                                .html('<i class="fa fa-trash-can me-1"></i>Delete')
+                                .attr("data-id", chap.id)
+                                .attr("data-title", chap.title)
+                                .attr("data-novel-id", novelId);
+
+                            var tr = $("<tr>");
+                            tr.append($("<td>").text(chap.chapterNumber));
+                            tr.append($("<td class='text-white fw-bold'>").text(chap.title));
+                            tr.append($("<td>").append(editBtn).append(deleteBtn));
+                            listBody.append(tr);
+                        });
+                    }
+                })
+                .fail(function() {
+                    listBody.html('<tr><td colspan="3" class="text-center text-danger py-3">Failed to load chapters list.</td></tr>');
+                });
+            });
+
+            // Trigger Edit Chapter Mode
+            $(document).on("click", ".btn-edit-chapter-trigger", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var novelId = btn.data("novel-id");
+                var number = btn.data("number");
+                var title = btn.data("title");
+                var content = btn.data("content");
+                var price = btn.data("price");
+
+                // Populate chapter form
+                $("#chapter-novel-id").val(novelId);
+                $("#chapter-number").val(number);
+                $("#chapter-title").val(title);
+                $("#chapter-content").val(content);
+                $("#chapter-price").val(price !== undefined ? price : 0);
+
+                // Update form mode parameters
+                var form = $("#form-add-chapter");
+                form.attr("data-mode", "edit");
+                form.attr("data-edit-id", id);
+
+                // Change visual header text
+                $("#title-add-chapter").html('<i class="fa-solid fa-edit text-warning me-2"></i>Edit Chapter (ID: ' + id + ')');
+                $("#btn-submit-chapter").html('<i class="fa fa-save me-2"></i>Save Changes').removeClass("btn-premium").addClass("btn-warning text-dark");
+                $("#btn-cancel-edit-chapter").removeClass("d-none");
+
+                // Smooth scroll to chapter form
+                $('html, body').animate({
+                    scrollTop: $("#title-add-chapter").offset().top - 80
+                }, 500);
+            });
+
+            // Cancel Edit Chapter trigger
+            $("#btn-cancel-edit-chapter").click(function() {
+                resetChapterForm();
+            });
+
+            function resetChapterForm() {
+                var form = $("#form-add-chapter");
+                form[0].reset();
+                form.attr("data-mode", "create");
+                form.attr("data-edit-id", "");
+                $("#chapter-price").val(0);
+
+                $("#title-add-chapter").html('<i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter');
+                $("#btn-submit-chapter").html('<i class="fa fa-plus me-2"></i>Add Chapter').addClass("btn-premium").removeClass("btn-warning text-dark");
+                $("#btn-cancel-edit-chapter").addClass("d-none");
+            }
+
+            // AJAX: Add / Edit Chapter button click helper
+            $("#btn-submit-chapter").click(function(e) {
+                e.preventDefault();
+                var form = $("#form-add-chapter");
+                
+                // Trigger HTML5 validation check
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+                
+                var mode = form.attr("data-mode");
+                var editId = form.attr("data-edit-id");
+
+                var novelId = $("#chapter-novel-id").val();
+                var chapterNumber = $("#chapter-number").val();
+                var title = $("#chapter-title").val();
+                var content = $("#chapter-content").val();
+                var price = $("#chapter-price").val();
+
+                var endpoint = mode === "edit" ? "/api/admin/chapters/edit/" + editId : "/api/admin/chapters/add";
+                var successMsg = mode === "edit" ? "Chapter updated successfully!" : "Chapter added successfully!";
+
+                $.post(endpoint, {
+                    novelId: novelId,
+                    chapterNumber: chapterNumber,
+                    title: title,
+                    content: content,
+                    price: price
+                })
+                .done(function(res) {
+                    showToast(successMsg);
+                    resetChapterForm();
+                    // Refresh drawer
+                    $("#chapters-admin-drawer").addClass("d-none");
+                    setTimeout(function() {
+                        $(".btn-manage-chapters[data-id='" + novelId + "']").click();
+                    }, 100);
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";
+                    showToast(msg, "error");
+                });
+            });
+
+            // Redirect form submit event to button click handler
+            $("#form-add-chapter").submit(function(e) {
+                e.preventDefault();
+                $("#btn-submit-chapter").click();
+            });
+
+            // AJAX: Delete chapter click handler
+            $(document).on("click", ".btn-delete-chapter-trigger", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var title = btn.data("title");
+                var novelId = btn.data("novel-id");
+
+                if (confirm("Are you sure you want to delete Chapter '" + title + "'? This action cannot be undone.")) {
+                    $.ajax({
+                        url: "/api/admin/chapters/" + id,
+                        type: "DELETE",
+                        success: function(res) {
+                            showToast(res.message || "Chapter deleted successfully.");
+                            // Refresh drawer
+                            $("#chapters-admin-drawer").addClass("d-none");
+                            setTimeout(function() {
+                                $(".btn-manage-chapters[data-id='" + novelId + "']").click();
+                            }, 100);
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete chapter.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+
+            // AJAX: Update user balance click handler
+            $(document).on("click", ".btn-update-balance", function() {
+                var btn = $(this);
+                var userId = btn.data("id");
+                var input = $(".user-balance-input[data-id='" + userId + "']");
+                var balance = input.val();
+                var original = input.data("original");
+
+                if (balance === "" || parseInt(balance) < 0) {
+                    showToast("Please enter a valid balance amount.", "error");
+                    input.val(original);
+                    return;
+                }
+
+                $.post("/api/admin/users/" + userId + "/balance", { balance: balance })
+                .done(function(res) {
+                    showToast(res.message || "User balance updated successfully.");
+                    input.data("original", balance);
+                    
+                    // If the admin updated their own balance, update navbar balance dynamically
+                    const currentLoggedInId = /*[[${session.user.id}]]*/ null;
+                    if (userId == currentLoggedInId) {
+                        $("#navbar-user-balance").text(balance);
+                    }
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to update balance.";
+                    showToast(msg, "error");
+                    input.val(original);
+                });
+            });
+
+            // --- ANALYTICS DASHBOARD JS ---
+            let chartTimelineInstance = null;
+            let chartEditorShareInstance = null;
+            let chartStorySalesInstance = null; // Used for editor or admin paginated chart
+            let chartStoryPieInstance = null;
+            let chartStoryFormatPolarInstance = null;
+            let userAnalyticsData = [];
+            
+            // Excel-like table state
+            let currentSortColumn = "id";
+            let currentSortDirection = "asc";
+
+            // Histogram pagination state
+            let histogramCurrentPage = 0;
+            let histogramPageSize = 5;
+            let allStorySalesData = [];
+
+            window.loadAnalytics = function() {
+                // Fetch summary stats
+                $.get("/api/admin/analytics/summary")
+                .done(function(data) {
+                    $("#stat-revenue").text(data.totalRevenue + " ❄️");
+                    $("#stat-sales").text(data.totalSales);
+                    $("#stat-readers").text(data.activeReaders);
+
+                    const userRole = currentRole; // injected at top
+
+                    // If EDITOR role, render the single sales histogram
+                    if (userRole === 'EDITOR') {
+                        const editorSalesCtx = document.getElementById('chart-editor-sales-histogram')?.getContext('2d');
+                        if (editorSalesCtx) {
+                            const stories = data.salesByStory.map(s => s.title);
+                            const salesCounts = data.salesByStory.map(s => s.sales);
+                            const revenues = data.salesByStory.map(s => s.revenue);
+
+                            if (chartStorySalesInstance) {
+                                chartStorySalesInstance.destroy();
+                            }
+
+                            chartStorySalesInstance = new Chart(editorSalesCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: stories.length > 0 ? stories : ["No Stories"],
+                                    datasets: [
+                                        {
+                                            label: 'Chapters Sold',
+                                            data: salesCounts.length > 0 ? salesCounts : [0],
+                                            backgroundColor: 'rgba(162, 155, 254, 0.75)',
+                                            borderColor: '#a29bfe',
+                                            borderWidth: 1
+                                        },
+                                        {
+                                            label: 'Revenue (Snow Flakes)',
+                                            data: revenues.length > 0 ? revenues : [0],
+                                            backgroundColor: 'rgba(46, 204, 113, 0.75)',
+                                            borderColor: '#2ecc71',
+                                            borderWidth: 1
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            labels: { color: '#b2bec3', font: { family: 'Poppins' } }
+                                        }
+                                    },
+                                    scales: {
+                                        x: {
+                                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                            ticks: { color: '#b2bec3', font: { family: 'Poppins' } }
+                                        },
+                                        y: {
+                                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                            ticks: { color: '#b2bec3', font: { family: 'Poppins' } },
+                                            beginAtZero: true
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        return; // Stop here for editors
+                    }
+
+                    // --- ADMIN ONLY CHARTS ---
+
+                    // 1. Line Chart: Revenue Timeline
+                    const timelineCtx = document.getElementById('chart-revenue-timeline')?.getContext('2d');
+                    if (timelineCtx) {
+                        const dates = Object.keys(data.salesOverTime);
+                        const values = Object.values(data.salesOverTime);
+
+                        if (chartTimelineInstance) {
+                            chartTimelineInstance.destroy();
+                        }
+
+                        chartTimelineInstance = new Chart(timelineCtx, {
+                            type: 'line',
+                            data: {
+                                labels: dates.length > 0 ? dates : ["No Sales Yet"],
+                                datasets: [{
+                                    label: 'Daily Revenue (Snow Flakes)',
+                                    data: values.length > 0 ? values : [0],
+                                    borderColor: '#2ecc71',
+                                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                                    borderWidth: 3,
+                                    fill: true,
+                                    tension: 0.3,
+                                    pointBackgroundColor: '#2ecc71',
+                                    pointBorderColor: '#fff',
+                                    pointHoverRadius: 7
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: { color: '#b2bec3', font: { family: 'Poppins' } }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                        ticks: { color: '#b2bec3', font: { family: 'Poppins' } }
+                                    },
+                                    y: {
+                                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                        ticks: { color: '#b2bec3', font: { family: 'Poppins' } },
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // 2. Doughnut / Circle Chart: Editor Share
+                    const editorShareCtx = document.getElementById('chart-editor-share')?.getContext('2d');
+                    if (editorShareCtx && data.salesByEditor) {
+                        const editorNames = data.salesByEditor.map(e => e.editorName);
+                        const revenues = data.salesByEditor.map(e => e.revenue);
+
+                        if (chartEditorShareInstance) {
+                            chartEditorShareInstance.destroy();
+                        }
+
+                        chartEditorShareInstance = new Chart(editorShareCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: editorNames.length > 0 ? editorNames : ["No Sales"],
+                                datasets: [{
+                                    data: revenues.length > 0 ? revenues : [1],
+                                    backgroundColor: ['#2ecc71', '#a29bfe', '#0984e3', '#fdcb6e', '#e84393'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: { color: '#b2bec3', font: { family: 'Poppins', size: 10 } }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // 3. Pie Chart: Story Revenue Share
+                    const storyPieCtx = document.getElementById('chart-story-pie')?.getContext('2d');
+                    if (storyPieCtx) {
+                        const stories = data.salesByStory.map(s => s.title);
+                        const revenues = data.salesByStory.map(s => s.revenue);
+
+                        if (chartStoryPieInstance) {
+                            chartStoryPieInstance.destroy();
+                        }
+
+                        chartStoryPieInstance = new Chart(storyPieCtx, {
+                            type: 'pie',
+                            data: {
+                                labels: stories.length > 0 ? stories : ["No Stories"],
+                                datasets: [{
+                                    data: revenues.length > 0 ? revenues : [1],
+                                    backgroundColor: ['#fdcb6e', '#e84393', '#0984e3', '#2ecc71', '#a29bfe', '#ffeaa7', '#fab1a0'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: { color: '#b2bec3', font: { family: 'Poppins', size: 10 } }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // 4. Polar Circle Chart: Format Distribution
+                    const storyFormatCtx = document.getElementById('chart-story-format-polar')?.getContext('2d');
+                    if (storyFormatCtx) {
+                        // Map of novel id -> type
+                        const storyTypeMap = {};
+                        if (window.allNovelsMeta) {
+                            window.allNovelsMeta.forEach(n => {
+                                storyTypeMap[n.id] = n.type;
+                            });
+                        }
+
+                        const formatSales = { NOVEL: 0, COMIC: 0, MANHWA: 0, MANGA: 0 };
+                        data.salesByStory.forEach(s => {
+                            const type = storyTypeMap[s.novelId] || 'NOVEL';
+                            if (formatSales[type] !== undefined) {
+                                formatSales[type] += s.sales;
+                            }
+                        });
+
+                        const formats = Object.keys(formatSales);
+                        const sales = Object.values(formatSales);
+
+                        if (chartStoryFormatPolarInstance) {
+                            chartStoryFormatPolarInstance.destroy();
+                        }
+
+                        chartStoryFormatPolarInstance = new Chart(storyFormatCtx, {
+                            type: 'polarArea',
+                            data: {
+                                labels: formats,
+                                datasets: [{
+                                    data: sales,
+                                    backgroundColor: [
+                                        'rgba(9, 132, 227, 0.4)',
+                                        'rgba(232, 67, 147, 0.4)',
+                                        'rgba(46, 204, 113, 0.4)',
+                                        'rgba(253, 203, 110, 0.4)'
+                                    ],
+                                    borderColor: ['#0984e3', '#e84393', '#2ecc71', '#fdcb6e'],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: { color: '#b2bec3', font: { family: 'Poppins', size: 10 } }
+                                    }
+                                },
+                                scales: {
+                                    r: {
+                                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                        angleLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                                        ticks: { color: '#b2bec3', backdropColor: 'transparent' }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // 5. Paginated Histogram: Sales by Story
+                    allStorySalesData = data.salesByStory;
+                    histogramCurrentPage = 0;
+                    renderStorySalesHistogram();
+                })
+                .fail(function() {
+                    showToast("Failed to retrieve analytics summary.", "error");
+                });
+
+                // Fetch user analytics (Admin Only)
+                const userAnalyticsTable = document.getElementById('table-user-analytics');
+                if (userAnalyticsTable) {
+                    $.get("/api/admin/analytics/users")
+                    .done(function(data) {
+                        userAnalyticsData = data;
+                        applyExcelFiltersAndSort();
+                    })
+                    .fail(function() {
+                        showToast("Failed to retrieve user analytics data.", "error");
+                    });
+                }
+            };
+
+            // Paginated Histogram Rendering
+            function renderStorySalesHistogram() {
+                const storySalesCtx = document.getElementById('chart-story-sales-histogram')?.getContext('2d');
+                if (!storySalesCtx) return;
+
+                const totalItems = allStorySalesData.length;
+                const totalPages = Math.max(1, Math.ceil(totalItems / histogramPageSize));
+                
+                // Boundaries
+                if (histogramCurrentPage >= totalPages) histogramCurrentPage = totalPages - 1;
+                if (histogramCurrentPage < 0) histogramCurrentPage = 0;
+
+                const startIdx = histogramCurrentPage * histogramPageSize;
+                const endIdx = Math.min(startIdx + histogramPageSize, totalItems);
+                
+                const pageData = allStorySalesData.slice(startIdx, endIdx);
+                
+                const stories = pageData.map(s => s.title);
+                const salesCounts = pageData.map(s => s.sales);
+                const revenues = pageData.map(s => s.revenue);
+
+                // Update UI text
+                $("#histogram-page-info").text(`Page ${histogramCurrentPage + 1}/${totalPages}`);
+                $("#btn-histogram-prev").prop('disabled', histogramCurrentPage === 0);
+                $("#btn-histogram-next").prop('disabled', histogramCurrentPage === totalPages - 1);
+
+                if (chartStorySalesInstance) {
+                    chartStorySalesInstance.destroy();
+                }
+
+                chartStorySalesInstance = new Chart(storySalesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: stories.length > 0 ? stories : ["No Stories"],
+                        datasets: [
+                            {
+                                label: 'Chapters Sold (Histogram)',
+                                data: salesCounts.length > 0 ? salesCounts : [0],
+                                backgroundColor: 'rgba(162, 155, 254, 0.75)',
+                                borderColor: '#a29bfe',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Revenue (Snow Flakes)',
+                                data: revenues.length > 0 ? revenues : [0],
+                                backgroundColor: 'rgba(46, 204, 113, 0.75)',
+                                borderColor: '#2ecc71',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#b2bec3', font: { family: 'Poppins' } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#b2bec3', font: { family: 'Poppins', size: 11 } }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#b2bec3', font: { family: 'Poppins' } },
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Pagination Button Handlers
+            $(document).on("click", "#btn-histogram-prev", function() {
+                if (histogramCurrentPage > 0) {
+                    histogramCurrentPage--;
+                    renderStorySalesHistogram();
+                }
+            });
+
+            $(document).on("click", "#btn-histogram-next", function() {
+                const totalPages = Math.ceil(allStorySalesData.length / histogramPageSize);
+                if (histogramCurrentPage < totalPages - 1) {
+                    histogramCurrentPage++;
+                    renderStorySalesHistogram();
+                }
+            });
+
+            $(document).on("change", "#histogram-page-size", function() {
+                histogramPageSize = parseInt($(this).val());
+                histogramCurrentPage = 0;
+                renderStorySalesHistogram();
+            });
+
+
+            // Excel-like Table Rendering & Sorting
+            function renderUserAnalyticsTable(users) {
+                const tbody = $("#user-analytics-tbody");
+                tbody.empty();
+
+                if (users.length === 0) {
+                    tbody.html('<tr><td colspan="8" class="text-center text-muted py-3">No matching user records found.</td></tr>');
+                    return;
+                }
+
+                users.forEach(function(u, idx) {
+                    let badgeClass = "bg-secondary";
+                    if (u.role === "ADMIN") badgeClass = "bg-danger";
+                    else if (u.role === "EDITOR") badgeClass = "bg-warning text-dark";
+                    else if (u.role === "PROOFREADER") badgeClass = "bg-info text-dark";
+                    else if (u.role === "DELETED") badgeClass = "bg-dark text-muted border border-secondary";
+
+                    const tr = $("<tr>");
+                    tr.append($("<td class='excel-index-col'>").text(idx + 1));
+                    tr.append($("<td>").text(u.userId));
+                    tr.append($("<td class='text-white fw-bold'>").text(u.name));
+                    tr.append($("<td>").text(u.email));
+                    tr.append($("<td>").html(`<span class="badge ${badgeClass}">${u.role}</span>`));
+                    tr.append($("<td class='text-white'>").text(u.balance));
+                    tr.append($("<td class='excel-text-success'>").text(u.totalSpent + " ❄️"));
+                    tr.append($("<td class='text-info'>").text(u.chaptersUnlocked));
+                    tbody.append(tr);
+                });
+
+                // Update sort indicator icons
+                $(".excel-sortable").each(function() {
+                    const col = $(this).data("col");
+                    const icon = $(this).find("i");
+                    icon.removeClass("fa-sort fa-sort-up fa-sort-down");
+                    if (col === currentSortColumn) {
+                        if (currentSortDirection === "asc") {
+                            icon.addClass("fa-sort-up text-success");
+                        } else {
+                            icon.addClass("fa-sort-down text-success");
+                        }
+                    } else {
+                        icon.addClass("fa-sort text-muted");
+                    }
+                });
+            }
+
+            // Click to activate excel cell highlight
+            $(document).on("click", ".excel-table td", function() {
+                $(".excel-table td").removeClass("active-cell");
+                if (!$(this).hasClass("excel-index-col")) {
+                    $(this).addClass("active-cell");
+                    const colIdx = $(this).index();
+                    const rowIdx = $(this).parent().find(".excel-index-col").text();
+                    const colLetter = String.fromCharCode(64 + colIdx); // index 1 corresponds to A
+                    $("#excel-sheet-info").html(`Cell: <strong class="text-success">${colLetter}${rowIdx}</strong> | Value: "<code>${$(this).text().trim()}</code>"`);
+                }
+            });
+
+            // Filtering and sorting application
+            function applyExcelFiltersAndSort() {
+                let filtered = [...userAnalyticsData];
+                
+                // Apply search
+                const searchVal = $("#user-analytics-search").val().toLowerCase().trim();
+                if (searchVal !== "") {
+                    filtered = filtered.filter(u => 
+                        (u.name && u.name.toLowerCase().includes(searchVal)) ||
+                        (u.email && u.email.toLowerCase().includes(searchVal)) ||
+                        (u.role && u.role.toLowerCase().includes(searchVal)) ||
+                        (u.userId && u.userId.toString().includes(searchVal))
+                    );
+                }
+
+                // Apply role filter
+                const roleVal = $("#excel-role-filter").val();
+                if (roleVal !== "") {
+                    filtered = filtered.filter(u => u.role === roleVal);
+                }
+
+                // Apply sorting
+                filtered.sort((a, b) => {
+                    let valA = a[currentSortColumn];
+                    let valB = b[currentSortColumn];
+
+                    if (typeof valA === 'string') {
+                        valA = valA.toLowerCase();
+                        valB = valB.toLowerCase();
+                    }
+
+                    if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                renderUserAnalyticsTable(filtered);
+            }
+
+            // Sorting click handler
+            $(document).on("click", ".excel-sortable", function() {
+                const col = $(this).data("col");
+                if (currentSortColumn === col) {
+                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSortColumn = col;
+                    currentSortDirection = 'asc';
+                }
+                applyExcelFiltersAndSort();
+            });
+
+            // Search filter trigger
+            $(document).on("input", "#user-analytics-search", function() {
+                applyExcelFiltersAndSort();
+            });
+
+            // Role filter trigger
+            $(document).on("change", "#excel-role-filter", function() {
+                applyExcelFiltersAndSort();
+            });
+
+            // Toolbar quick sort buttons
+            $(document).on("click", "#excel-btn-sort-asc", function() {
+                currentSortColumn = "balance";
+                currentSortDirection = "asc";
+                applyExcelFiltersAndSort();
+            });
+
+            $(document).on("click", "#excel-btn-sort-desc", function() {
+                currentSortColumn = "balance";
+                currentSortDirection = "desc";
+                applyExcelFiltersAndSort();
+            });
+
+            // Export to CSV helper
+            $(document).on("click", "#excel-btn-export", function() {
+                if (userAnalyticsData.length === 0) {
+                    showToast("No data to export.", "error");
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "User ID,Name,Email,Role,Balance,Total Spent,Chapters Unlocked\r\n";
+
+                userAnalyticsData.forEach(function(u) {
+                    const row = [
+                        u.userId,
+                        `"${u.name.replace(/"/g, '""')}"`,
+                        u.email,
+                        u.role,
+                        u.balance,
+                        u.totalSpent,
+                        u.chaptersUnlocked
+                    ].join(",");
+                    csvContent += row + "\r\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "user_economic_analysis.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast("CSV file exported successfully!");
+            });
+
+            // --- SNOW FLAKES PACKAGES EVENT HANDLERS ---
+
+            // Trigger Edit Flake Package Mode
+            $(document).on("click", ".btn-edit-flake-trigger", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var amount = btn.data("amount");
+                var price = btn.data("price");
+
+                // Populate form fields
+                $("#flake-amount").val(amount);
+                $("#flake-price").val(price);
+
+                // Update form state attributes
+                var form = $("#form-add-flake");
+                form.attr("data-mode", "edit");
+                form.attr("data-edit-id", id);
+
+                // Change form visual styling/headings
+                $("#title-add-flake").html('<i class="fa-solid fa-edit text-warning me-2"></i>Edit Flake Package (ID: ' + id + ')');
+                $("#btn-submit-flake").html('<i class="fa fa-save me-2"></i>Save Changes').removeClass("btn-premium").addClass("btn-warning text-dark");
+                $("#btn-cancel-edit-flake").removeClass("d-none");
+
+                // Smooth scroll to form
+                $('html, body').animate({
+                    scrollTop: $("#title-add-flake").offset().top - 80
+                }, 500);
+            });
+
+            // Cancel Edit Flake Package click handler
+            $("#btn-cancel-edit-flake").click(function() {
+                resetFlakeForm();
+            });
+
+            function resetFlakeForm() {
+                var form = $("#form-add-flake");
+                form[0].reset();
+                form.attr("data-mode", "create");
+                form.attr("data-edit-id", "");
+
+                $("#title-add-flake").html('<i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Flake Package');
+                $("#btn-submit-flake").html('<i class="fa fa-plus me-2"></i>Create Package').addClass("btn-premium").removeClass("btn-warning text-dark");
+                $("#btn-cancel-edit-flake").addClass("d-none");
+            }
+
+            // AJAX: Create / Edit Flake Package form submit
+            $("#form-add-flake").submit(function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var mode = form.attr("data-mode");
+                var editId = form.attr("data-edit-id");
+
+                var amount = $("#flake-amount").val();
+                var price = $("#flake-price").val();
+
+                var endpoint = mode === "edit" ? "/api/admin/flakes/edit/" + editId : "/api/admin/flakes/add";
+                var successMsg = mode === "edit" ? "Package details updated successfully!" : "Package added successfully!";
+
+                $.post(endpoint, {
+                    amount: amount,
+                    price: price
+                })
+                .done(function(res) {
+                    showToast(res.message || successMsg);
+                    resetFlakeForm();
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1200);
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";
+                    showToast(msg, "error");
+                });
+            });
+
+            // AJAX: Delete Flake Package click handler
+            $(document).on("click", ".btn-delete-flake", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var amount = btn.data("amount");
+
+                if (confirm("Are you sure you want to delete the package with " + amount + " Snow Flakes? This action cannot be undone.")) {
+                    $.ajax({
+                        url: "/api/admin/flakes/" + id,
+                        type: "DELETE",
+                        success: function(res) {
+                            showToast(res.message || "Package deleted successfully.");
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1200);
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete package.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+            // --- OWNER SELF-DESTRUCT BUTTON LOGIC ---
+            if (currentRole === 'OWNER') {
+                let holdTimer = null;
+                const holdDuration = 3000; // 3 seconds
+                let startHoldTime = 0;
+                let currentProgress = 0;
+                let isHolding = false;
+                const selfDestructBtn = $("#btn-self-destruct");
+                const progressBg = $(".btn-self-destruct-bg");
+
+                function startHold(e) {
+                    if (isHolding) return;
+                    e.preventDefault();
+                    isHolding = true;
+                    startHoldTime = Date.now();
+                    progressBg.css("width", "0%");
+                    
+                    holdTimer = setInterval(function() {
+                        const elapsed = Date.now() - startHoldTime;
+                        currentProgress = Math.min((elapsed / holdDuration) * 100, 100);
+                        progressBg.css("width", currentProgress + "%");
+
+                        if (elapsed >= holdDuration) {
+                            clearInterval(holdTimer);
+                            holdTimer = null;
+                            triggerSelfDestruct();
+                        }
+                    }, 50);
+                }
+
+                function endHold() {
+                    if (!isHolding) return;
+                    isHolding = false;
+                    if (holdTimer) {
+                        clearInterval(holdTimer);
+                        holdTimer = null;
+                    }
+                    progressBg.css("width", "0%");
+                }
+
+                function triggerSelfDestruct() {
+                    progressBg.css("width", "100%");
+                    // Send request to toggle self-destruct mode
+                    $.post("/api/admin/self-destruct")
+                    .done(function(res) {
+                        const active = res.securedMode;
+                        if (active) {
+                            showToast("Secured Mode activated. Platform contents are now hidden.", "success");
+                        } else {
+                            showToast("Secured Mode deactivated. Platform contents restored.", "success");
+                        }
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    })
+                    .fail(function(err) {
+                        const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to toggle Secured Mode.";
+                        showToast(msg, "error");
+                        progressBg.css("width", "0%");
+                    });
+                }
+
+                selfDestructBtn.on("mousedown touchstart", startHold);
+                $(window).on("mouseup touchend mouseleave touchcancel", endHold);
+            }
+
+            // Restore last active tab if present
+            const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
+            if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
+                switchTab('stories');
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes')) {
+                switchTab('stories');
+            } else if ((activeTab === 'users' || activeTab === 'flakes') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+                switchTab('stories');
+            } else {
+                switchTab(activeTab);
+            }
+        });
+    </script>
+</body>
+</html>

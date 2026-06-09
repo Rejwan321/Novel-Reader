@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login / Signup</title>
+</head>
+<body>
+<div th:fragment="signupForm">
+<div class="blur-bg-overlay"></div>
+<div class="auth-container" id="container">
+    <div class="form-container signup-container">
+        <form class="form-con" id="signup-form-modal" action="#">
+            <h1>Create Account</h1>
+            <div class="social-container">
+                <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social"><i class="fab fa-google-plus-g"></i></a>
+                <a href="#" class="social"><i class="fab fa-brands fa-x-twitter"></i></a>
+            </div>
+            <span>or use your email for registration</span>
+            <input class="insert" id="signup-name" type="text" placeholder="Name" required>
+            <input class="insert" id="signup-email" type="email" placeholder="Email" required>
+            <input class="insert" id="signup-password" type="password" placeholder="Password" required>
+            <button class="log-button" type="submit">Sign Up</button>
+            <div class="mobile-auth-toggle">
+                <span>Already have an account? <a href="#" id="to-login-btn">Login</a></span>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-container login-container">
+        <form class="form-con" id="login-form-modal" action="#">
+            <h1>Login</h1>
+            <div class="social-container">
+                <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social"><i class="fab fa-google-plus-g"></i></a>
+                <a href="#" class="social"><i class="fab fa-brands fa-x-twitter"></i></a>
+            </div>
+            <span>or use your account</span>
+            <input class="insert" id="login-email" type="email" placeholder="Email" required>
+            <input class="insert" id="login-password" type="password" placeholder="Password" required>
+            <a href="#" class="social text-decoration-none">Forgot your password?</a>
+            <button class="log-button" type="submit">Login</button>
+            <div class="mobile-auth-toggle">
+                <span>Don't have an account? <a href="#" id="to-signup-btn">Sign Up</a></span>
+            </div>
+        </form>
+    </div>
+
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h1>Welcome Back</h1>
+                <p>To keep connected with us please login with your personal info</p>
+                <button class="ghost" id="login">Login</button>
+            </div>
+
+            <div class="overlay-panel overlay-right">
+                <h1>Hello Friend</h1>
+                <p>Enter your personal details and start journey with us</p>
+                <button class="ghost" id="signup">Signup</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>

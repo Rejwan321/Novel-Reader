@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <title>Novel Reader</title>
+</head>
+<body>
+<div th:fragment="navbar">
+<div class="sticky-top" style="z-index: 1020;">
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+        <a class="navbar-brand navbar-brand-logo" href="/"><i class="fa-solid fa-snowflake text-white me-2"></i>Yuki Tales</a>
+        <button class="navbar-toggler collapsed d-flex d-lg-none flex-column justify-content-around" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="toggler-icon top-bar"></span>
+            <span class="toggler-icon middle-bar"></span>
+            <span class="toggler-icon bottom-bar"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link-item" href="/"><i class="fa fa-home me-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link-item" href="/bookshelf"><i class="fa fa-book me-1"></i>Bookshelf</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link-item dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-compass me-1"></i>Explore
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown" style="background-color: rgba(104, 85, 224, 0.6); border: 1px solid #5e63b6; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                        <li><a class="dropdown-item genre-filter-nav" href="#" data-type="NOVEL"><i class="fa-solid fa-font me-2"></i>Novels</a></li>
+                        <li><a class="dropdown-item genre-filter-nav" href="#" data-type="COMIC"><i class="fa-solid fa-image me-2"></i>Comics</a></li>
+                        <li><a class="dropdown-item genre-filter-nav" href="#" data-type="MANHWA"><i class="fa-solid fa-book-open-reader me-2"></i>Manhwa</a></li>
+                        <li><a class="dropdown-item genre-filter-nav" href="#" data-type="MANGA"><i class="fa-solid fa-book-open me-2"></i>Manga</a></li>
+                        <li><hr class="dropdown-divider" style="background-color: #5e63b6;"></li>
+                        <li><a class="dropdown-item" href="https://discord.com" target="_blank"><i class="fab fa-discord me-2"></i>Join our Discord</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="navbar-actions-group">
+                <div class="search-bar me-3">
+                    <form id="search-form" action="/" method="get">
+                        <input type="text" name="search" class="input" placeholder="" th:value="${param.search}">
+                    </form>
+                    <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
+                </div>
+
+                <div class="register" id="nav-auth-section">
+                    <!-- Shown when User is NOT logged in -->
+                    <button th:if="${session.user == null}" class="log">
+                       Sign In
+                    </button>
+                    
+                    <!-- Shown when User IS logged in -->
+                    <div th:if="${session.user != null}" class="dropdown d-flex align-items-center">
+                        <span id="btn-navbar-balance" class="badge rounded-pill me-2 px-3 py-2 d-flex align-items-center" style="background-color: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); color: #00e5ff; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" title="Purchase Snow Flakes">
+                            <span id="navbar-user-balance" th:text="${session.user.balance}">100</span>
+                            <i class="fa-solid fa-snowflake ms-2" style="color: #00e5ff;"></i>
+                        </span>
+                        <button class="btn btn-profile-dropdown dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa fa-user-circle me-1"></i>
+                            <span th:if="${session.user.user_type == 'OWNER'}">Owner Panel</span>
+                            <span th:if="${session.user.user_type == 'ADMIN'}">Admin Panel</span>
+                            <span th:if="${session.user.user_type == 'EDITOR'}">Editor Panel</span>
+                            <span th:if="${session.user.user_type == 'PROOFREADER'}">Proofreader Panel</span>
+                            <span th:if="${session.user.user_type != 'OWNER' and session.user.user_type != 'ADMIN' and session.user.user_type != 'EDITOR' and session.user.user_type != 'PROOFREADER'}" th:text="${session.user.name}">Reader</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="background-color: rgba(104, 85, 224, 0.6); border: 1px solid #5e63b6; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                            <li th:if="${session.user.user_type == 'OWNER'}">
+                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Owner Panel</a>
+                            </li>
+                            <li th:if="${session.user.user_type == 'ADMIN'}">
+                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Admin Panel</a>
+                            </li>
+                            <li th:if="${session.user.user_type == 'EDITOR'}">
+                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Editor Panel</a>
+                            </li>
+                            <li th:if="${session.user.user_type == 'PROOFREADER'}">
+                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Proofreader Panel</a>
+                            </li>
+                            <li><hr class="dropdown-divider" style="background-color: #5e63b6;"></li>
+                            <li><a class="dropdown-item text-danger" href="#" id="btn-logout"><i class="fa-solid fa-sign-out-alt me-2"></i> Log Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+</div>
+
+<!-- Purchase Snow Flakes Modal -->
+<div class="modal fade" id="purchaseFlakesModal" tabindex="-1" aria-labelledby="purchaseFlakesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content text-white" style="background: rgba(26, 21, 56, 0.85); border: 1px solid rgba(189, 83, 237, 0.4); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title h4 fw-bold font-outfit" id="purchaseFlakesModalLabel" style="color: #00e5ff;">
+                    <i class="fa-solid fa-snowflake me-2"></i>Purchase Snow Flakes
+                </h2>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-muted font-size-sm mb-4">Select a Snow Flakes package to unlock premium chapters instantly. Secure mock checkout.</p>
+                
+                <div class="row g-3">
+                    <!-- Dynamic Packs from Database -->
+                    <div th:each="pack : ${flakePackages}" class="col-12 col-md-6 col-lg-3">
+                        <div class="card h-100 text-center p-3 border-0"
+                             th:style="${pack.amount == 1000} ? 'background: rgba(104, 85, 224, 0.1); border: 1px solid rgba(189, 83, 237, 0.6) !important; border-radius: 12px; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(189, 83, 237, 0.2);' : 'background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05) !important; border-radius: 12px; transition: all 0.3s ease;'"
+                             th:classappend="${pack.amount == 1000} ? 'position-relative' : ''">
+                            <span th:if="${pack.amount == 1000}" class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-violet font-size-xs px-2 py-1" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Best Value</span>
+                            <div class="my-3">
+                                <i class="fa-solid fa-snowflake"
+                                   th:classappend="${pack.amount == 100} ? 'fa-2x' : (${pack.amount == 500} ? 'fa-2x' : (${pack.amount == 1000} ? 'fa-3x' : 'fa-2x'))"
+                                   th:style="${pack.amount == 100} ? 'color: #00e5ff; filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.3));' : (${pack.amount == 500} ? 'color: #bd53ed; filter: drop-shadow(0 0 5px rgba(189, 83, 237, 0.3));' : (${pack.amount == 1000} ? 'color: #00e5ff; filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.5));' : 'color: #ffc107; filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.3));'))"></i>
+                            </div>
+                            <h3 class="h5 fw-bold mb-1" th:style="${pack.amount == 1000} ? 'color: #00e5ff;' : ''" th:classappend="${pack.amount == 1000} ? 'h4' : ''" th:text="${pack.amount}">100</h3>
+                            <p class="text-muted font-size-xs mb-3">Snow Flakes</p>
+                            <div class="mt-auto">
+                                <p class="h6 fw-bold text-success mb-3" th:classappend="${pack.amount == 1000} ? 'h5' : ''" th:text="'$' + ${#numbers.formatDecimal(pack.price, 1, 2)}">$0.99</p>
+                                <button class="btn btn-sm btn-premium w-100 btn-purchase-pack" th:data-amount="${pack.amount}">Purchase</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-sm btn-outline-light px-4 py-2" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global Toast Notification Container -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="actionToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-message-body">
+                Hello, world! This is a toast message.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+</div>
+</body>
+</html>

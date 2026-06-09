@@ -1,0 +1,282 @@
+package com.reader.Novel.Reader.service;
+
+import com.reader.Novel.Reader.model.Novel;
+import com.reader.Novel.Reader.model.Chapter;
+import com.reader.Novel.Reader.model.User;
+import com.reader.Novel.Reader.repository.NovelRepository;
+import com.reader.Novel.Reader.repository.ChapterRepository;
+import com.reader.Novel.Reader.repository.UserRepository;
+import com.reader.Novel.Reader.model.FlakePackage;
+import com.reader.Novel.Reader.repository.FlakePackageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+
+@Component
+public class DataInitializer implements CommandLineRunner {
+
+    @Autowired
+    private NovelRepository novelRepository;
+
+    @Autowired
+    private ChapterRepository chapterRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private FlakePackageRepository flakePackageRepository;
+
+    @Override
+    public void run(String... args) throws Exception {
+        if (flakePackageRepository.count() == 0) {
+            flakePackageRepository.save(new FlakePackage(null, 100, 0.99));
+            flakePackageRepository.save(new FlakePackage(null, 500, 3.99));
+            flakePackageRepository.save(new FlakePackage(null, 1000, 6.99));
+            flakePackageRepository.save(new FlakePackage(null, 2000, 11.99));
+        }
+        if (userRepository.count() == 0) {
+            // Seed Sakura Owner user
+            User user = new User(null, "Sakura Owner", "sakura@sakura.com", "sakura002", "OWNER");
+            userRepository.save(user);
+
+            // Seed an Editor user
+            User editor = new User(null, "Yuki Editor", "editor@yuki.com", "editor123", "EDITOR");
+            userRepository.save(editor);
+        } else {
+            // Migrate Sakura Admin user to OWNER if present
+            userRepository.findByEmail("sakura@sakura.com").ifPresent(u -> {
+                if ("ADMIN".equals(u.getUser_type())) {
+                    u.setUser_type("OWNER");
+                    u.setName("Sakura Owner");
+                    userRepository.save(u);
+                }
+            });
+        }
+
+        User admin = userRepository.findByEmail("sakura@sakura.com").orElse(null);
+        User editor = userRepository.findByEmail("editor@yuki.com").orElse(null);
+        Long adminId = admin != null ? admin.getId() : 1L;
+        Long editorId = editor != null ? editor.getId() : 2L;
+
+        if (novelRepository.count() == 0) {
+            // 1. Seed Novel 1: Solo Leveling: Ragnarok
+            Novel novel1 = new Novel(null, "Solo Leveling: Ragnarok", "Chugong",
+                "In the shadows of the dimensional rift, a new crisis emerges. Sung Suho, the son of the Shadow Monarch Sung Jinwoo, has lived a normal life until the seals separating the dimensions began to crack. Now, the gates reopen, and the shadows call upon their new lord.",
+                "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
+                "NOVEL", "Action, Fantasy, System", 4.9, "ONGOING");
+            novel1.setCreatorId(editorId);
+            novel1 = novelRepository.save(novel1);
+
+            Chapter n1c1 = new Chapter(null, novel1, "The Son of the Monarch", 1.0,
+                "<p>Sung Suho woke up to a ringing sound in his ears. It wasn't his alarm clock. It was a cold, mechanical voice echoing directly within his mind.</p>" +
+                "<p><b>[System Alert: The Seals of the Shadow Realm are breaking.]</b></p>" +
+                "<p>He looked at his hands, which were faintly glowing with a dark blue aura. The same color he had seen in his childhood dreams, where a man in dark armor fought countless monsters single-handedly. He never knew that the man was his father, nor did he know that the blood running in his veins carried the power to command death itself.</p>" +
+                "<p>\"What is this?\" Suho muttered, standing up. As he took a step forward, the floor of his bedroom suddenly dissolved into black shadows. Out of the shadows, a small, black ant-like creature with tiny wings popped up, bowing its head.</p>" +
+                "<p>\"Greetings, young master! We have waited ten thousand years for your awakening!\"</p>");
+            chapterRepository.save(n1c1);
+
+            Chapter n1c2 = new Chapter(null, novel1, "The Shadow Ant's Request", 2.0,
+                "<p>Suho stared at the bowing shadow creature in absolute silence. \"Did you just... talk?\"</p>" +
+                "<p>\"Yes, young master! I am a low-grade shadow soldier, left behind by the Great Monarch to guide you when the gates open again!\" the creature squeaked excitedly.</p>" +
+                "<p>Suho rubbed his temples. He had a university exam in two hours. He was studying art history. He did not have time to be a shadow lord. \"Look, whatever your name is—\"</p>" +
+                "<p>\"Call me Beru-junior, sire!\"</p>" +
+                "<p>\"Beru-junior, I need to go to class. Can we do this shadow business later?\" Suho asked. But before the little ant could answer, a loud explosion rocked the entire building. The windows shattered, and a terrifying roar echoed from the streets below. A gate had opened right in the middle of Seoul.</p>",
+                20);
+            chapterRepository.save(n1c2);
+
+            // 2. Seed Novel 2: The Apothecary Diaries
+            Novel novel2 = new Novel(null, "The Apothecary Diaries", "Natsu Hyūga",
+                "Maomao, a young woman trained in the art of herbal medicine, is kidnapped and forced to work as a lowly maid in the Emperor's inner palace. Using her sharp wit and extensive knowledge of poisons, she solves mysteries in the court while trying to keep a low profile.",
+                "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+                "NOVEL", "Mystery, Historical, Drama", 4.8, "COMPLETED");
+            novel2.setCreatorId(editorId);
+            novel2 = novelRepository.save(novel2);
+
+            Chapter n2c1 = new Chapter(null, novel2, "The Poison Test", 1.0,
+                "<p>The inner court was always filled with rumors, but the latest one was particularly grim. The infants of the Emperor's favorite consorts were dying one by one from a mysterious illness.</p>" +
+                "<p>Maomao quietly washed the linens, keeping her head down. She knew exactly what was happening. It wasn't a curse, nor was it a assassin's poison. It was the expensive cosmetic powder the consorts used. The white lead was poisoning the babies through their mothers' skin.</p>" +
+                "<p>She wanted to stay out of it. An apothecary in the inner palace was a dangerous thing to be. But when she saw Consort Gyokuyou carrying her crying baby, Maomao's conscience got the better of her. She wrote a warning on a piece of paper, wrapped it around a twig of azalea, and left it where the consort's guards would find it.</p>");
+            chapterRepository.save(n2c1);
+
+            Chapter n2c2 = new Chapter(null, novel2, "The Clever Maid", 2.0,
+                "<p>Consort Gyokuyou's baby recovered, and it didn't take long for Jinshi, the eccentric and incredibly beautiful head eunuch, to trace the warning back to Maomao.</p>" +
+                "<p>\"So, you are the one who knows about poison,\" Jinshi said, a beautiful but scheming smile on his face as he looked down at Maomao. He held a plate of sweets in front of her. \"Eat one.\"</p>" +
+                "<p>Maomao didn't hesitate. She picked up a pastry and bit into it. She instantly tasted the subtle, bitter tang of blowfish poison. Instead of spitting it out or panicking, her eyes lit up with professional excitement. \"My, what a delightful dosage! It makes the tongue tingle just right!\"</p>" +
+                "<p>Jinshi stared at her, half-impressed and half-horrified. \"You really are a strange girl. From today on, you are the Consort's official food taster.\"</p>",
+                20);
+            chapterRepository.save(n2c2);
+
+            // 3. Seed Comic 1: Tower of God
+            Novel comic1 = new Novel(null, "Tower of God", "SIU",
+                "What do you desire? Money and wealth? Honor and pride? Authority and power? Revenge? Or something that transcends them all? Whatever you desire is here, at the top of the Tower. Join Bam on his climb to find his friend Rachel.",
+                "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+                "COMIC", "Fantasy, Adventure, Action", 4.7, "ONGOING");
+            comic1.setCreatorId(adminId);
+            comic1 = novelRepository.save(comic1);
+
+            String comicImages1 = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800," +
+                                  "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800," +
+                                  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800," +
+                                  "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800";
+            Chapter c1c1 = new Chapter(null, comic1, "The First Floor Test", 1.0, comicImages1);
+            chapterRepository.save(c1c1);
+
+            String comicImages2 = "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=800," +
+                                  "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800," +
+                                  "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800," +
+                                  "https://images.unsplash.com/photo-1563089145-599997674d42?w=800";
+            Chapter c1c2 = new Chapter(null, comic1, "The Black March Awakens", 2.0, comicImages2);
+            chapterRepository.save(c1c2);
+
+            // 4. Seed Comic 2: Cyberpunk: Edgerunners
+            Novel comic2 = new Novel(null, "Cyberpunk: Edgerunners", "Studio Trigger",
+                "In a dystopia riddled with corruption and cybernetic implants, a talented but street-smart kid named David Martinez loses everything in a drive-by shooting. With nothing left to lose, he chooses to stay alive by becoming an edgerunner—a mercenary outlaw.",
+                "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80",
+                "COMIC", "Sci-Fi, Cyberpunk, Action", 4.9, "COMPLETED");
+            comic2.setCreatorId(adminId);
+            comic2 = novelRepository.save(comic2);
+
+            String comicImages3 = "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800," +
+                                  "https://images.unsplash.com/photo-1561715276-a2d087060f1d?w=800," +
+                                  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800";
+            Chapter c2c1 = new Chapter(null, comic2, "I Want to Stay at Your House", 1.0, comicImages3);
+            chapterRepository.save(c2c1);
+
+            String comicImages4 = "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800," +
+                                  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800," +
+                                  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800";
+            Chapter c2c2 = new Chapter(null, comic2, "Over the Edge", 2.0, comicImages4);
+            chapterRepository.save(c2c2);
+
+            // 5. Seed Manga 1: Frieren: Beyond Journey's End
+            Novel manga1 = new Novel(null, "Frieren: Beyond Journey's End", "Kanehito Yamada",
+                "Elf mage Frieren and her fellow adventurers have defeated the Demon King and brought peace to the land. But Frieren, who lives much longer than humans, must watch her former companions age and pass away. Hoping to better understand humans, she embarks on a new journey.",
+                "https://images.unsplash.com/photo-1601987177651-8edfe6c20009?w=600&auto=format&fit=crop&q=80",
+                "MANGA", "Fantasy, Adventure, Slice of Life", 4.9, "ONGOING");
+            manga1.setCreatorId(editorId);
+            manga1 = novelRepository.save(manga1);
+
+            String mangaImages1 = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800," +
+                                  "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800," +
+                                  "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800";
+            Chapter m1c1 = new Chapter(null, manga1, "The Journey's End", 1.0, mangaImages1);
+            chapterRepository.save(m1c1);
+
+            String mangaImages2 = "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800," +
+                                  "https://images.unsplash.com/photo-1561715276-a2d087060f1d?w=800," +
+                                  "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=800";
+            Chapter m1c2 = new Chapter(null, manga1, "Priest Heiter's Request", 2.0, mangaImages2);
+            chapterRepository.save(m1c2);
+
+            // 6. Seed Manga 2: Super Cub (with local cover URL path with accent characters)
+            Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
+                "it's about cub.",
+                "Zero Ts\u00fa.jpg",
+                "MANGA", "Slice Of Life", 4.8, "ONGOING");
+            manga2.setCreatorId(editorId);
+            manga2 = novelRepository.save(manga2);
+
+            Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
+            chapterRepository.save(m2c1);
+
+            Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
+            chapterRepository.save(m2c2);
+        }
+
+        // Migrate any existing novels that have null creatorId
+        for (Novel n : novelRepository.findAll()) {
+            if (n.getCreatorId() == null) {
+                String title = n.getTitle();
+                if (title != null && (title.contains("Solo Leveling") || title.contains("Apothecary") || title.contains("Frieren") || title.contains("Super Cub"))) {
+                    n.setCreatorId(editorId);
+                } else {
+                    n.setCreatorId(adminId);
+                }
+                novelRepository.save(n);
+            }
+        }
+
+        sanitizeLocalCoverUrls();
+    }
+
+    private void sanitizeLocalCoverUrls() {
+        System.out.println("Sanitizing local cover URLs...");
+        String userDir = System.getProperty("user.dir");
+        for (Novel novel : novelRepository.findAll()) {
+            String coverUrl = novel.getCoverUrl();
+            if (coverUrl != null && !coverUrl.startsWith("http://") && !coverUrl.startsWith("https://") && !coverUrl.startsWith("/uploads/")) {
+                Path matchedFile = findLocalFile(coverUrl, userDir);
+                if (matchedFile != null) {
+                    try {
+                        String originalFilename = matchedFile.getFileName().toString();
+                        String extension = "";
+                        if (originalFilename.contains(".")) {
+                            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                        }
+                        String uniqueName = UUID.randomUUID().toString() + extension;
+                        
+                        Path srcDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads");
+                        Path targetDir = Paths.get(userDir, "target", "classes", "static", "uploads");
+                        
+                        Files.createDirectories(srcDir);
+                        Files.createDirectories(targetDir);
+                        
+                        Path srcFile = srcDir.resolve(uniqueName);
+                        Path targetFile = targetDir.resolve(uniqueName);
+                        
+                        Files.copy(matchedFile, srcFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(matchedFile, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        
+                        novel.setCoverUrl("/uploads/" + uniqueName);
+                        novelRepository.save(novel);
+                        System.out.println("Resolved local cover for novel '" + novel.getTitle() + "' to: /uploads/" + uniqueName);
+                    } catch (Exception e) {
+                        System.err.println("Error copying file: " + e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
+    private Path findLocalFile(String filename, String userDir) {
+        try {
+            Path directPath = Paths.get(filename);
+            if (Files.exists(directPath) && !Files.isDirectory(directPath)) {
+                return directPath;
+            }
+        } catch (Exception e) {}
+
+        try {
+            Path relativePath = Paths.get(userDir, filename);
+            if (Files.exists(relativePath) && !Files.isDirectory(relativePath)) {
+                return relativePath;
+            }
+        } catch (Exception e) {}
+
+        try {
+            String cleanName = Paths.get(filename).getFileName().toString().toLowerCase();
+            File rootDir = new File(userDir);
+            File[] files = rootDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile()) {
+                        String name = f.getName().toLowerCase();
+                        String normName = name.replaceAll("[ūúùûü]", "u");
+                        String normClean = cleanName.replaceAll("[ūúùûü]", "u");
+                        if (name.equals(cleanName) || normName.equals(normClean) || name.contains(cleanName) || cleanName.contains(name)) {
+                            return f.toPath();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {}
+        
+        return null;
+    }
+}
