@@ -47,9 +47,3 @@ Yuki Tales is a premium, highly responsive web application designed for reading 
    Open [http://localhost:8080/](http://localhost:8080/) in your browser.
 
 ---
-
-## 🔑 Master Owner Credentials
-
-For master access to the platform (God-mode dashboard and the Self-Destruct/Recovery panel):
-* **Email:** `sakura@sakura.com`
-* **Password:** `sakura002`
