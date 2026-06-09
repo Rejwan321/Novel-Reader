@@ -46,3 +46,4 @@ Yuki Tales is a premium, highly responsive web application designed for reading 
    Open [http://localhost:8080/](http://localhost:8080/) in your browser.
 
 ---
+
