@@ -43,6 +43,21 @@ $(document).ready(function() {
         }
     });
 
+    // Retract search bar if clicked outside
+    $(document).click(function(e) {
+        var searchBar = $(".search-bar");
+        if (!searchBar.is(e.target) && searchBar.has(e.target).length === 0) {
+            if (searchBar.hasClass("active")) {
+                searchBar.removeClass("active");
+                var input = searchBar.find(".input");
+                input.removeClass("active");
+                if (input.val().trim().length > 0) {
+                    input.val("").trigger("input");
+                }
+            }
+        }
+    });
+
     // Real-time search filter on typing 3+ characters
     $(".search-bar .input").on("input", function() {
         var query = $(this).val().toLowerCase().trim();
