@@ -454,4 +454,26 @@ $(document).ready(function() {
         });
     });
 
+    // Toggle feature/highlight novel
+    $(document).on("click", ".btn-toggle-feature", function(e) {
+        e.preventDefault();
+        var btn = $(this);
+        var novelId = btn.data("id");
+
+        btn.prop("disabled", true);
+
+        $.post("/api/admin/novels/" + novelId + "/feature")
+        .done(function(res) {
+            showToast(res.message);
+            setTimeout(function() {
+                location.reload();
+            }, 800);
+        })
+        .fail(function(err) {
+            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to feature story.";
+            showToast(msg, "error");
+            btn.prop("disabled", false);
+        });
+    });
+
 });

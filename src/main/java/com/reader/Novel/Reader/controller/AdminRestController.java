@@ -1177,4 +1177,36 @@ public class AdminRestController {
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Package deleted successfully!"));
     }
+
+    @PostMapping("/novels/{id}/feature")
+    public ResponseEntity<?> toggleFeatureNovel(
+            @PathVariable Long id,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can feature stories."));
+        }
+
+        Novel novel = novelService.getNovelById(id);
+        if (novel == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Story not found."));
+        }
+
+        Long currentFeatured = novelService.getFeaturedNovelId();
+        if (id.equals(currentFeatured)) {
+            novelService.setFeaturedNovelId(null);
+            return ResponseEntity.ok(Map.of("success", true, "featured", false, "message", "Story unfeatured successfully!"));
+        } else {
+            novelService.setFeaturedNovelId(id);
+            return ResponseEntity.ok(Map.of("success", true, "featured", true, "message", "Story featured successfully!"));
+        }
+    }
 }
