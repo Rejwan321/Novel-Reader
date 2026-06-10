@@ -30,7 +30,6 @@ public class NovelReaderApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        System.out.println("🔍 Fetching all users from the database:");
-        userRepository.findAll().forEach(System.out::println);
+        // User list console print removed for security purposes
     }
 }
