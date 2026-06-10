@@ -375,6 +375,7 @@ public class AdminRestController {
         Novel novel = new Novel(null, title.trim(), author.trim(), description.trim(), resolvedCoverUrl, type.toUpperCase(), genre.trim(), rating, status);
         novel.setCreatorId(loggedInUser.getId());
         Novel saved = novelService.saveNovel(novel);
+        syncNovelFoldersAndFiles(saved);
 
         return ResponseEntity.ok(Map.of("success", true, "novel", saved));
     }
@@ -545,6 +546,7 @@ public class AdminRestController {
 
         Chapter chapter = new Chapter(null, novel, title.trim(), chapterNumber, content.trim(), price);
         Chapter saved = chapterServiceHelper(chapter);
+        syncChapterFiles(saved);
 
         return ResponseEntity.ok(Map.of("success", true, "chapter", saved));
     }
@@ -635,6 +637,7 @@ public class AdminRestController {
         existingNovel.setStatus(status);
 
         Novel saved = novelService.saveNovel(existingNovel);
+        syncNovelFoldersAndFiles(saved);
         return ResponseEntity.ok(Map.of("success", true, "novel", saved));
     }
 
@@ -692,6 +695,7 @@ public class AdminRestController {
         existingChapter.setPrice(price);
 
         Chapter saved = novelService.saveChapter(existingChapter);
+        syncChapterFiles(saved);
         return ResponseEntity.ok(Map.of("success", true, "chapter", saved));
     }
 
@@ -1207,6 +1211,87 @@ public class AdminRestController {
         } else {
             novelService.setFeaturedNovelId(id);
             return ResponseEntity.ok(Map.of("success", true, "featured", true, "message", "Story featured successfully!"));
+        }
+    }
+
+    private void syncNovelFoldersAndFiles(Novel novel) {
+        if (novel == null || novel.getId() == null) return;
+        
+        String userDir = System.getProperty("user.dir");
+        Path srcMainDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", "stories", "story_" + novel.getId());
+        Path targetDir = Paths.get(userDir, "target", "classes", "static", "uploads", "stories", "story_" + novel.getId());
+        Path rootBackupDir = Paths.get(userDir, "uploads", "stories", "story_" + novel.getId());
+        
+        try {
+            // Create subdirectories
+            Files.createDirectories(srcMainDir.resolve("media"));
+            Files.createDirectories(srcMainDir.resolve("text"));
+            
+            Files.createDirectories(targetDir.resolve("media"));
+            Files.createDirectories(targetDir.resolve("text"));
+            
+            Files.createDirectories(rootBackupDir.resolve("media"));
+            Files.createDirectories(rootBackupDir.resolve("text"));
+            
+            // Sync description
+            String desc = novel.getDescription() != null ? novel.getDescription() : "";
+            Files.writeString(srcMainDir.resolve("text").resolve("description.txt"), desc);
+            Files.writeString(targetDir.resolve("text").resolve("description.txt"), desc);
+            Files.writeString(rootBackupDir.resolve("text").resolve("description.txt"), desc);
+            
+            // Sync cover image if local upload
+            String coverUrl = novel.getCoverUrl();
+            if (coverUrl != null && coverUrl.startsWith("/uploads/") && !coverUrl.contains("/stories/")) {
+                String filename = coverUrl.substring(coverUrl.lastIndexOf("/") + 1);
+                String destFilename = "cover_" + filename;
+                
+                Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
+                Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
+                Path rootFile = Paths.get(userDir, "uploads", filename);
+                
+                Path destSrcFile = srcMainDir.resolve("media").resolve(destFilename);
+                Path destTargetFile = targetDir.resolve("media").resolve(destFilename);
+                Path destRootFile = rootBackupDir.resolve("media").resolve(destFilename);
+                
+                if (Files.exists(srcFile)) {
+                    Files.copy(srcFile, destSrcFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                if (Files.exists(targetFile)) {
+                    Files.copy(targetFile, destTargetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                if (Files.exists(rootFile)) {
+                    Files.copy(rootFile, destRootFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                
+                novel.setCoverUrl("/uploads/stories/story_" + novel.getId() + "/media/" + destFilename);
+                novelService.saveNovel(novel);
+            }
+        } catch (IOException e) {
+            System.err.println("Error synchronizing novel folders and files: " + e.getMessage());
+        }
+    }
+
+    private void syncChapterFiles(Chapter chapter) {
+        if (chapter == null || chapter.getNovel() == null) return;
+        Novel novel = chapter.getNovel();
+        
+        // Ensure folders exist
+        syncNovelFoldersAndFiles(novel);
+        
+        String userDir = System.getProperty("user.dir");
+        Path srcTextDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", "stories", "story_" + novel.getId(), "text");
+        Path targetTextDir = Paths.get(userDir, "target", "classes", "static", "uploads", "stories", "story_" + novel.getId(), "text");
+        Path rootTextDir = Paths.get(userDir, "uploads", "stories", "story_" + novel.getId(), "text");
+        
+        String chapFilename = "chapter_" + chapter.getChapterNumber() + ".txt";
+        String content = chapter.getContent() != null ? chapter.getContent() : "";
+        
+        try {
+            Files.writeString(srcTextDir.resolve(chapFilename), content);
+            Files.writeString(targetTextDir.resolve(chapFilename), content);
+            Files.writeString(rootTextDir.resolve(chapFilename), content);
+        } catch (IOException e) {
+            System.err.println("Error synchronizing chapter text file: " + e.getMessage());
         }
     }
 }
