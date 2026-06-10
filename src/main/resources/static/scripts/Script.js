@@ -43,6 +43,37 @@ $(document).ready(function() {
         }
     });
 
+    // Real-time search filter on typing 3+ characters
+    $(".search-bar .input").on("input", function() {
+        var query = $(this).val().toLowerCase().trim();
+        if (query.length >= 3) {
+            var cards = $(".book-card-col");
+            var visibleCount = 0;
+            cards.each(function() {
+                var cardCol = $(this);
+                var title = cardCol.find(".card-title").text().toLowerCase();
+                var author = cardCol.find(".card-text").text().toLowerCase();
+                if (title.includes(query) || author.includes(query)) {
+                    cardCol.show();
+                    visibleCount++;
+                } else {
+                    cardCol.hide();
+                }
+            });
+            if (visibleCount === 0) {
+                $("#empty-state-container").removeClass("d-none").show();
+            } else {
+                $("#empty-state-container").addClass("d-none");
+            }
+            $(".carousels-section, .hero-section, .recently-updated-section, .filter-section").hide();
+        } else {
+            $(".carousels-section, .hero-section, .recently-updated-section, .filter-section").show();
+            if (typeof applyFilters === "function") {
+                applyFilters();
+            }
+        }
+    });
+
     // --- Sign In / Sign Up Modal Controls ---
     $(".log").click(function() {
         document.body.classList.toggle("show-popup");
