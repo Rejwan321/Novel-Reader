@@ -478,11 +478,22 @@ $(document).ready(function() {
 
     // Autocomplete for Genres in Admin panel
     const ALL_GENRES = [
-        "Action", "Adventure", "Comedy", "Cultivation", "Drama", "Fantasy", 
-        "Harem", "Historical", "Isekai", "LitRPG", "Magic", "Martial Arts", 
-        "Mecha", "Mystery", "Psychological", "Romance", "Sci-Fi", "School Life", 
-        "Seinen", "Shounen", "Slice of Life", "Sports", "Supernatural", 
-        "System", "Thriller", "Tragedy", "Wuxia", "Xianxia", "Xuanhuan"
+        "Action", "Adventure", "Apocalypse", "Beast World", "BL (Boys Love)", 
+        "GL (Girls Love)", "Comedy", "Comic", "Cultivation", "Cyberpunk", 
+        "Doujinshi", "Drama", "Ecchi", "Family", "Fantasy", "Game", 
+        "Gekiga", "Gender Bender", "Guilds", "Harem", "High Fantasy", 
+        "Historical", "Horror", "Isekai", "Josei", "Light Novel", 
+        "LitRPG", "Magic", "Manga", "Manhua", "Manhwa", "Martial Arts", 
+        "Mecha", "Military", "Modern", "Music", "Mystery", "Parody", 
+        "Police", "Post-Apocalyptic", "Psychological", "Rebirth", 
+        "Reincarnation", "Reverse Harem", "Romance", "Samurai", "School Life", 
+        "Sci-Fi", "Seinen", "Shoujo", "Shoujo Ai", "Shounen", "Shounen Ai", 
+        "Slice of Life", "Smut", "Space Opera", "Sports", "Steampunk", 
+        "Super Power", "Supernatural", "Survival", "System", "Thriller", 
+        "Time Travel", "Tower Climbing", "Tragedy", "Transmigration", 
+        "Urban Fantasy", "Vampire", "Villainess", "Virtual Reality", 
+        "Webtoon", "Werewolf", "Wuxia", "Xianxia", "Xuanhuan", "Yaoi", 
+        "Yuri", "Zombie"
     ];
 
     const genreInput = $("#story-genre");
