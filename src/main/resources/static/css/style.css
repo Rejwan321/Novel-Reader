@@ -158,7 +158,7 @@ nav.navbar {
 }
 
 .search-bar .input::placeholder {
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* User authentication dropdown button & login pill */
