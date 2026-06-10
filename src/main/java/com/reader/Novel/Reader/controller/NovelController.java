@@ -28,11 +28,27 @@ public class NovelController {
                 return "home";
             }
         }
+        List<Novel> novels;
         if (search != null && !search.trim().isEmpty()) {
-            model.addAttribute("novels", novelService.searchNovels(search.trim()));
+            novels = novelService.searchNovels(search.trim());
         } else {
-            model.addAttribute("novels", novelService.getAllNovels());
+            novels = new java.util.ArrayList<>(novelService.getAllNovels());
+            Long featuredId = novelService.getFeaturedNovelId();
+            if (featuredId != null) {
+                int featuredIdx = -1;
+                for (int i = 0; i < novels.size(); i++) {
+                    if (novels.get(i).getId().equals(featuredId)) {
+                        featuredIdx = i;
+                        break;
+                    }
+                }
+                if (featuredIdx > 0) {
+                    Novel featuredNovel = novels.remove(featuredIdx);
+                    novels.add(0, featuredNovel);
+                }
+            }
         }
+        model.addAttribute("novels", novels);
         return "home";
     }
 

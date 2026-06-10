@@ -56,6 +56,7 @@ public class AdminController {
         } else {
             model.addAttribute("novels", novelService.getAllNovels());
         }
+        model.addAttribute("featuredNovelId", novelService.getFeaturedNovelId());
         model.addAttribute("userRole", role);
 
         return "admin";

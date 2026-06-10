@@ -322,6 +322,25 @@
             color: white !important;
             border-color: #e74c3c !important;
         }
+        .btn-action-feature {
+            background-color: rgba(155, 89, 182, 0.08) !important;
+            color: #9b59b6 !important;
+            border: 1px solid rgba(155, 89, 182, 0.25) !important;
+        }
+        .btn-action-feature:hover {
+            background-color: rgba(155, 89, 182, 0.18) !important;
+            border-color: #9b59b6 !important;
+        }
+        .btn-action-featured {
+            background-color: rgba(241, 196, 15, 0.12) !important;
+            color: #f1c40f !important;
+            border: 1px solid rgba(241, 196, 15, 0.5) !important;
+            box-shadow: 0 0 8px rgba(241, 196, 15, 0.15);
+        }
+        .btn-action-featured:hover {
+            background-color: rgba(241, 196, 15, 0.22) !important;
+            border-color: #f1c40f !important;
+        }
         .btn-self-destruct {
             position: relative;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -603,6 +622,13 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-sm btn-action-premium btn-toggle-feature"
+                                                         th:classappend="${n.id == featuredNovelId} ? 'btn-action-featured' : 'btn-action-feature'"
+                                                         th:data-id="${n.id}"
+                                                         th:title="${n.id == featuredNovelId} ? 'Unfeature Story' : 'Feature Story'">
+                                                     <i th:class="${n.id == featuredNovelId} ? 'fa-solid fa-star text-warning' : 'fa-regular fa-star'"></i>
+                                                     <span th:text="${n.id == featuredNovelId} ? 'Featured' : 'Feature'">Feature</span>
+                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta"
                                                         th:data-id="${n.id}"
                                                         th:data-title="${n.title}"

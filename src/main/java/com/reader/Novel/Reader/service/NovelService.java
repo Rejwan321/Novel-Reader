@@ -246,4 +246,25 @@ public class NovelService {
     public FlakePackage getFlakePackageById(Long id) {
         return flakePackageRepository.findById(id).orElse(null);
     }
+
+    public Long getFeaturedNovelId() {
+        return systemSettingRepository.findById("featured_novel_id")
+                .map(setting -> {
+                    try {
+                        return Long.parseLong(setting.getSettingValue());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .orElse(null);
+    }
+
+    @Transactional
+    public void setFeaturedNovelId(Long novelId) {
+        if (novelId == null) {
+            systemSettingRepository.deleteById("featured_novel_id");
+        } else {
+            systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("featured_novel_id", String.valueOf(novelId)));
+        }
+    }
 }
