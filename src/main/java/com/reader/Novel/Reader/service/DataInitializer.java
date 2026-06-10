@@ -187,6 +187,22 @@ public class DataInitializer implements CommandLineRunner {
 
             Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
             chapterRepository.save(m2c2);
+        } else {
+            // Check if Super Cub exists in existing database, if not seed it
+            if (!novelRepository.findAll().stream().anyMatch(n -> "Super Cub".equalsIgnoreCase(n.getTitle()))) {
+                Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
+                    "it's about cub.",
+                    "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
+                    "MANGA", "Slice Of Life", 4.8, "ONGOING");
+                manga2.setCreatorId(editorId);
+                manga2 = novelRepository.save(manga2);
+
+                Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
+                chapterRepository.save(m2c1);
+
+                Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
+                chapterRepository.save(m2c2);
+            }
         }
 
         // Migrate any existing novels that have null creatorId
