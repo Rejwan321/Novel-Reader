@@ -476,4 +476,66 @@ $(document).ready(function() {
         });
     });
 
+    // Autocomplete for Genres in Admin panel
+    const ALL_GENRES = [
+        "Action", "Adventure", "Comedy", "Cultivation", "Drama", "Fantasy", 
+        "Harem", "Historical", "Isekai", "LitRPG", "Magic", "Martial Arts", 
+        "Mecha", "Mystery", "Psychological", "Romance", "Sci-Fi", "School Life", 
+        "Seinen", "Shounen", "Slice of Life", "Sports", "Supernatural", 
+        "System", "Thriller", "Tragedy", "Wuxia", "Xianxia", "Xuanhuan"
+    ];
+
+    const genreInput = $("#story-genre");
+    const genreDropdown = $("#genre-autocomplete-dropdown");
+
+    if (genreInput.length > 0 && genreDropdown.length > 0) {
+        genreInput.on("input focus", function() {
+            var val = $(this).val();
+            var parts = val.split(",");
+            var currentQuery = parts[parts.length - 1].trim().toLowerCase();
+
+            if (currentQuery.length >= 1) {
+                // Find already selected genres to exclude them
+                var selectedGenres = parts.slice(0, parts.length - 1).map(g => g.trim().toLowerCase());
+                
+                var matches = ALL_GENRES.filter(function(genre) {
+                    return genre.toLowerCase().includes(currentQuery) && !selectedGenres.includes(genre.toLowerCase());
+                });
+
+                if (matches.length > 0) {
+                    genreDropdown.empty();
+                    matches.forEach(function(genre) {
+                        genreDropdown.append('<div class="genre-suggestion-item" data-value="' + genre + '">' + genre + '</div>');
+                    });
+                    genreDropdown.removeClass("d-none");
+                } else {
+                    genreDropdown.addClass("d-none");
+                }
+            } else {
+                genreDropdown.addClass("d-none");
+            }
+        });
+
+        // Click on suggestion
+        genreDropdown.on("click", ".genre-suggestion-item", function() {
+            var selectedVal = $(this).data("value");
+            var val = genreInput.val();
+            var parts = val.split(",");
+            parts[parts.length - 1] = " " + selectedVal;
+            
+            // Clean up empty elements and format nicely
+            var newVal = parts.map(p => p.trim()).filter(p => p.length > 0).join(", ") + ", ";
+            genreInput.val(newVal);
+            genreInput.focus();
+            genreDropdown.addClass("d-none");
+        });
+
+        // Hide suggestions on clicking outside
+        $(document).click(function(e) {
+            if (!genreInput.is(e.target) && !genreDropdown.is(e.target) && genreDropdown.has(e.target).length === 0) {
+                genreDropdown.addClass("d-none");
+            }
+        });
+    }
+
 });
