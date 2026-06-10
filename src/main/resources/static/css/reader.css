@@ -11,7 +11,7 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 1000;
+    z-index: 1015;
 }
 
 /* Settings Panel */
@@ -133,6 +133,7 @@ body.theme-sepia .novel-reader-container h2 {
     max-height: 250px;
     overflow-y: auto;
     scrollbar-width: thin;
+    z-index: 1100 !important;
 }
 .dropdown-scrollable::-webkit-scrollbar {
     width: 5px;
