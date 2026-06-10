@@ -24,14 +24,14 @@
 
     <!-- Floating Sub-Navbar (Reader Toolbar) -->
     <div class="reader-toolbar sticky-top shadow-sm py-2">
-        <div class="container d-flex align-items-center justify-content-between">
+        <div class="container position-relative d-flex align-items-center justify-content-between">
             <!-- Back to Details -->
             <a th:href="@{'/novel/' + ${novel.id}}" class="btn btn-sm btn-outline-light text-decoration-none">
                 <i class="fa fa-arrow-left me-1"></i> Details
             </a>
 
             <!-- Chapter Picker -->
-            <div class="dropdown" id="dropdown-chapters-wrapper">
+            <div class="dropdown position-absolute start-50 translate-middle-x" id="dropdown-chapters-wrapper">
                 <button class="btn btn-sm btn-outline-light dropdown-toggle text-truncate" style="max-width: 220px;" type="button" id="chaptersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <span th:text="'Ch ' + ${chapter.chapterNumber} + ': ' + ${chapter.title}">Ch 1: Title</span>
                 </button>
