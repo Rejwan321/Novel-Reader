@@ -264,6 +264,19 @@ nav.navbar {
 }
 
 /* Custom Navpills Tab / Filters */
+.nav-pills-custom {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+    width: 100%;
+}
+.nav-pills-custom::-webkit-scrollbar {
+    display: none; /* WebKit */
+}
+
 .filter-tab {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -273,6 +286,7 @@ nav.navbar {
     font-weight: 500;
     font-size: 0.9rem;
     transition: all 0.3s;
+    flex-shrink: 0;
 }
 
 .filter-tab:hover {
@@ -288,6 +302,19 @@ nav.navbar {
 }
 
 /* Genre Chips */
+.genre-chips-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+    width: 100%;
+}
+.genre-chips-container::-webkit-scrollbar {
+    display: none; /* WebKit */
+}
+
 .genre-chip {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -297,6 +324,7 @@ nav.navbar {
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .genre-chip:hover {
