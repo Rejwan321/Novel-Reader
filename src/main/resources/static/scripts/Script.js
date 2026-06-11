@@ -43,49 +43,115 @@ $(document).ready(function() {
         }
     });
 
-    // Retract search bar if clicked outside
+    // Retract search bar and dropdown if clicked outside
     $(document).click(function(e) {
         var searchBar = $(".search-bar");
-        if (!searchBar.is(e.target) && searchBar.has(e.target).length === 0) {
+        var dropdown = $("#search-results-dropdown");
+        if (!searchBar.is(e.target) && searchBar.has(e.target).length === 0 &&
+            !dropdown.is(e.target) && dropdown.has(e.target).length === 0) {
+            
+            dropdown.addClass("d-none").empty();
             if (searchBar.hasClass("active")) {
                 searchBar.removeClass("active");
                 var input = searchBar.find(".input");
                 input.removeClass("active");
                 if (input.val().trim().length > 0) {
-                    input.val("").trigger("input");
+                    input.val("");
                 }
             }
         }
     });
 
-    // Real-time search filter on typing 3+ characters
+    // Real-time search dropdown suggestions on typing 3+ characters
+    var searchTimeout = null;
     $(".search-bar .input").on("input", function() {
-        var query = $(this).val().toLowerCase().trim();
+        var query = $(this).val().trim();
+        var dropdown = $("#search-results-dropdown");
+        
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
         if (query.length >= 3) {
-            var cards = $(".book-card-col");
-            var visibleCount = 0;
-            cards.each(function() {
-                var cardCol = $(this);
-                var title = cardCol.find(".card-title").text().toLowerCase();
-                var author = cardCol.find(".card-text").text().toLowerCase();
-                if (title.includes(query) || author.includes(query)) {
-                    cardCol.show();
-                    visibleCount++;
-                } else {
-                    cardCol.hide();
-                }
-            });
-            if (visibleCount === 0) {
-                $("#empty-state-container").removeClass("d-none").show();
-            } else {
-                $("#empty-state-container").addClass("d-none");
-            }
-            $(".carousels-section, .hero-section, .recently-updated-section, .filter-section").hide();
+            searchTimeout = setTimeout(function() {
+                $.getJSON("/api/novels", { search: query }, function(data) {
+                    dropdown.empty();
+                    
+                    if (!data || data.length === 0) {
+                        dropdown.html('<div class="p-3 text-muted text-center font-size-sm">No results found</div>');
+                        dropdown.removeClass("d-none");
+                        return;
+                    }
+                    
+                    // Group results by type
+                    var groups = {
+                        "NOVEL": [],
+                        "COMIC": [],
+                        "MANHWA": [],
+                        "MANGA": []
+                    };
+                    
+                    data.forEach(function(item) {
+                        var type = (item.type || "").toUpperCase();
+                        if (groups[type]) {
+                            groups[type].push(item);
+                        } else {
+                            if (!groups["OTHER"]) groups["OTHER"] = [];
+                            groups["OTHER"].push(item);
+                        }
+                    });
+                    
+                    var html = "";
+                    var typeLabels = {
+                        "NOVEL": "Novels",
+                        "COMIC": "Comics",
+                        "MANHWA": "Manhwa",
+                        "MANGA": "Manga",
+                        "OTHER": "Other"
+                    };
+                    
+                    var hasItems = false;
+                    Object.keys(groups).forEach(function(key) {
+                        var list = groups[key];
+                        if (list && list.length > 0) {
+                            hasItems = true;
+                            var label = typeLabels[key] || key;
+                            html += '<div class="search-group-header">' + label + '</div>';
+                            list.slice(0, 5).forEach(function(item) {
+                                var ratingText = item.rating ? ' (★ ' + parseFloat(item.rating).toFixed(1) + ')' : '';
+                                var meta = (item.status || "ONGOING") + ratingText;
+                                html += '<a href="/novel/' + item.id + '" class="search-result-item">' +
+                                        '  <img src="' + (item.coverUrl || '/uploads/default-cover.jpg') + '" class="search-result-img" alt="">' +
+                                        '  <div class="search-result-info">' +
+                                        '    <div class="search-result-title">' + item.title + '</div>' +
+                                        '    <div class="search-result-meta">' + meta + '</div>' +
+                                        '  </div>' +
+                                        '</a>';
+                            });
+                        }
+                    });
+                    
+                    if (!hasItems) {
+                        dropdown.html('<div class="p-3 text-muted text-center font-size-sm">No results found</div>');
+                        dropdown.removeClass("d-none");
+                        return;
+                    }
+                    
+                    // Footer link
+                    html += '<a href="#" class="search-results-footer" id="btn-view-all-results">View all results for <strong>' + query + '</strong></a>';
+                    
+                    dropdown.html(html);
+                    dropdown.removeClass("d-none");
+                    
+                    // Hook view-all click to submit form
+                    $("#btn-view-all-results").click(function(e) {
+                        e.preventDefault();
+                        $("#search-form").submit();
+                    });
+                });
+            }, 250);
         } else {
-            $(".carousels-section, .hero-section, .recently-updated-section, .filter-section").show();
-            if (typeof applyFilters === "function") {
-                applyFilters();
-            }
+            dropdown.addClass("d-none").empty();
         }
     });
 
