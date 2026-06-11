@@ -62,7 +62,7 @@ $(document).ready(function() {
         }
     });
 
-    // Real-time search dropdown suggestions on typing 3+ characters
+    // Real-time search dropdown suggestions on typing 1+ characters
     var searchTimeout = null;
     $(".search-bar .input").on("input", function() {
         var query = $(this).val().trim();
@@ -72,7 +72,7 @@ $(document).ready(function() {
             clearTimeout(searchTimeout);
         }
         
-        if (query.length >= 3) {
+        if (query.length >= 1) {
             searchTimeout = setTimeout(function() {
                 $.getJSON("/api/novels", { search: query }, function(data) {
                     dropdown.empty();
