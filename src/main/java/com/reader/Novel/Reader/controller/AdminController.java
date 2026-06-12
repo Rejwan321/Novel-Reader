@@ -45,7 +45,7 @@ public class AdminController {
         // Admin-only data (or owner)
         if ("ADMIN".equals(role) || "OWNER".equals(role)) {
             java.util.List<User> filteredUsers = userService.getUsers().stream()
-                .filter(u -> !"OWNER".equals(u.getUser_type()))
+                .filter(u -> isOwner || !"OWNER".equals(u.getUser_type()))
                 .collect(java.util.stream.Collectors.toList());
             model.addAttribute("users", filteredUsers);
         }
