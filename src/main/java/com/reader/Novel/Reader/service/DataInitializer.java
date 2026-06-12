@@ -52,6 +52,9 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update("UPDATE purchases SET user_id = 1 WHERE user_id = 2");
             jdbcTemplate.update("UPDATE ratings SET user_id = 1 WHERE user_id = 2");
 
+            // Clean up Slice Of Life capitalization inconsistency
+            jdbcTemplate.update("UPDATE novels SET genre = REPLACE(genre, 'Slice Of Life', 'Slice of Life')");
+
             // Delete legacy users
             jdbcTemplate.execute("DELETE FROM reader WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
             
@@ -197,7 +200,7 @@ public class DataInitializer implements CommandLineRunner {
             Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
                 "it's about cub.",
                 "Zero Ts\u00fa.jpg",
-                "MANGA", "Slice Of Life", 4.8, "ONGOING");
+                "MANGA", "Slice of Life", 4.8, "ONGOING");
             manga2.setCreatorId(editorId);
             manga2 = novelRepository.save(manga2);
 
@@ -212,7 +215,7 @@ public class DataInitializer implements CommandLineRunner {
                 Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
                     "it's about cub.",
                     "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
-                    "MANGA", "Slice Of Life", 4.8, "ONGOING");
+                    "MANGA", "Slice of Life", 4.8, "ONGOING");
                 manga2.setCreatorId(editorId);
                 manga2 = novelRepository.save(manga2);
 
