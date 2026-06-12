@@ -1,13 +1,13 @@
 /* MyAnimeList-style Search Results Dropdown Overlay */
 
-.navbar-actions-group {
+.search-wrapper {
     position: relative;
 }
 
 .search-results-dropdown-menu {
     position: absolute;
     top: calc(100% + 10px);
-    right: 0;
+    left: 0;
     width: 360px;
     max-height: 480px;
     background: rgba(24, 24, 41, 0.98);
