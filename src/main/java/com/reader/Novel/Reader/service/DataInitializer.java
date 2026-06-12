@@ -21,6 +21,9 @@ import java.util.UUID;
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private NovelRepository novelRepository;
 
     @Autowired
@@ -40,29 +43,45 @@ public class DataInitializer implements CommandLineRunner {
             flakePackageRepository.save(new FlakePackage(null, 1000, 6.99));
             flakePackageRepository.save(new FlakePackage(null, 2000, 11.99));
         }
-        if (userRepository.count() == 0) {
-            // Seed Sakura Owner user
-            User user = new User(null, "Sakura Owner", "sakura@sakura.com", "sakura002", "OWNER");
-            userRepository.save(user);
 
-            // Seed an Editor user
-            User editor = new User(null, "Yuki Editor", "editor@yuki.com", "editor123", "EDITOR");
-            userRepository.save(editor);
-        } else {
-            // Migrate Sakura Admin user to OWNER if present
-            userRepository.findByEmail("sakura@sakura.com").ifPresent(u -> {
-                if ("ADMIN".equals(u.getUser_type())) {
-                    u.setUser_type("OWNER");
-                    u.setName("Sakura Owner");
-                    userRepository.save(u);
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        try {
+            // Re-map any references of the legacy editor (ID 2) to the admin (ID 1)
+            jdbcTemplate.update("UPDATE novels SET creator_id = 1 WHERE creator_id = 2");
+            jdbcTemplate.update("UPDATE bookmarks SET user_id = 1 WHERE user_id = 2");
+            jdbcTemplate.update("UPDATE purchases SET user_id = 1 WHERE user_id = 2");
+            jdbcTemplate.update("UPDATE ratings SET user_id = 1 WHERE user_id = 2");
+
+            // Delete legacy users
+            jdbcTemplate.execute("DELETE FROM reader WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
+            
+            // Ensure owner exists with ID 0
+            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'sakura'");
+            if (owners.isEmpty()) {
+                jdbcTemplate.execute("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', 'sakura', 'OWNER', 100)");
+            } else {
+                Long currentOwnerId = ((Number) owners.get(0).get("id")).longValue();
+                if (currentOwnerId != 0L) {
+                    jdbcTemplate.update("UPDATE reader SET id = 0 WHERE id = ?", currentOwnerId);
                 }
-            });
+            }
+
+            // Ensure admin exists with ID 1
+            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'admin'");
+            if (admins.isEmpty()) {
+                jdbcTemplate.execute("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', 'admin', 'ADMIN', 100)");
+            } else {
+                Long currentAdminId = ((Number) admins.get(0).get("id")).longValue();
+                if (currentAdminId != 1L) {
+                    jdbcTemplate.update("UPDATE reader SET id = 1 WHERE id = ?", currentAdminId);
+                }
+            }
+        } finally {
+            jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
         }
 
-        User admin = userRepository.findByEmail("sakura@sakura.com").orElse(null);
-        User editor = userRepository.findByEmail("editor@yuki.com").orElse(null);
-        Long adminId = admin != null ? admin.getId() : 1L;
-        Long editorId = editor != null ? editor.getId() : 2L;
+        Long adminId = 1L;
+        Long editorId = 1L;
 
         if (novelRepository.count() == 0) {
             // 1. Seed Novel 1: Solo Leveling: Ragnarok
