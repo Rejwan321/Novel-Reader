@@ -43,14 +43,16 @@
             </ul>
 
             <div class="navbar-actions-group">
-                <div class="search-bar me-3">
-                    <form id="search-form" action="/" method="get">
-                        <input type="text" name="search" class="input" placeholder="Search..." th:value="${param.search}">
-                    </form>
-                    <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
+                <div class="search-wrapper position-relative me-3">
+                    <div class="search-bar">
+                        <form id="search-form" action="/" method="get">
+                            <input type="text" name="search" class="input" placeholder="Search..." th:value="${param.search}">
+                        </form>
+                        <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
+                    </div>
+                    <!-- Real-time Search Dropdown Menu -->
+                    <div id="search-results-dropdown" class="d-none search-results-dropdown-menu"></div>
                 </div>
-                <!-- Real-time Search Dropdown Menu -->
-                <div id="search-results-dropdown" class="d-none search-results-dropdown-menu"></div>
 
                 <div class="register" id="nav-auth-section">
                     <!-- Shown when User is NOT logged in -->
