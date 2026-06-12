@@ -8,6 +8,7 @@ import com.reader.Novel.Reader.repository.ChapterRepository;
 import com.reader.Novel.Reader.repository.UserRepository;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePackageRepository;
+import com.reader.Novel.Reader.util.PasswordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -63,24 +64,28 @@ public class DataInitializer implements CommandLineRunner {
             
             // Ensure owner exists with ID 0
             java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'sakura'");
+            String sakuraHashed = PasswordUtils.hashPassword("sakura");
             if (owners.isEmpty()) {
-                jdbcTemplate.execute("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', 'sakura', 'OWNER', 100)");
+                jdbcTemplate.update("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', ?, 'OWNER', 100)", sakuraHashed);
             } else {
                 Long currentOwnerId = ((Number) owners.get(0).get("id")).longValue();
                 if (currentOwnerId != 0L) {
                     jdbcTemplate.update("UPDATE reader SET id = 0 WHERE id = ?", currentOwnerId);
                 }
+                jdbcTemplate.update("UPDATE reader SET password = ? WHERE email = 'sakura'", sakuraHashed);
             }
 
             // Ensure admin exists with ID 1
             java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'admin'");
+            String adminHashed = PasswordUtils.hashPassword("admin");
             if (admins.isEmpty()) {
-                jdbcTemplate.execute("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', 'admin', 'ADMIN', 100)");
+                jdbcTemplate.update("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', ?, 'ADMIN', 100)", adminHashed);
             } else {
                 Long currentAdminId = ((Number) admins.get(0).get("id")).longValue();
                 if (currentAdminId != 1L) {
                     jdbcTemplate.update("UPDATE reader SET id = 1 WHERE id = ?", currentAdminId);
                 }
+                jdbcTemplate.update("UPDATE reader SET password = ? WHERE email = 'admin'", adminHashed);
             }
         } finally {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
