@@ -37,6 +37,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        String userHome = System.getProperty("user.home");
+        boolean isLocalDesktop = userHome != null && userHome.contains("sayan");
+
         if (flakePackageRepository.count() == 0) {
             flakePackageRepository.save(new FlakePackage(null, 100, 0.99));
             flakePackageRepository.save(new FlakePackage(null, 500, 3.99));
@@ -196,25 +199,11 @@ public class DataInitializer implements CommandLineRunner {
             Chapter m1c2 = new Chapter(null, manga1, "Priest Heiter's Request", 2.0, mangaImages2);
             chapterRepository.save(m1c2);
 
-            // 6. Seed Manga 2: Super Cub (with local cover URL path with accent characters)
-            Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
-                "it's about cub.",
-                "Zero Ts\u00fa.jpg",
-                "MANGA", "Slice of Life", 4.8, "ONGOING");
-            manga2.setCreatorId(editorId);
-            manga2 = novelRepository.save(manga2);
-
-            Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
-            chapterRepository.save(m2c1);
-
-            Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
-            chapterRepository.save(m2c2);
-        } else {
-            // Check if Super Cub exists in existing database, if not seed it
-            if (!novelRepository.findAll().stream().anyMatch(n -> "Super Cub".equalsIgnoreCase(n.getTitle()))) {
+            if (isLocalDesktop) {
+                // 6. Seed Manga 2: Super Cub (with local cover URL path with accent characters)
                 Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
                     "it's about cub.",
-                    "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
+                    "Zero Ts\u00fa.jpg",
                     "MANGA", "Slice of Life", 4.8, "ONGOING");
                 manga2.setCreatorId(editorId);
                 manga2 = novelRepository.save(manga2);
@@ -224,6 +213,24 @@ public class DataInitializer implements CommandLineRunner {
 
                 Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
                 chapterRepository.save(m2c2);
+            }
+        } else {
+            if (isLocalDesktop) {
+                // Check if Super Cub exists in existing database, if not seed it
+                if (!novelRepository.findAll().stream().anyMatch(n -> "Super Cub".equalsIgnoreCase(n.getTitle()))) {
+                    Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
+                        "it's about cub.",
+                        "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
+                        "MANGA", "Slice of Life", 4.8, "ONGOING");
+                    manga2.setCreatorId(editorId);
+                    manga2 = novelRepository.save(manga2);
+
+                    Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
+                    chapterRepository.save(m2c1);
+
+                    Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
+                    chapterRepository.save(m2c2);
+                }
             }
         }
 
