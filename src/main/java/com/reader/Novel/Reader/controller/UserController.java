@@ -64,10 +64,11 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
         }
         User target = service.getUserById(usr.getId());
-        if (target != null && "OWNER".equals(target.getUser_type())) {
+        boolean isOwner = "OWNER".equals(loggedInUser.getUser_type());
+        if (target != null && "OWNER".equals(target.getUser_type()) && !isOwner) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify owner."));
         }
-        if ("OWNER".equals(usr.getUser_type())) {
+        if ("OWNER".equals(usr.getUser_type()) && !isOwner) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot promote to owner."));
         }
         service.updateUser(usr);
