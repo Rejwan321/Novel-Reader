@@ -91,7 +91,7 @@ public class AdminRestController {
         }
 
         // Protect OWNER accounts from being modified
-        if ("OWNER".equals(userToModify.getUser_type())) {
+        if ("OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify an owner account."));
         }
 
@@ -194,7 +194,7 @@ public class AdminRestController {
         }
 
         // Protect OWNER accounts from being modified
-        if ("OWNER".equals(userToModify.getUser_type())) {
+        if ("OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify an owner account."));
         }
 
