@@ -936,8 +936,9 @@ public class AdminRestController {
             userLookup.put(u.getId(), u);
         }
 
+        boolean isOwner = "OWNER".equals(loggedInUser.getUser_type());
         java.util.List<User> allUsers = rawUsers.stream()
-            .filter(u -> !"OWNER".equals(u.getUser_type()))
+            .filter(u -> isOwner || !"OWNER".equals(u.getUser_type()))
             .collect(java.util.stream.Collectors.toList());
 
         List<Purchase> allPurchases = novelService.getAllPurchases();

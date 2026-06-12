@@ -25,8 +25,9 @@ public class UserController {
         if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
         }
+        boolean isOwner = "OWNER".equals(loggedInUser.getUser_type());
         return ResponseEntity.ok(service.getUsers().stream()
-                .filter(u -> !"OWNER".equals(u.getUser_type()))
+                .filter(u -> isOwner || !"OWNER".equals(u.getUser_type()))
                 .collect(Collectors.toList()));
     }
 
