@@ -83,7 +83,11 @@ $(document).ready(function() {
                         return;
                     }
                     
-                    // Group results by type
+                    var matchingAuthors = {};
+                    var matchingGenres = {};
+                    var qLower = query.toLowerCase();
+                    
+                    // Group results by type (only if TITLE matches)
                     var groups = {
                         "NOVEL": [],
                         "COMIC": [],
@@ -92,16 +96,70 @@ $(document).ready(function() {
                     };
                     
                     data.forEach(function(item) {
-                        var type = (item.type || "").toUpperCase();
-                        if (groups[type]) {
-                            groups[type].push(item);
-                        } else {
-                            if (!groups["OTHER"]) groups["OTHER"] = [];
-                            groups["OTHER"].push(item);
+                        var title = (item.title || "").toLowerCase();
+                        var author = (item.author || "");
+                        var genreStr = (item.genre || "");
+                        
+                        // 1. Author matching
+                        if (author.toLowerCase().indexOf(qLower) !== -1) {
+                            matchingAuthors[author] = (matchingAuthors[author] || 0) + 1;
+                        }
+                        
+                        // 2. Genre matching
+                        var genres = genreStr.split(",").map(function(g) { return g.trim(); });
+                        genres.forEach(function(g) {
+                            if (g.toLowerCase().indexOf(qLower) !== -1) {
+                                matchingGenres[g] = (matchingGenres[g] || 0) + 1;
+                            }
+                        });
+                        
+                        // 3. Title matching (for grouped thumbnail list)
+                        if (title.indexOf(qLower) !== -1) {
+                            var type = (item.type || "").toUpperCase();
+                            if (groups[type]) {
+                                groups[type].push(item);
+                            } else {
+                                if (!groups["OTHER"]) groups["OTHER"] = [];
+                                groups["OTHER"].push(item);
+                            }
                         }
                     });
                     
                     var html = "";
+                    
+                    // A. Search Action Header
+                    html += '<a href="#" class="search-action-item" id="search-action-submit">' +
+                            '  <span class="action-text"><i class="fa-solid fa-arrow-turn-down fa-rotate-90 me-2"></i>Search for <strong>' + query + '</strong></span>' +
+                            '  <i class="fa fa-arrow-right item-arrow"></i>' +
+                            '</a>';
+                            
+                    // B. Author Rows
+                    Object.keys(matchingAuthors).forEach(function(author) {
+                        var count = matchingAuthors[author];
+                        html += '<a href="/?search=' + encodeURIComponent(author) + '" class="search-badge-item">' +
+                                '  <div class="badge-content">' +
+                                '    <span class="search-badge badge-author">Author</span>' +
+                                '    <span class="item-name">' + author + '</span>' +
+                                '    <span class="item-count">' + count + '</span>' +
+                                '  </div>' +
+                                '  <i class="fa fa-arrow-right item-arrow"></i>' +
+                                '</a>';
+                    });
+                    
+                    // C. Genre Rows
+                    Object.keys(matchingGenres).forEach(function(genre) {
+                        var count = matchingGenres[genre];
+                        html += '<a href="/?genre=' + encodeURIComponent(genre) + '" class="search-badge-item">' +
+                                '  <div class="badge-content">' +
+                                '    <span class="search-badge badge-genre">Genre</span>' +
+                                '    <span class="item-name">' + genre + '</span>' +
+                                '    <span class="item-count">' + count + '</span>' +
+                                '  </div>' +
+                                '  <i class="fa fa-arrow-right item-arrow"></i>' +
+                                '</a>';
+                    });
+                    
+                    // D. Grouped Series (only if titles match query)
                     var typeLabels = {
                         "NOVEL": "Novels",
                         "COMIC": "Comics",
@@ -131,7 +189,8 @@ $(document).ready(function() {
                         }
                     });
                     
-                    if (!hasItems) {
+                    // If no authors, genres, or titles match
+                    if (Object.keys(matchingAuthors).length === 0 && Object.keys(matchingGenres).length === 0 && !hasItems) {
                         dropdown.html('<div class="p-3 text-muted text-center font-size-sm">No results found</div>');
                         dropdown.removeClass("d-none");
                         return;
@@ -142,6 +201,12 @@ $(document).ready(function() {
                     
                     dropdown.html(html);
                     dropdown.removeClass("d-none");
+                    
+                    // Hook search-action-submit click to submit form
+                    $("#search-action-submit").click(function(e) {
+                        e.preventDefault();
+                        $("#search-form").submit();
+                    });
                     
                     // Hook view-all click to submit form
                     $("#btn-view-all-results").click(function(e) {
@@ -376,6 +441,17 @@ $(document).ready(function() {
             if (selectedType === "COMIC") $("#tab-comics").addClass("active");
             if (selectedType === "MANHWA") $("#tab-manhwa").addClass("active");
             if (selectedType === "MANGA") $("#tab-manga").addClass("active");
+            applyFilters();
+        }
+        var genreParam = urlParams.get("genre");
+        if (genreParam) {
+            selectedGenre = genreParam;
+            $(".genre-chip").removeClass("active");
+            $(".genre-chip").each(function() {
+                if ($(this).data("genre").toLowerCase() === genreParam.toLowerCase()) {
+                    $(this).addClass("active");
+                }
+            });
             applyFilters();
         }
     }
