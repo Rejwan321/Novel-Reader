@@ -129,7 +129,7 @@ public class NovelService {
     }
 
     public List<Novel> searchNovels(String query) {
-        return novelRepository.findByTitleContainingIgnoreCase(query);
+        return novelRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseOrGenreContainingIgnoreCase(query, query, query);
     }
 
     public Novel getNovelById(Long id) {
