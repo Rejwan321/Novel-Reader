@@ -25,6 +25,7 @@ public class NovelReaderApplication implements CommandLineRunner {
     private UserRepository userRepository;
 
     public static void main(String[] args) {
+        System.setProperty("spring.h2.console.enabled", "true");
         SpringApplication.run(NovelReaderApplication.class, args);
     }
 

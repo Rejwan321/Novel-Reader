@@ -8,6 +8,7 @@ import com.reader.Novel.Reader.repository.ChapterRepository;
 import com.reader.Novel.Reader.repository.UserRepository;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePackageRepository;
+import com.reader.Novel.Reader.util.PasswordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,7 @@ public class DataInitializer implements CommandLineRunner {
 
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
         try {
+            jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS DECRYPT_PASSWORD FOR 'com.reader.Novel.Reader.util.PasswordUtils.decryptForH2'");
             // Re-map any references of the legacy editor (ID 2) to the admin (ID 1)
             jdbcTemplate.update("UPDATE novels SET creator_id = 1 WHERE creator_id = 2");
             jdbcTemplate.update("UPDATE bookmarks SET user_id = 1 WHERE user_id = 2");
@@ -59,29 +61,42 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update("UPDATE novels SET genre = REPLACE(genre, 'Slice Of Life', 'Slice of Life')");
 
             // Delete legacy users
-            jdbcTemplate.execute("DELETE FROM reader WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
+            jdbcTemplate.execute("DELETE FROM reader_internal WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
             
             // Ensure owner exists with ID 0
-            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'sakura'");
+            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");
+            String sakuraHashed = PasswordUtils.hashPassword("sakura");
             if (owners.isEmpty()) {
-                jdbcTemplate.execute("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', 'sakura', 'OWNER', 100)");
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', ?, 'OWNER', 100)", sakuraHashed);
             } else {
                 Long currentOwnerId = ((Number) owners.get(0).get("id")).longValue();
                 if (currentOwnerId != 0L) {
-                    jdbcTemplate.update("UPDATE reader SET id = 0 WHERE id = ?", currentOwnerId);
+                    jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = ?", currentOwnerId);
                 }
+                jdbcTemplate.update("UPDATE reader_internal SET password = ? WHERE email = 'sakura'", sakuraHashed);
             }
 
             // Ensure admin exists with ID 1
-            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'admin'");
+            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'admin'");
+            String adminHashed = PasswordUtils.hashPassword("admin");
             if (admins.isEmpty()) {
-                jdbcTemplate.execute("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', 'admin', 'ADMIN', 100)");
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', ?, 'ADMIN', 100)", adminHashed);
             } else {
                 Long currentAdminId = ((Number) admins.get(0).get("id")).longValue();
                 if (currentAdminId != 1L) {
-                    jdbcTemplate.update("UPDATE reader SET id = 1 WHERE id = ?", currentAdminId);
+                    jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = ?", currentAdminId);
                 }
+                jdbcTemplate.update("UPDATE reader_internal SET password = ? WHERE email = 'admin'", adminHashed);
             }
+
+            // Create the view named READER for H2 console users
+            jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
+            jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
+            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
+
+            // Create the H2 database user admin/admin with admin privileges
+            jdbcTemplate.execute("CREATE USER IF NOT EXISTS admin PASSWORD 'admin'");
+            jdbcTemplate.execute("ALTER USER admin ADMIN TRUE");
         } finally {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
         }
