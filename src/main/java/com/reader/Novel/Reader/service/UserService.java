@@ -96,7 +96,7 @@ public class UserService {
                     .setParameter("oldId", oldId)
                     .executeUpdate();
 
-            entityManager.createNativeQuery("UPDATE reader SET id = :newId WHERE id = :oldId")
+            entityManager.createNativeQuery("UPDATE reader_internal SET id = :newId WHERE id = :oldId")
                     .setParameter("newId", newId)
                     .setParameter("oldId", oldId)
                     .executeUpdate();
@@ -115,7 +115,7 @@ public class UserService {
             }
         }
         long nextId = maxId + 1;
-        entityManager.createNativeQuery("ALTER TABLE reader ALTER COLUMN id RESTART WITH " + nextId).executeUpdate();
+        entityManager.createNativeQuery("ALTER TABLE reader_internal ALTER COLUMN id RESTART WITH " + nextId).executeUpdate();
     }
 }
 
