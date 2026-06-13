@@ -81,6 +81,6 @@ public class PasswordUtils {
         } catch (Exception e) {
             // Ignore
         }
-        return "********";
+        return encryptedText;
     }
 }
