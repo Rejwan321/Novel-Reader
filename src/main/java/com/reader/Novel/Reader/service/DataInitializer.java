@@ -93,6 +93,10 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
             jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
             jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
+
+            // Create the H2 database user admin/admin with admin privileges
+            jdbcTemplate.execute("CREATE USER IF NOT EXISTS admin PASSWORD 'admin'");
+            jdbcTemplate.execute("ALTER USER admin ADMIN TRUE");
         } finally {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
         }
