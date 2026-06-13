@@ -25,9 +25,7 @@ public class NovelReaderApplication implements CommandLineRunner {
     private UserRepository userRepository;
 
     public static void main(String[] args) {
-        String userHome = System.getProperty("user.home");
-        boolean isLocal = userHome != null && userHome.contains("sayan");
-        System.setProperty("spring.h2.console.enabled", String.valueOf(isLocal));
+        System.setProperty("spring.h2.console.enabled", "true");
         SpringApplication.run(NovelReaderApplication.class, args);
     }
 
