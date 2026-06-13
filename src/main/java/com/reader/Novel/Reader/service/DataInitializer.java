@@ -61,33 +61,38 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update("UPDATE novels SET genre = REPLACE(genre, 'Slice Of Life', 'Slice of Life')");
 
             // Delete legacy users
-            jdbcTemplate.execute("DELETE FROM reader WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
+            jdbcTemplate.execute("DELETE FROM reader_internal WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
             
             // Ensure owner exists with ID 0
-            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'sakura'");
+            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");
             String sakuraHashed = PasswordUtils.hashPassword("sakura");
             if (owners.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', ?, 'OWNER', 100)", sakuraHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', ?, 'OWNER', 100)", sakuraHashed);
             } else {
                 Long currentOwnerId = ((Number) owners.get(0).get("id")).longValue();
                 if (currentOwnerId != 0L) {
-                    jdbcTemplate.update("UPDATE reader SET id = 0 WHERE id = ?", currentOwnerId);
+                    jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = ?", currentOwnerId);
                 }
-                jdbcTemplate.update("UPDATE reader SET password = ? WHERE email = 'sakura'", sakuraHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET password = ? WHERE email = 'sakura'", sakuraHashed);
             }
 
             // Ensure admin exists with ID 1
-            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader WHERE email = 'admin'");
+            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'admin'");
             String adminHashed = PasswordUtils.hashPassword("admin");
             if (admins.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', ?, 'ADMIN', 100)", adminHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', ?, 'ADMIN', 100)", adminHashed);
             } else {
                 Long currentAdminId = ((Number) admins.get(0).get("id")).longValue();
                 if (currentAdminId != 1L) {
-                    jdbcTemplate.update("UPDATE reader SET id = 1 WHERE id = ?", currentAdminId);
+                    jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = ?", currentAdminId);
                 }
-                jdbcTemplate.update("UPDATE reader SET password = ? WHERE email = 'admin'", adminHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET password = ? WHERE email = 'admin'", adminHashed);
             }
+
+            // Create the view named READER for H2 console users
+            jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
+            jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
+            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
         } finally {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
         }
