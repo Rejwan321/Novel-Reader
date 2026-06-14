@@ -30,20 +30,7 @@
                 <i class="fa fa-arrow-left me-1"></i> Details
             </a>
 
-            <!-- Chapter Picker -->
-            <div class="dropdown position-absolute start-50 translate-middle-x" id="dropdown-chapters-wrapper">
-                <button class="btn btn-sm btn-outline-light dropdown-toggle text-truncate" style="max-width: 220px;" type="button" id="chaptersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span th:text="'Ch ' + ${chapter.chapterNumber} + ': ' + ${chapter.title}">Ch 1: Title</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark dropdown-scrollable" aria-labelledby="chaptersDropdown" style="background-color: rgba(104, 85, 224, 0.6); border: 1px solid #bd53ed; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                    <li th:each="c : ${chapters}">
-                        <a class="dropdown-item" 
-                           th:classappend="${c.chapterNumber == chapter.chapterNumber ? 'active bg-violet' : ''}"
-                           th:href="@{'/novel/' + ${novel.id} + '/read/' + ${c.chapterNumber}}"
-                           th:text="'Ch ' + ${c.chapterNumber} + ': ' + ${c.title}">Ch 1: Chapter Name</a>
-                    </li>
-                </ul>
-            </div>
+
 
             <!-- Settings Drawer Trigger (Only for Novels/Text Content) -->
             <div class="d-flex align-items-center gap-2">
