@@ -33,7 +33,7 @@ body {
     color: var(--text-primary);
     font-family: var(--font-poppins);
     margin: 0;
-    padding-top: 0;
+    padding-top: 68px;
     position: relative;
     min-height: 100vh;
     display: flex;
