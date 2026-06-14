@@ -437,6 +437,10 @@
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-reviews-btn" onclick="switchTab('reviews')">
                         <i class="fa-solid fa-comment-dots text-violet"></i>User Reviews
                     </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-notifications-btn" onclick="switchTab('notifications')">
+                        <i class="fa-solid fa-bell text-warning"></i>Notifications
+                    </button>
 
                     <!-- Self-Destruct / Recovery Button (OWNER only) -->
                     <div th:if="${userRole == 'OWNER'}" class="mt-4 pt-3 border-top border-secondary">
@@ -919,6 +923,39 @@
                     </div>
                 </div>
 
+                <!-- Notifications Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-notifications" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1"><i class="fa-solid fa-bell text-warning me-2"></i>Notifications</h2>
+                            <p class="text-muted small mb-0">View comments and replies mentioning admin.</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-warning" onclick="loadNotifications()">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>Refresh
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle border-0" style="background-color: #120e2e; border-radius: 12px; overflow: hidden;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid rgba(255,255,255,0.05);">
+                                    <th scope="col" style="padding: 16px;">Author</th>
+                                    <th scope="col" style="padding: 16px;">Comment</th>
+                                    <th scope="col" style="padding: 16px;">Source</th>
+                                    <th scope="col" style="padding: 16px;">Created At</th>
+                                    <th scope="col" style="padding: 16px;">Status</th>
+                                    <th scope="col" style="padding: 16px; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifications-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">Loading notifications...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Analytics Dashboard Pane -->
                 <div th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-card" id="pane-analytics" style="display: none;">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1165,13 +1202,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -1188,6 +1225,8 @@
                 loadAnalytics();
             } else if (tab === 'reviews') {
                 loadReviews();
+            } else if (tab === 'notifications') {
+                loadNotifications();
             }
         }
 
@@ -1249,6 +1288,104 @@
                 },
                 error: function(err) {
                     showToast("Error deleting review: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                }
+            });
+        }
+
+        function loadNotifications() {
+            var tbody = $("#notifications-table-body");
+            tbody.html('<tr><td colspan="6" class="text-center text-muted py-4"><i class="fa fa-spinner fa-spin me-2"></i>Loading notifications...</td></tr>');
+            
+            $.get("/api/admin/notifications")
+                .done(function(notifications) {
+                    tbody.empty();
+                    if (!notifications || notifications.length === 0) {
+                        tbody.html('<tr><td colspan="6" class="text-center text-muted py-4">No notifications yet.</td></tr>');
+                        return;
+                    }
+                    notifications.forEach(function(notif) {
+                        var dateStr = notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'N/A';
+                        var isReadText = notif.read ? 'Read' : 'Unread';
+                        var statusClass = notif.read ? 'badge bg-secondary' : 'badge bg-warning text-dark';
+                        
+                        var tr = $('<tr></tr>');
+                        tr.append($('<td style="padding: 16px; font-weight: 600; color: #00e5ff;"></td>').text(notif.mentionerName));
+                        tr.append($('<td style="padding: 16px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></td>').text(notif.snippet).attr("title", notif.snippet));
+                        
+                        var sourceTd = $('<td style="padding: 16px;"></td>');
+                        var readLink = '/novel/' + notif.novelId + '/read/' + notif.chapterNumber;
+                        var linkEl = $('<a href="' + readLink + '" target="_blank" style="color: #2ecc71; text-decoration: none; font-weight: 500;"></a>')
+                            .text(notif.novelTitle + ' - Ch. ' + notif.chapterNumber);
+                        sourceTd.append(linkEl);
+                        tr.append(sourceTd);
+                        
+                        tr.append($('<td style="padding: 16px; color: #a1a1b5;"></td>').text(dateStr));
+                        
+                        var statusTd = $('<td style="padding: 16px;"></td>');
+                        var statusBadge = $('<span class="' + statusClass + '" style="font-size:0.75rem; font-weight:600; cursor:pointer;"></span>')
+                            .text(isReadText)
+                            .click(function() {
+                                toggleNotificationRead(notif.id);
+                            });
+                        statusTd.append(statusBadge);
+                        tr.append(statusTd);
+                        
+                        var actionTd = $('<td style="padding: 16px; text-align: right; gap: 8px; display: flex; justify-content: flex-end;"></td>');
+                        
+                        // Toggle Read Button
+                        var readBtn = $('<button class="btn btn-sm btn-outline-info px-2 py-1 rounded" style="font-weight:600; font-size:0.75rem;"></button>');
+                        if (notif.read) {
+                            readBtn.html('<i class="fa fa-envelope-open me-1"></i>Mark Unread');
+                        } else {
+                            readBtn.html('<i class="fa fa-envelope me-1"></i>Mark Read');
+                        }
+                        readBtn.click(function() {
+                            toggleNotificationRead(notif.id);
+                        });
+                        actionTd.append(readBtn);
+                        
+                        // Delete Button
+                        var delBtn = $('<button class="btn btn-sm btn-danger px-2 py-1 rounded" style="font-weight:600; font-size:0.75rem;"><i class="fa fa-trash me-1"></i>Delete</button>');
+                        delBtn.click(function() {
+                            if (confirm("Are you sure you want to delete this notification?")) {
+                                deleteNotification(notif.id);
+                            }
+                        });
+                        actionTd.append(delBtn);
+                        
+                        tr.append(actionTd);
+                        tbody.append(tr);
+                    });
+                })
+                .fail(function(err) {
+                    tbody.html('<tr><td colspan="6" class="text-center text-danger py-4">Error loading notifications: ' + (err.responseJSON ? err.responseJSON.error : "Unknown error") + '</td></tr>');
+                });
+        }
+
+        function toggleNotificationRead(id) {
+            $.ajax({
+                url: '/api/admin/notifications/' + id + '/toggle-read',
+                type: 'PUT',
+                success: function(res) {
+                    showToast("Notification status updated.");
+                    loadNotifications();
+                },
+                error: function(err) {
+                    showToast("Error updating status: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                }
+            });
+        }
+
+        function deleteNotification(id) {
+            $.ajax({
+                url: '/api/admin/notifications/' + id,
+                type: 'DELETE',
+                success: function(res) {
+                    showToast("Notification deleted successfully.");
+                    loadNotifications();
+                },
+                error: function(err) {
+                    showToast("Error deleting notification: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
                 }
             });
         }
@@ -2674,9 +2811,9 @@
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);

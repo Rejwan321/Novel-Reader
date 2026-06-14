@@ -1,8 +1,12 @@
 package com.reader.Novel.Reader.controller;
 
+import com.reader.Novel.Reader.model.Chapter;
 import com.reader.Novel.Reader.model.Comment;
+import com.reader.Novel.Reader.model.Notification;
 import com.reader.Novel.Reader.model.User;
+import com.reader.Novel.Reader.repository.ChapterRepository;
 import com.reader.Novel.Reader.repository.CommentRepository;
+import com.reader.Novel.Reader.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +22,36 @@ public class CommentRestController {
 
     @Autowired
     private CommentRepository commentRepository;
+
+    @Autowired
+    private ChapterRepository chapterRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    private void checkAndCreateNotification(Comment comment) {
+        String content = comment.getContent();
+        if (content == null) return;
+        String lower = content.toLowerCase();
+        if (lower.contains("@admin") || lower.contains("@system admin") || lower.contains("@systemadmin")) {
+            chapterRepository.findById(comment.getChapterId()).ifPresent(chapter -> {
+                com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
+                if (novel != null) {
+                    String snippet = content.length() > 100 ? content.substring(0, 97) + "..." : content;
+                    Notification notification = new Notification(
+                        comment,
+                        comment.getUser().getName(),
+                        snippet,
+                        novel.getId(),
+                        novel.getTitle(),
+                        chapter.getChapterNumber(),
+                        chapter.getId()
+                    );
+                    notificationRepository.save(notification);
+                }
+            });
+        }
+    }
 
     @GetMapping("/chapters/{chapterId}/comments")
     public ResponseEntity<List<Comment>> getComments(@PathVariable Long chapterId) {
@@ -46,6 +80,7 @@ public class CommentRestController {
 
         Comment comment = new Comment(chapterId, loggedInUser, content.trim());
         Comment saved = commentRepository.save(comment);
+        checkAndCreateNotification(saved);
         return ResponseEntity.ok(saved);
     }
 
@@ -144,6 +179,7 @@ public class CommentRestController {
         parent.getReplies().add(reply);
         
         Comment saved = commentRepository.save(reply);
+        checkAndCreateNotification(saved);
         return ResponseEntity.ok(saved);
     }
 
