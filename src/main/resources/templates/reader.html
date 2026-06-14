@@ -172,6 +172,23 @@
     <!-- Main Reader Workspace -->
     <main class="container py-4 my-3 d-flex flex-column align-items-center" style="min-height: 80vh;">
 
+        <!-- Navigation Controls at Top -->
+        <div class="navigation-controls d-flex justify-content-between align-items-center w-100 max-width-reader mb-4">
+            <!-- Previous Button -->
+            <a id="nav-btn-prev-top" class="btn btn-premium px-4"
+               th:classappend="${prevChapterNumber == null ? 'disabled btn-secondary-muted' : ''}"
+               th:href="${prevChapterNumber != null ? '/novel/' + novel.id + '/read/' + prevChapterNumber : '#'}">
+                <i class="fa fa-chevron-left me-2"></i> Previous
+            </a>
+
+            <!-- Next Button -->
+            <a id="nav-btn-next-top" class="btn btn-premium px-4"
+               th:classappend="${nextChapterNumber == null ? 'disabled btn-secondary-muted' : ''}"
+               th:href="${nextChapterNumber != null ? '/novel/' + novel.id + '/read/' + nextChapterNumber : '#'}">
+                Next <i class="fa fa-chevron-right ms-2"></i>
+            </a>
+        </div>
+
 
         <!-- Novel / Text Content Viewer -->
         <div th:if="${!isImageContent}" class="novel-reader-container p-4 p-md-5 rounded shadow" id="novel-reading-frame">
