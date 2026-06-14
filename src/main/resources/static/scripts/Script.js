@@ -2,8 +2,6 @@
 
 $(document).ready(function() {
 
-
-
     // --- Toast Notification Helper ---
     function showToast(message, type = "success") {
         var toastEl = document.getElementById('actionToast');

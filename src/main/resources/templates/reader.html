@@ -6,9 +6,9 @@
     <meta name="description" content="Read novels and comics online. Support customizable reading environments, including fonts, sizes, and dark/sepia/light themes.">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='3.1')}"/>
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/reader.css(v='3.1')}"/>
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css(v='3.1')}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/reader.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,97 +17,14 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <title th:text="${novel.title} + ' - Ch ' + ${chapter.chapterNumber} + ': ' + ${chapter.title} + ' - Yuki Tales'">Reader - Yuki Tales</title>
-    <style>
-        /* Comment Feed styles */
-        .comment-card {
-            background: rgba(15, 15, 27, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            transition: all 0.3s ease;
-        }
-        .comment-card:hover {
-            background: rgba(15, 15, 27, 0.8);
-            border-color: rgba(94, 99, 182, 0.3);
-        }
-        .comment-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #00e5ff, #bd53ed);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-        .comment-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .comment-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .comment-author-name {
-            font-weight: 600;
-            color: #ffffff;
-            font-size: 0.95rem;
-        }
-        .comment-badge {
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 99px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .badge-owner { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
-        .badge-admin { background: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3); }
-        .badge-editor { background: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3); }
-        .badge-proofreader { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
-        .badge-reader { background: rgba(255, 255, 255, 0.07); color: #e0e0e0; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .comment-time {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        .comment-body {
-            color: #d1d2d6;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .btn-delete-comment {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.9rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        .btn-delete-comment:hover {
-            color: #ff3366;
-            background: rgba(255, 51, 102, 0.1);
-        }
-    </style>
 </head>
 <body class="dark-theme" id="reader-body">
     <!-- Navbar -->
     <div th:replace="~{fragments/Navbar :: navbar}"></div>
 
     <!-- Floating Sub-Navbar (Reader Toolbar) -->
-    <div class="reader-toolbar sticky-top shadow-sm">
-        <div class="container h-100 position-relative d-flex align-items-center justify-content-between">
+    <div class="reader-toolbar sticky-top shadow-sm py-2">
+        <div class="container position-relative d-flex align-items-center justify-content-between">
             <!-- Back to Details -->
             <a th:href="@{'/novel/' + ${novel.id}}" class="btn btn-sm btn-outline-light text-decoration-none">
                 <i class="fa fa-arrow-left me-1"></i> Return
@@ -166,7 +83,25 @@
 
     <!-- Main Reader Workspace -->
     <main class="container py-4 my-3 d-flex flex-column align-items-center" style="min-height: 80vh;">
+        
+        <!-- Navigation Buttons at Top -->
+        <div class="navigation-controls d-flex justify-content-between align-items-center w-100 max-width-reader mb-4">
+            <!-- Previous Button -->
+            <a id="nav-btn-prev-top" class="btn btn-premium px-4"
+               th:classappend="${prevChapterNumber == null ? 'disabled btn-secondary-muted' : ''}"
+               th:href="${prevChapterNumber != null ? '/novel/' + novel.id + '/read/' + prevChapterNumber : '#'}">
+                <i class="fa fa-chevron-left me-2"></i> Previous
+            </a>
 
+
+
+            <!-- Next Button -->
+            <a id="nav-btn-next-top" class="btn btn-premium px-4"
+               th:classappend="${nextChapterNumber == null ? 'disabled btn-secondary-muted' : ''}"
+               th:href="${nextChapterNumber != null ? '/novel/' + novel.id + '/read/' + nextChapterNumber : '#'}">
+                Next <i class="fa fa-chevron-right ms-2"></i>
+            </a>
+        </div>
 
         <!-- Novel / Text Content Viewer -->
         <div th:if="${!isImageContent}" class="novel-reader-container p-4 p-md-5 rounded shadow" id="novel-reading-frame">
@@ -206,36 +141,6 @@
                th:href="${nextChapterNumber != null ? '/novel/' + novel.id + '/read/' + nextChapterNumber : '#'}">
                 Next <i class="fa fa-chevron-right ms-2"></i>
             </a>
-        </div>
-
-        <!-- Comments Section -->
-        <div class="comments-section w-100 max-width-reader mt-4 mb-5 p-4 rounded shadow" style="background: rgba(24, 24, 41, 0.95); border: 1px solid rgba(94, 99, 182, 0.25);">
-            <h3 class="h5 fw-bold text-white mb-4 font-outfit d-flex align-items-center gap-2">
-                <i class="fa-solid fa-comments" style="color: #00e5ff;"></i> Join the Discussion (<span id="comment-count">0</span>)
-            </h3>
-
-            <!-- Comment Input Area -->
-            <div class="comment-input-area mb-4">
-                <div th:if="${session.user != null}">
-                    <form id="comment-form">
-                        <div class="mb-3">
-                            <textarea class="form-control text-white border-secondary" id="comment-content" rows="3" placeholder="Share your thoughts on this chapter..." style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px;" required></textarea>
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-premium px-4" id="btn-submit-comment">Post Comment</button>
-                        </div>
-                    </form>
-                </div>
-                <div th:if="${session.user == null}" class="text-center p-3 rounded" style="background: rgba(15, 15, 27, 0.6); border: 1px dashed rgba(255, 255, 255, 0.1);">
-                    <p class="text-muted mb-2 font-size-sm">You must be logged in to post comments.</p>
-                    <button class="btn btn-sm btn-premium px-4" onclick="document.body.classList.add('show-popup')">Login / Signup</button>
-                </div>
-            </div>
-
-            <!-- Comments Feed -->
-            <div class="comments-feed" id="comments-feed">
-                <!-- Loaded dynamically -->
-            </div>
         </div>
     </main>
 
@@ -287,7 +192,7 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='3.1')}"></script>
+    <script th:src="@{/scripts/Script.js(v='1.1')}"></script>
     <script th:inline="javascript">
         // Convert HTML content to formatted plain text for editing
         function htmlToPlainText(html) {
@@ -386,114 +291,6 @@
                     window.location.href = "/novel/" + novelId + "/read/" + number;
                 }).fail(function(err) {
                     alert("Error updating chapter: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
-                });
-            });
-
-            // Chapter Comments logic
-            var chapterId = [[${chapter.id}]];
-            var currentUserId = [[${session.user != null ? session.user.id : null}]];
-            var currentUserRole = [[${session.user != null ? session.user.user_type : null}]];
-
-            function loadComments() {
-                $.getJSON('/api/chapters/' + chapterId + '/comments', function(comments) {
-                    $('#comment-count').text(comments.length);
-                    var feed = $('#comments-feed');
-                    feed.empty();
-                    
-                    if (comments.length === 0) {
-                        feed.html('<p class="text-center text-muted my-4 font-size-sm">No comments yet. Be the first to start the conversation!</p>');
-                        return;
-                    }
-                    
-                    comments.forEach(function(comment) {
-                        var author = comment.user;
-                        var initials = (author.name || "U").substring(0, 1).toUpperCase();
-                        
-                        var badgeClass = 'badge-reader';
-                        var roleName = author.user_type || 'READER';
-                        if (roleName === 'OWNER') badgeClass = 'badge-owner';
-                        else if (roleName === 'ADMIN') badgeClass = 'badge-admin';
-                        else if (roleName === 'EDITOR') badgeClass = 'badge-editor';
-                        else if (roleName === 'PROOFREADER') badgeClass = 'badge-proofreader';
-                        
-                        // Parse creation date
-                        var date = new Date(comment.createdAt);
-                        var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
-                        // Show delete button if user is Admin, Owner, or the author of the comment
-                        var canDelete = (currentUserId && (currentUserId === author.id || currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
-                        var deleteBtnHtml = canDelete ? 
-                            '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
-                        
-                        var cardHtml = 
-                            '<div class="comment-card" id="comment-card-' + comment.id + '">' +
-                            '  <div class="d-flex gap-3">' +
-                            '    <div class="comment-avatar">' + initials + '</div>' +
-                            '    <div class="flex-grow-1">' +
-                            '      <div class="comment-header">' +
-                            '        <div class="comment-meta">' +
-                            '          <span class="comment-author-name">' + author.name + '</span>' +
-                            '          <span class="comment-badge ' + badgeClass + '">' + roleName + '</span>' +
-                            '          <span class="comment-time">' + formattedTime + '</span>' +
-                            '        </div>' +
-                            '        ' + deleteBtnHtml +
-                            '      </div>' +
-                            '      <div class="comment-body">' + escapeHtml(comment.content) + '</div>' +
-                            '    </div>' +
-                            '  </div>' +
-                            '</div>';
-                        feed.append(cardHtml);
-                    });
-                });
-            }
-
-            function escapeHtml(str) {
-                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-            }
-
-            loadComments();
-
-            // Submit comment handler
-            $('#comment-form').submit(function(e) {
-                e.preventDefault();
-                var content = $('#comment-content').val().trim();
-                if (!content) return;
-                
-                var btn = $('#btn-submit-comment');
-                btn.prop('disabled', true).text('Posting...');
-                
-                $.post('/api/chapters/' + chapterId + '/comments', {
-                    content: content
-                }).done(function() {
-                    $('#comment-content').val('');
-                    loadComments();
-                }).fail(function(err) {
-                    alert("Error posting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
-                }).always(function() {
-                    btn.prop('disabled', false).text('Post Comment');
-                });
-            });
-
-            // Delete comment handler
-            $(document).on('click', '.btn-delete-comment-action', function(e) {
-                e.preventDefault();
-                var id = $(this).data('id');
-                if (!confirm("Are you sure you want to delete this comment?")) return;
-                
-                $.ajax({
-                    url: '/api/comments/' + id,
-                    type: 'DELETE'
-                }).done(function() {
-                    $('#comment-card-' + id).fadeOut(300, function() {
-                        $(this).remove();
-                        // Update comment count manually or reload
-                        var currentCount = parseInt($('#comment-count').text()) || 0;
-                        if (currentCount > 0) {
-                            $('#comment-count').text(currentCount - 1);
-                        }
-                    });
-                }).fail(function(err) {
-                    alert("Error deleting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
                 });
             });
         });
