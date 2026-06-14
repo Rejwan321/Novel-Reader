@@ -433,6 +433,10 @@
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-flakes-btn" onclick="switchTab('flakes')">
                         <i class="fa-solid fa-snowflake text-info"></i>Snow Flakes Price
                     </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-reviews-btn" onclick="switchTab('reviews')">
+                        <i class="fa-solid fa-comment-dots text-violet"></i>User Reviews
+                    </button>
 
                     <!-- Self-Destruct / Recovery Button (OWNER only) -->
                     <div th:if="${userRole == 'OWNER'}" class="mt-4 pt-3 border-top border-secondary">
@@ -882,6 +886,31 @@
                     </div>
                 </div>
 
+                <!-- User Reviews Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-reviews" style="display: none;">
+                    <h2 class="h4 fw-bold text-white mb-3"><i class="fa-solid fa-comment-dots text-violet me-2"></i>User Reviews</h2>
+                    <p class="text-muted small mb-4">View and manage feedback/reviews submitted by readers.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle border-0" style="background-color: #120e2e; border-radius: 12px; overflow: hidden;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid rgba(255,255,255,0.05);">
+                                    <th scope="col" style="padding: 16px;">Name</th>
+                                    <th scope="col" style="padding: 16px;">Rating</th>
+                                    <th scope="col" style="padding: 16px;">Comment</th>
+                                    <th scope="col" style="padding: 16px;">Submitted At</th>
+                                    <th scope="col" style="padding: 16px; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviews-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Loading reviews...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Analytics Dashboard Pane -->
                 <div th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-card" id="pane-analytics" style="display: none;">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1128,13 +1157,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -1149,7 +1178,71 @@
 
             if (tab === 'analytics') {
                 loadAnalytics();
+            } else if (tab === 'reviews') {
+                loadReviews();
             }
+        }
+
+        function loadReviews() {
+            var tbody = $("#reviews-table-body");
+            tbody.html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fa fa-spinner fa-spin me-2"></i>Loading reviews...</td></tr>');
+            
+            $.get("/api/admin/reviews")
+                .done(function(reviews) {
+                    tbody.empty();
+                    if (!reviews || reviews.length === 0) {
+                        tbody.html('<tr><td colspan="5" class="text-center text-muted py-4">No reviews submitted yet.</td></tr>');
+                        return;
+                    }
+                    reviews.forEach(function(review) {
+                        // Render rating stars
+                        var starsHtml = '';
+                        for (var i = 1; i <= 5; i++) {
+                            if (i <= review.rating) {
+                                starsHtml += '<i class="fa-solid fa-star text-warning me-1"></i>';
+                            } else {
+                                starsHtml += '<i class="fa-regular fa-star text-warning me-1"></i>';
+                            }
+                        }
+                        
+                        // Format date
+                        var dateStr = review.createdAt ? new Date(review.createdAt).toLocaleString() : 'N/A';
+                        
+                        var tr = $('<tr></tr>');
+                        tr.append($('<td style="padding: 16px; font-weight: 600; color: #00e5ff;"></td>').text(review.name));
+                        tr.append($('<td style="padding: 16px;"></td>').html(starsHtml));
+                        tr.append($('<td style="padding: 16px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></td>').text(review.comment).attr("title", review.comment));
+                        tr.append($('<td style="padding: 16px; color: #a1a1b5;"></td>').text(dateStr));
+                        
+                        var actionTd = $('<td style="padding: 16px; text-align: right;"></td>');
+                        var btn = $('<button class="btn btn-sm btn-danger px-3 py-1 rounded" style="font-weight:600;"><i class="fa fa-trash me-1"></i>Delete</button>');
+                        btn.click(function() {
+                            if (confirm("Are you sure you want to delete this review from " + review.name + "?")) {
+                                deleteReview(review.id);
+                            }
+                        });
+                        actionTd.append(btn);
+                        tr.append(actionTd);
+                        tbody.append(tr);
+                    });
+                })
+                .fail(function(err) {
+                    tbody.html('<tr><td colspan="5" class="text-center text-danger py-4">Error loading reviews: ' + (err.responseJSON ? err.responseJSON.error : "Unknown error") + '</td></tr>');
+                });
+        }
+
+        function deleteReview(id) {
+            $.ajax({
+                url: '/api/admin/reviews/' + id,
+                type: 'DELETE',
+                success: function(res) {
+                    showToast("Review deleted successfully.");
+                    loadReviews();
+                },
+                error: function(err) {
+                    showToast("Error deleting review: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                }
+            });
         }
 
         $(document).ready(function() {
@@ -2469,9 +2562,9 @@
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);
