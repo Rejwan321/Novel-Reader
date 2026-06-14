@@ -21,7 +21,7 @@ public class CommentRestController {
 
     @GetMapping("/chapters/{chapterId}/comments")
     public ResponseEntity<List<Comment>> getComments(@PathVariable Long chapterId) {
-        List<Comment> comments = commentRepository.findByChapterIdOrderByCreatedAtAsc(chapterId);
+        List<Comment> comments = commentRepository.findByChapterIdAndParentIsNullOrderByCreatedAtAsc(chapterId);
         return ResponseEntity.ok(comments);
     }
 
@@ -46,6 +46,104 @@ public class CommentRestController {
 
         Comment comment = new Comment(chapterId, loggedInUser, content.trim());
         Comment saved = commentRepository.save(comment);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/comments/{commentId}/like")
+    public ResponseEntity<?> likeComment(@PathVariable Long commentId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to like comments."));
+        }
+        
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+        if (commentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comment not found."));
+        }
+        
+        Comment comment = commentOpt.get();
+        Long userId = loggedInUser.getId();
+        
+        if (comment.getLikedUserIds().contains(userId)) {
+            comment.getLikedUserIds().remove(userId);
+        } else {
+            comment.getLikedUserIds().add(userId);
+            comment.getDislikedUserIds().remove(userId);
+        }
+        
+        commentRepository.save(comment);
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "likes", comment.getLikedUserIds().size(),
+            "dislikes", comment.getDislikedUserIds().size(),
+            "liked", comment.getLikedUserIds().contains(userId),
+            "disliked", comment.getDislikedUserIds().contains(userId)
+        ));
+    }
+
+    @PostMapping("/comments/{commentId}/dislike")
+    public ResponseEntity<?> dislikeComment(@PathVariable Long commentId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to dislike comments."));
+        }
+        
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+        if (commentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comment not found."));
+        }
+        
+        Comment comment = commentOpt.get();
+        Long userId = loggedInUser.getId();
+        
+        if (comment.getDislikedUserIds().contains(userId)) {
+            comment.getDislikedUserIds().remove(userId);
+        } else {
+            comment.getDislikedUserIds().add(userId);
+            comment.getLikedUserIds().remove(userId);
+        }
+        
+        commentRepository.save(comment);
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "likes", comment.getLikedUserIds().size(),
+            "dislikes", comment.getDislikedUserIds().size(),
+            "liked", comment.getLikedUserIds().contains(userId),
+            "disliked", comment.getDislikedUserIds().contains(userId)
+        ));
+    }
+
+    @PostMapping("/comments/{commentId}/reply")
+    public ResponseEntity<?> addReply(
+            @PathVariable Long commentId,
+            @RequestParam String content,
+            HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to post replies."));
+        }
+        
+        if (content == null || content.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Reply content cannot be empty."));
+        }
+
+        if (content.length() > 2000) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Reply length cannot exceed 2000 characters."));
+        }
+
+        Optional<Comment> parentOpt = commentRepository.findById(commentId);
+        if (parentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Parent comment not found."));
+        }
+
+        Comment parent = parentOpt.get();
+        Comment reply = new Comment(parent.getChapterId(), loggedInUser, content.trim());
+        reply.setParent(parent);
+        parent.getReplies().add(reply);
+        
+        Comment saved = commentRepository.save(reply);
         return ResponseEntity.ok(saved);
     }
 

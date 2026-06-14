@@ -26,6 +26,25 @@ public class Comment {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Comment parent;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC")
+    private java.util.List<Comment> replies = new java.util.ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "comment_likes", joinColumns = @JoinColumn(name = "comment_id"))
+    @Column(name = "user_id")
+    private java.util.Set<Long> likedUserIds = new java.util.HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "comment_dislikes", joinColumns = @JoinColumn(name = "comment_id"))
+    @Column(name = "user_id")
+    private java.util.Set<Long> dislikedUserIds = new java.util.HashSet<>();
+
     public Comment() {
     }
 
