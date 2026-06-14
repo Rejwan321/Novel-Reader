@@ -512,6 +512,7 @@ public class AdminRestController {
             @RequestParam Double chapterNumber,
             @RequestParam String content,
             @RequestParam(defaultValue = "0") Integer price,
+            @RequestParam(required = false) String publishAt,
             HttpSession session) {
 
         if (isRestricted(session)) {
@@ -550,6 +551,13 @@ public class AdminRestController {
         }
 
         Chapter chapter = new Chapter(null, novel, title.trim(), chapterNumber, content.trim(), price);
+        if (publishAt != null && !publishAt.trim().isEmpty()) {
+            try {
+                chapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
+            } catch (Exception e) {
+                // ignore parsing error
+            }
+        }
         Chapter saved = chapterServiceHelper(chapter);
         syncChapterFiles(saved);
 
@@ -654,6 +662,7 @@ public class AdminRestController {
             @RequestParam Double chapterNumber,
             @RequestParam String content,
             @RequestParam(defaultValue = "0") Integer price,
+            @RequestParam(required = false) String publishAt,
             HttpSession session) {
 
         if (isRestricted(session)) {
@@ -698,6 +707,15 @@ public class AdminRestController {
         existingChapter.setChapterNumber(chapterNumber);
         existingChapter.setContent(content.trim());
         existingChapter.setPrice(price);
+        if (publishAt != null && !publishAt.trim().isEmpty()) {
+            try {
+                existingChapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
+            } catch (Exception e) {
+                // ignore parsing error
+            }
+        } else {
+            existingChapter.setPublishAt(null);
+        }
 
         Chapter saved = novelService.saveChapter(existingChapter);
         syncChapterFiles(saved);
