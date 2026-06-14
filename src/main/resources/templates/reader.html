@@ -197,34 +197,35 @@
         // Convert HTML content to formatted plain text for editing
         function htmlToPlainText(html) {
             if (!html) return "";
-            var temp = document.createElement("div");
-            temp.innerHTML = html;
+            var text = html;
             
-            // Convert bold and italic elements to markdown representation
-            temp.querySelectorAll("b, strong").forEach(function(el) {
-                el.outerHTML = "**" + el.innerHTML + "**";
-            });
-            temp.querySelectorAll("i, em").forEach(function(el) {
-                el.outerHTML = "*" + el.innerHTML + "*";
-            });
+            // Replace bold tags with markdown representation
+            text = text.replace(/<b\b[^>]*>(.*?)<\/b>/gi, "**$1**");
+            text = text.replace(/<strong\b[^>]*>(.*?)<\/strong>/gi, "**$1**");
             
-            // Map paragraphs to double newlines
-            var paragraphs = temp.querySelectorAll("p");
-            if (paragraphs.length > 0) {
-                var parts = [];
-                paragraphs.forEach(function(p) {
-                    parts.push(p.innerText || p.textContent || "");
-                });
-                return parts.join("\n\n");
-            }
+            // Replace italic tags with markdown representation
+            text = text.replace(/<i\b[^>]*>(.*?)<\/i>/gi, "*$1*");
+            text = text.replace(/<em\b[^>]*>(.*?)<\/em>/gi, "*$1*");
             
-            // Fallback for line breaks if no <p> tags are present
-            var htmlStr = temp.innerHTML;
-            htmlStr = htmlStr.replace(/<br\s*\/?>/gi, "\n");
+            // Convert paragraph blocks to newlines
+            text = text.replace(/<p\b[^>]*>/gi, "");
+            text = text.replace(/<\/p>/gi, "\n\n");
             
-            var cleanTemp = document.createElement("div");
-            cleanTemp.innerHTML = htmlStr;
-            return (cleanTemp.innerText || cleanTemp.textContent || "").trim();
+            // Convert line breaks to newlines
+            text = text.replace(/<br\s*\/?>/gi, "\n");
+            
+            // Strip any remaining HTML tags
+            text = text.replace(/<[^>]+>/g, "");
+            
+            // Decode HTML entities
+            text = text.replace(/&nbsp;/g, " ")
+                       .replace(/&lt;/g, "<")
+                       .replace(/&gt;/g, ">")
+                       .replace(/&amp;/g, "&")
+                       .replace(/&quot;/g, '"')
+                       .replace(/&#39;/g, "'");
+                       
+            return text.trim();
         }
 
         // Convert formatted plain text back to HTML for storage
