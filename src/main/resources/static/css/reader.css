@@ -6,18 +6,13 @@
 
 .reader-toolbar {
     position: sticky;
-    top: 50px !important;
-    background: #0f0f1a;
+    top: 68px;
+    background: rgba(24, 24, 41, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     z-index: 1030 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
 }
-
-
 
 /* Settings Panel */
 .reader-settings-panel {
@@ -109,9 +104,6 @@ body.theme-light {
     background-color: #f5f6fa !important;
     color: #2f3640 !important;
 }
-body.theme-light .reader-toolbar {
-    background-color: #f5f6fa !important;
-}
 body.theme-light .novel-reader-container {
     background-color: #ffffff !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
@@ -125,9 +117,6 @@ body.theme-light .novel-reader-container h2 {
 body.theme-sepia {
     background-color: #f4edd8 !important;
     color: #5d4037 !important;
-}
-body.theme-sepia .reader-toolbar {
-    background-color: #f4edd8 !important;
 }
 body.theme-sepia .novel-reader-container {
     background-color: #fbf6eb !important;
