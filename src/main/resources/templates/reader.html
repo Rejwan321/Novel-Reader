@@ -113,7 +113,12 @@
                 <i class="fa fa-arrow-left me-1"></i> Return
             </a>
 
-
+            <!-- Chapter Info in Middle -->
+            <div class="chapter-info-center text-truncate mx-2 text-center" style="max-width: 50%;">
+                <span class="text-white-50 font-size-xs" th:text="'Chapter ' + ${chapter.chapterNumber}">Chapter 1.0</span>
+                <span class="text-muted mx-1">|</span>
+                <span class="text-white fw-bold font-outfit font-size-sm" th:text="${chapter.title}">Chapter Title</span>
+            </div>
 
             <!-- Settings Drawer Trigger (Only for Novels/Text Content) -->
             <div class="d-flex align-items-center gap-2">
