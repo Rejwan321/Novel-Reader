@@ -593,8 +593,12 @@
                                     <input type="text" class="form-input-admin" id="chapter-title" required placeholder="e.g. The Awakening of Shadows">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label-admin">Chapter Content</label>
+                                    <div class="d-flex align-items-center mb-2 justify-content-between">
+                                        <label class="form-label-admin mb-0">Chapter Content</label>
+                                        <button type="button" class="btn btn-sm btn-outline-info" id="btn-insert-image" style="padding: 3px 10px; font-size: 0.8rem; border-color: rgba(0, 188, 212, 0.4);"><i class="fa-solid fa-image me-1"></i>Insert Image</button>
+                                    </div>
                                     <textarea class="form-input-admin" id="chapter-content" rows="6" required placeholder="Type or paste normal text here..."></textarea>
+                                    <input type="file" id="chapter-insert-image-file" accept="image/*" class="d-none">
                                 </div>
                                 <div class="col-12 text-end">
                                     <button type="button" id="btn-cancel-edit-chapter" class="btn btn-secondary px-3 py-2 me-2 d-none"><i class="fa fa-times me-1"></i>Cancel Edit</button>
@@ -1797,6 +1801,72 @@
             $("#form-add-chapter").submit(function(e) {
                 e.preventDefault();
                 $("#btn-submit-chapter").click();
+            });
+
+            // Insert Image click handler
+            $("#btn-insert-image").click(function() {
+                $("#chapter-insert-image-file").click();
+            });
+
+            $("#chapter-insert-image-file").change(function() {
+                var fileInput = this;
+                if (fileInput.files.length === 0) return;
+                
+                var file = fileInput.files[0];
+                var btn = $("#btn-insert-image");
+                var originalHtml = btn.html();
+                
+                // Show loading state
+                btn.html('<i class="fa fa-spinner fa-spin me-1"></i>Uploading...').prop("disabled", true);
+                
+                var formData = new FormData();
+                formData.append("file", file);
+                
+                $.ajax({
+                    url: "/api/admin/upload-image",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        btn.html(originalHtml).prop("disabled", false);
+                        fileInput.value = ""; // Reset file input
+                        
+                        if (res.success && res.url) {
+                            var selectedOpt = $("#chapter-novel-id option:selected");
+                            var storyType = selectedOpt.data("type") || "NOVEL";
+                            var textarea = $("#chapter-content");
+                            var currentVal = textarea.val();
+                            var insertText = "";
+                            
+                            if (storyType === "NOVEL") {
+                                insertText = '\n<img src="' + res.url + '" style="max-width:100%; display:block; margin:20px auto; border-radius:8px;" />\n';
+                            } else {
+                                if (currentVal.trim() === "") {
+                                    insertText = res.url;
+                                } else {
+                                    insertText = "," + res.url;
+                                }
+                            }
+                            
+                            var cursorPos = textarea.prop('selectionStart');
+                            var textBefore = currentVal.substring(0, cursorPos);
+                            var textAfter  = currentVal.substring(cursorPos, currentVal.length);
+                            textarea.val(textBefore + insertText + textAfter);
+                            textarea.focus();
+                            
+                            showToast("Image uploaded and inserted successfully!");
+                        } else {
+                            showToast("Upload failed.", "error");
+                        }
+                    },
+                    error: function(err) {
+                        btn.html(originalHtml).prop("disabled", false);
+                        fileInput.value = "";
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to upload image.";
+                        showToast(msg, "error");
+                    }
+                });
             });
 
             // AJAX: Delete chapter click handler
