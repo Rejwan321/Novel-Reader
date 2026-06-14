@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Book · WebNovel</title>
+  <link rel="stylesheet" href="/css/books.css" />
+</head>
+<body>
+
+  <main class="container">
+    <section id="bookHeader" class="book-header"></section>
+
+    <section>
+      <h2>Chapters</h2>
+      <div id="chapters" class="chapters-list" aria-live="polite"></div>
+    </section>
+
+    <section>
+      <h2>Reviews</h2>
+      <div id="reviews" class="reviews" aria-live="polite"></div>
+
+      <form id="reviewForm" class="review-form" autocomplete="off">
+        <label>
+          Rating
+          <select name="rating" required>
+            <option value="">Select</option>
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option>
+          </select>
+        </label>
+        <label>
+          Comment
+          <textarea name="comment" rows="3" maxlength="1000" placeholder="Share your thoughts..."></textarea>
+        </label>
+        <button type="submit">Submit Review</button>
+        <p id="reviewMsg" class="msg" role="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <script type="module">
+    import { apiGet, apiPost, imgOrPlaceholder, formatDate } from '/scripts/api.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    const header = document.getElementById('bookHeader');
+    const chaptersEl = document.getElementById('chapters');
+    const reviewsEl = document.getElementById('reviews');
+    const form = document.getElementById('reviewForm');
+    const msg = document.getElementById('reviewMsg');
+
+    function renderHeader(b) {
+      header.innerHTML = `
+        <div class="book-hero">
+          <img class="cover" src="${imgOrPlaceholder(b.coverImageUrl)}" alt="${b.title}"/>
+          <div class="info">
+            <h1>${b.title}</h1>
+            <p class="genre">${b.genre ?? ''}</p>
+            <p class="desc">${b.description ?? ''}</p>
+            <button id="addToLibrary">Add to Library</button>
+          </div>
+        </div>`;
+      const btn = header.querySelector('#addToLibrary');
+      btn.addEventListener('click', async () => {
+        // Replace 0 with actual logged-in userId when backend auth is connected.
+        try {
+          await apiPost(`/library/user/${0}/book/${id}`);
+          btn.textContent = 'Saved ✓';
+          btn.disabled = true;
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    }
+
+    function renderChapters(list) {
+      if (!list?.length) { chaptersEl.innerHTML = '<p class="empty">No chapters yet.</p>'; return; }
+      chaptersEl.innerHTML = list.map(c => `
+        <a class="chapter" href="#ch-${c.chapterId}">
+          <span>#${c.chapterNumber ?? ''}</span>
+          <span>${c.title ?? 'Untitled'}</span>
+          <span class="date">${formatDate(c.createdAt)}</span>
+        </a>`).join('');
+    }
+
+    function renderReviews(list) {
+      if (!list?.length) { reviewsEl.innerHTML = '<p class="empty">No reviews yet.</p>'; return; }
+      reviewsEl.innerHTML = list.map(r => `
+        <article class="review">
+          <div class="rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+          <p>${(r.comment || '').replace(/</g,'&lt;')}</p>
+          <span class="date">${formatDate(r.createdAt)}</span>
+        </article>`).join('');
+    }
+
+    async function load() {
+      const [book, chapters, reviews] = await Promise.all([
+        apiGet(`/books/${id}`), apiGet(`/books/${id}/chapters`), apiGet(`/books/${id}/reviews`)
+      ]);
+      renderHeader(book);
+      renderChapters(chapters);
+      renderReviews(reviews);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const rating = Number(fd.get('rating'));
+      const comment = fd.get('comment') || '';
+      try {
+        // Replace 0 with actual authenticated userId once integrated
+        await apiPost(`/books/${id}/reviews`, { userId: 0, rating, comment });
+        msg.textContent = 'Thanks for your review!';
+        form.reset();
+        const reviews = await apiGet(`/books/${id}/reviews`);
+        renderReviews(reviews);
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+
+    if (id) load();
+  </script>
+</body>
+</html>

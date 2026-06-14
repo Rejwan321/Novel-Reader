@@ -25,12 +25,12 @@ public class NovelReaderApplication implements CommandLineRunner {
     private UserRepository userRepository;
 
     public static void main(String[] args) {
+        System.setProperty("spring.h2.console.enabled", "true");
         SpringApplication.run(NovelReaderApplication.class, args);
     }
 
     @Override
     public void run(String... args) {
-        System.out.println("🔍 Fetching all users from the database:");
-        userRepository.findAll().forEach(System.out::println);
+        // User list console print removed for security purposes
     }
 }
