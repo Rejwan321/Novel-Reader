@@ -90,6 +90,27 @@
                     </a>
                 </div>
                 <button class="new-novel-scroll-btn scroll-btn-right" onclick="scrollCarousel('completed', 240)">❯</button>
+        </section>
+
+        <!-- Upcoming Release Schedule Section -->
+        <section class="release-schedule-section mb-5" th:if="${upcomingChapters != null and !upcomingChapters.isEmpty()}">
+            <h4 class="mb-4 text-white font-family-outfit"><i class="fa-solid fa-calendar-days text-violet me-2"></i>Upcoming Release Schedule</h4>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <div class="col" th:each="chap : ${upcomingChapters}">
+                    <div class="card bg-dark border-0 p-3 rounded-3 h-100 d-flex flex-row align-items-center gap-3 release-schedule-card" style="border: 1px solid rgba(255, 255, 255, 0.03) !important; transition: all 0.3s ease;">
+                        <img th:src="${chap.novel.coverUrl}" class="rounded" style="width: 60px; height: 80px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        <div class="flex-grow-1 min-width-0">
+                            <h6 class="mb-1 text-white fw-bold line-clamp-1 font-family-outfit">
+                                <a th:href="@{'/novel/' + ${chap.novel.id}}" th:text="${chap.novel.title}" class="text-decoration-none text-white hover-violet">Novel Title</a>
+                            </h6>
+                            <p class="text-muted small mb-2 text-truncate" th:text="'Chapter ' + ${chap.chapterNumber} + ': ' + ${chap.title}">Chapter 1: Title</p>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning text-dark small"><i class="fa-solid fa-clock me-1"></i>Premier</span>
+                                <span class="text-gray-accent small font-weight-500" th:text="${#temporals.format(chap.publishAt, 'MMM dd, hh:mm a')}">June 15, 10:00 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

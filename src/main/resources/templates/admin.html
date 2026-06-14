@@ -580,6 +580,10 @@
                                     <label class="form-label-admin">Price (Snow Flakes)</label>
                                     <input type="number" class="form-input-admin" id="chapter-price" required min="0" value="0" placeholder="0 for free chapters">
                                 </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Publish Date & Time (Optional)</label>
+                                    <input type="datetime-local" class="form-input-admin" id="chapter-publish-at">
+                                </div>
                                 <div class="col-md-6 d-none">
                                     <label class="form-label-admin">Or Upload Content Image</label>
                                     <input type="file" class="form-input-admin" id="chapter-image-file" accept="image/*" style="padding: 7px 14px;">
@@ -1663,7 +1667,8 @@
                                 .attr("data-number", chap.chapterNumber)
                                 .attr("data-title", chap.title)
                                 .attr("data-content", chap.content)
-                                .attr("data-price", chap.price);
+                                .attr("data-price", chap.price)
+                                .attr("data-publish-at", chap.publishAt || "");
 
                             var deleteBtn = $('<button type="button" class="btn btn-sm btn-outline-danger btn-delete-chapter-trigger">')
                                 .html('<i class="fa fa-trash-can me-1"></i>Delete')
@@ -1693,6 +1698,7 @@
                 var title = btn.data("title");
                 var content = btn.data("content");
                 var price = btn.data("price");
+                var publishAt = btn.attr("data-publish-at") || btn.data("publish-at") || "";
 
                 // Populate chapter form
                 $("#chapter-novel-id").val(novelId);
@@ -1700,6 +1706,11 @@
                 $("#chapter-title").val(title);
                 $("#chapter-content").val(content);
                 $("#chapter-price").val(price !== undefined ? price : 0);
+                
+                if (publishAt && publishAt.length > 16) {
+                    publishAt = publishAt.substring(0, 16);
+                }
+                $("#chapter-publish-at").val(publishAt);
 
                 // Update form mode parameters
                 var form = $("#form-add-chapter");
@@ -1728,6 +1739,7 @@
                 form.attr("data-mode", "create");
                 form.attr("data-edit-id", "");
                 $("#chapter-price").val(0);
+                $("#chapter-publish-at").val("");
 
                 $("#title-add-chapter").html('<i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter');
                 $("#btn-submit-chapter").html('<i class="fa fa-plus me-2"></i>Add Chapter').addClass("btn-premium").removeClass("btn-warning text-dark");
@@ -1753,6 +1765,7 @@
                 var title = $("#chapter-title").val();
                 var content = $("#chapter-content").val();
                 var price = $("#chapter-price").val();
+                var publishAt = $("#chapter-publish-at").val();
 
                 var endpoint = mode === "edit" ? "/api/admin/chapters/edit/" + editId : "/api/admin/chapters/add";
                 var successMsg = mode === "edit" ? "Chapter updated successfully!" : "Chapter added successfully!";
@@ -1762,7 +1775,8 @@
                     chapterNumber: chapterNumber,
                     title: title,
                     content: content,
-                    price: price
+                    price: price,
+                    publishAt: publishAt
                 })
                 .done(function(res) {
                     showToast(successMsg);
