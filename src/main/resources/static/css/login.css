@@ -14,16 +14,16 @@
     margin: 20px 0 50px;
 }
 
-h1 {
+.auth-container h1 {
     font-weight: 600;
     margin: 0;
 }
 
-h2 {
+.auth-container h2 {
     text-align: center;
 }
 
-p {
+.auth-container p {
     font-size: .85rem;
     font-weight: 200;
     line-height: 1.25rem;
@@ -31,7 +31,7 @@ p {
     margin: 20px 0 30px;
 }
 
-span { font-size: .75rem; }
+.auth-container span { font-size: .75rem; }
 
 .blur-bg-overlay{
     position:fixed;
@@ -336,7 +336,7 @@ span { font-size: .75rem; }
 }
 
 @media (max-width: 768px) {
-    h1 { font-size: 1.2rem; }
+    .auth-container h1 { font-size: 1.2rem; }
     
     .auth-container {
         width: 350px !important;
@@ -457,7 +457,7 @@ span { font-size: .75rem; }
         width: 34px !important;
     }
     
-    p {
+    .auth-container p {
         margin: 10px 0 15px !important;
     }
 }
