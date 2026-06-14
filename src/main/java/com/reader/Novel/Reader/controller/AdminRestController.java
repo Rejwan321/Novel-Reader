@@ -6,7 +6,9 @@ import com.reader.Novel.Reader.model.Chapter;
 import com.reader.Novel.Reader.model.Purchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.model.Review;
+import com.reader.Novel.Reader.model.Notification;
 import com.reader.Novel.Reader.repository.ReviewRepository;
+import com.reader.Novel.Reader.repository.NotificationRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,9 @@ public class AdminRestController {
 
     @Autowired
     private ReviewRepository reviewRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
@@ -1348,6 +1353,68 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Review not found."));
         }
         reviewRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // GET all notifications for Admin/Owner dashboard
+    @GetMapping("/notifications")
+    public ResponseEntity<?> getAllNotifications(HttpSession session) {
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        return ResponseEntity.ok(notificationRepository.findByOrderByCreatedAtDesc());
+    }
+
+    // Toggle read/unread status of notification
+    @PutMapping("/notifications/{id}/toggle-read")
+    public ResponseEntity<?> toggleNotificationRead(@PathVariable Long id, HttpSession session) {
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        java.util.Optional<Notification> notifOpt = notificationRepository.findById(id);
+        if (notifOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Notification not found."));
+        }
+        Notification notification = notifOpt.get();
+        notification.setRead(!notification.isRead());
+        notificationRepository.save(notification);
+        return ResponseEntity.ok(Map.of("success", true, "isRead", notification.isRead()));
+    }
+
+    // DELETE a notification
+    @DeleteMapping("/notifications/{id}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Long id, HttpSession session) {
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        if (!notificationRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Notification not found."));
+        }
+        notificationRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("success", true));
     }
 }

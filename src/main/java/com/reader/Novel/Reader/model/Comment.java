@@ -35,6 +35,10 @@ public class Comment {
     @OrderBy("createdAt ASC")
     private java.util.List<Comment> replies = new java.util.ArrayList<>();
 
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Notification> notifications = new java.util.ArrayList<>();
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "comment_likes", joinColumns = @JoinColumn(name = "comment_id"))
     @Column(name = "user_id")
