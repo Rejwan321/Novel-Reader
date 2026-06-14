@@ -278,7 +278,7 @@
                                 <button type="button" class="btn btn-sm btn-outline-info" id="btn-reader-insert-image" style="padding: 2px 8px; font-size: 0.75rem; border-color: rgba(0, 188, 212, 0.4);"><i class="fa-solid fa-image me-1"></i>Insert Image</button>
                             </div>
                             <textarea class="form-control bg-dark text-white border-secondary" id="edit-chapter-content" rows="12" th:text="${chapter.content}" required></textarea>
-                            <input type="file" id="reader-insert-image-file" accept="image/*" class="d-none">
+                            <input type="file" id="reader-insert-image-file" accept="image/*" class="d-none" multiple>
                         </div>
                         <div class="d-flex justify-content-end mt-4">
                             <button type="button" class="btn btn-outline-light me-2 px-4" data-bs-dismiss="modal">Cancel</button>
@@ -381,55 +381,81 @@
                 var fileInput = this;
                 if (fileInput.files.length === 0) return;
                 
-                var file = fileInput.files[0];
+                var files = Array.from(fileInput.files);
                 var btn = $("#btn-reader-insert-image");
                 var originalHtml = btn.html();
                 
-                btn.html('<i class="fa fa-spinner fa-spin me-1"></i>Uploading...').prop("disabled", true);
+                btn.html('<i class="fa fa-spinner fa-spin me-1"></i>Uploading (0/' + files.length + ')...').prop("disabled", true);
                 
-                var formData = new FormData();
-                formData.append("file", file);
+                var uploadedCount = 0;
                 
-                $.ajax({
-                    url: "/api/admin/upload-image",
-                    type: "POST",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(res) {
-                        btn.html(originalHtml).prop("disabled", false);
-                        fileInput.value = "";
+                var uploadPromises = files.map(function(file, index) {
+                    var formData = new FormData();
+                    formData.append("file", file);
+                    
+                    return $.ajax({
+                        url: "/api/admin/upload-image",
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false
+                    }).then(function(res) {
+                        uploadedCount++;
+                        btn.html('<i class="fa fa-spinner fa-spin me-1"></i>Uploading (' + uploadedCount + '/' + files.length + ')...');
+                        return { index: index, url: res.url };
+                    }).catch(function(err) {
+                        console.error("Failed to upload file at index " + index, err);
+                        return { index: index, url: null };
+                    });
+                });
+                
+                Promise.all(uploadPromises).then(function(results) {
+                    btn.html(originalHtml).prop("disabled", false);
+                    fileInput.value = "";
+                    
+                    results.sort(function(a, b) {
+                        return a.index - b.index;
+                    });
+                    
+                    var validUrls = results.filter(function(r) {
+                        return r.url !== null;
+                    }).map(function(r) {
+                        return r.url;
+                    });
+                    
+                    if (validUrls.length > 0) {
+                        var textarea = $("#edit-chapter-content");
+                        var currentVal = textarea.val();
+                        var insertText = "";
                         
-                        if (res.success && res.url) {
-                            var textarea = $("#edit-chapter-content");
-                            var currentVal = textarea.val();
-                            var insertText = "";
-                            
-                            if (isImageContent) {
-                                if (currentVal.trim() === "") {
-                                    insertText = res.url;
-                                } else {
-                                    insertText = "," + res.url;
-                                }
+                        if (isImageContent) {
+                            var joinedUrls = validUrls.join(",");
+                            if (currentVal.trim() === "") {
+                                insertText = joinedUrls;
                             } else {
-                                insertText = '\n<img src="' + res.url + '" style="max-width:100%; display:block; margin:20px auto; border-radius:8px;" />\n';
+                                insertText = "," + joinedUrls;
                             }
-                            
-                            var cursorPos = textarea.prop('selectionStart');
-                            var textBefore = currentVal.substring(0, cursorPos);
-                            var textAfter  = currentVal.substring(cursorPos, currentVal.length);
-                            textarea.val(textBefore + insertText + textAfter);
-                            textarea.focus();
                         } else {
-                            alert("Upload failed.");
+                            validUrls.forEach(function(url) {
+                                insertText += '\n<img src="' + url + '" style="max-width:100%; display:block; margin:20px auto; border-radius:8px;" />\n';
+                            });
                         }
-                    },
-                    error: function(err) {
-                        btn.html(originalHtml).prop("disabled", false);
-                        fileInput.value = "";
-                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to upload image.";
-                        alert(msg);
+                        
+                        var cursorPos = textarea.prop('selectionStart');
+                        var textBefore = currentVal.substring(0, cursorPos);
+                        var textAfter  = currentVal.substring(cursorPos, currentVal.length);
+                        textarea.val(textBefore + insertText + textAfter);
+                        textarea.focus();
                     }
+                    
+                    var failedCount = results.length - validUrls.length;
+                    if (failedCount > 0) {
+                        alert(failedCount + " image(s) failed to upload.");
+                    }
+                }).catch(function() {
+                    btn.html(originalHtml).prop("disabled", false);
+                    fileInput.value = "";
+                    alert("Failed to upload some images.");
                 });
             });
 
