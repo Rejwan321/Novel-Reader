@@ -194,10 +194,68 @@
     <!-- Scripts -->
     <script th:src="@{/scripts/Script.js(v='1.1')}"></script>
     <script>
+        // Convert HTML content to formatted plain text for editing
+        function htmlToPlainText(html) {
+            if (!html) return "";
+            var temp = document.createElement("div");
+            temp.innerHTML = html;
+            
+            // Convert bold and italic elements to markdown representation
+            temp.querySelectorAll("b, strong").forEach(function(el) {
+                el.outerHTML = "**" + el.innerHTML + "**";
+            });
+            temp.querySelectorAll("i, em").forEach(function(el) {
+                el.outerHTML = "*" + el.innerHTML + "*";
+            });
+            
+            // Map paragraphs to double newlines
+            var paragraphs = temp.querySelectorAll("p");
+            if (paragraphs.length > 0) {
+                var parts = [];
+                paragraphs.forEach(function(p) {
+                    parts.push(p.innerText || p.textContent || "");
+                });
+                return parts.join("\n\n");
+            }
+            
+            // Fallback for line breaks if no <p> tags are present
+            var htmlStr = temp.innerHTML;
+            htmlStr = htmlStr.replace(/<br\s*\/?>/gi, "\n");
+            
+            var cleanTemp = document.createElement("div");
+            cleanTemp.innerHTML = htmlStr;
+            return (cleanTemp.innerText || cleanTemp.textContent || "").trim();
+        }
+
+        // Convert formatted plain text back to HTML for storage
+        function plainTextToHtml(text) {
+            if (!text) return "";
+            var paragraphs = text.split(/\n\s*\n/);
+            var htmlParts = [];
+            paragraphs.forEach(function(p) {
+                var cleanP = p.trim();
+                if (cleanP) {
+                    var htmlLine = cleanP
+                        .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") // Bold
+                        .replace(/\*(.*?)\*/g, "<i>$1</i>")    // Italic
+                        .replace(/\n/g, "<br>");                // Single newlines to <br>
+                    htmlParts.push("<p>" + htmlLine + "</p>");
+                }
+            });
+            return htmlParts.join("");
+        }
+
         // Set up initial bookmark progress on load via REST API
         $(document).ready(function() {
             var novelId = [[${novel.id}]];
             var chNum = [[${chapter.chapterNumber}]];
+            var isImageContent = [[${isImageContent}]];
+            
+            // Convert raw HTML in textarea to plain text if this is text content
+            if (!isImageContent) {
+                var rawContent = $("#edit-chapter-content").val();
+                $("#edit-chapter-content").val(htmlToPlainText(rawContent));
+            }
             
             // Post progress update
             $.post('/api/bookmarks/progress', {
@@ -217,6 +275,11 @@
                 var number = $("#edit-chapter-number").val();
                 var price = $("#edit-chapter-price").val();
                 var content = $("#edit-chapter-content").val();
+                
+                // If this is text content, convert plain text back to HTML before sending
+                if (!isImageContent) {
+                    content = plainTextToHtml(content);
+                }
                 
                 $.post("/api/admin/chapters/edit/" + id, {
                     title: title,
