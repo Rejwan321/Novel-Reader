@@ -535,7 +535,7 @@
             var currentUserId = [[${session.user != null ? session.user.id : null}]];
             var currentUserRole = [[${session.user != null ? session.user.user_type : null}]];
 
-            function buildCommentCard(comment, isReply) {
+            function buildCommentCard(comment, isReply, parentId) {
                 var author = comment.user;
                 var initials = (author.name || "U").substring(0, 1).toUpperCase();
                 
@@ -565,10 +565,11 @@
                 var likesCount = comment.likedUserIds ? comment.likedUserIds.length : 0;
                 var dislikesCount = comment.dislikedUserIds ? comment.dislikedUserIds.length : 0;
                 
-                var replyBtnHtml = !isReply ? 
-                    '<button class="comment-action-btn btn-reply-comment-action" data-id="' + comment.id + '" title="Reply">' +
+                var replyParentId = isReply ? parentId : comment.id;
+                var replyBtnHtml = 
+                    '<button class="comment-action-btn btn-reply-comment-action" data-id="' + comment.id + '" data-parent-id="' + replyParentId + '" data-is-reply="' + isReply + '" data-author-name="' + author.name + '" title="Reply">' +
                     '  <i class="fa-solid fa-reply"></i> Reply' +
-                    '</button>' : '';
+                    '</button>';
                 
                 var cardHtml = 
                     '<div class="comment-card" id="comment-card-' + comment.id + '">' +
@@ -627,7 +628,7 @@
                         var repliesContainer = $('<div class="reply-container" id="reply-container-' + comment.id + '"></div>');
                         if (comment.replies && comment.replies.length > 0) {
                             comment.replies.forEach(function(reply) {
-                                var replyHtml = buildCommentCard(reply, true);
+                                var replyHtml = buildCommentCard(reply, true, comment.id);
                                 repliesContainer.append(replyHtml);
                             });
                         } else {
@@ -694,25 +695,40 @@
                     return;
                 }
                 var commentId = $(this).data('id');
-                var existingForm = $('#reply-form-node-' + commentId);
+                var parentId = $(this).data('parent-id');
+                var isReply = $(this).data('is-reply');
+                var authorName = $(this).data('author-name');
+                
+                var formContainerId = 'reply-form-node-' + commentId;
+                var existingForm = $('#' + formContainerId);
                 
                 if (existingForm.length > 0) {
                     existingForm.slideUp(200, function() { $(this).remove(); });
                 } else {
                     $('.reply-form-container').slideUp(200, function() { $(this).remove(); });
                     
+                    var mentionText = isReply ? '@' + authorName + ' ' : '';
+                    
                     var formHtml = 
-                        '<div class="reply-form-container" id="reply-form-node-' + commentId + '" style="display:none;">' +
+                        '<div class="reply-form-container" id="' + formContainerId + '" style="display:none;">' +
                         '  <textarea class="form-control text-white border-secondary mb-2" id="reply-content-' + commentId + '" rows="2" placeholder="Write a reply..." style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px; font-size: 0.9rem;" required></textarea>' +
                         '  <div class="d-flex justify-content-end gap-2">' +
                         '    <button class="btn btn-sm btn-outline-light btn-cancel-reply" data-id="' + commentId + '">Cancel</button>' +
-                        '    <button class="btn btn-sm btn-premium btn-submit-reply" data-id="' + commentId + '">Reply</button>' +
+                        '    <button class="btn btn-sm btn-premium btn-submit-reply" data-id="' + commentId + '" data-parent-id="' + parentId + '">Reply</button>' +
                         '  </div>' +
                         '</div>';
                     
                     $('#comment-card-' + commentId).after(formHtml);
-                    $('#reply-form-node-' + commentId).slideDown(200);
-                    $('#reply-content-' + commentId).focus();
+                    $('#' + formContainerId).slideDown(200);
+                    
+                    var textarea = $('#reply-content-' + commentId);
+                    textarea.val(mentionText);
+                    textarea.focus();
+                    
+                    // Force cursor to the end of the text
+                    var tempVal = textarea.val();
+                    textarea.val('');
+                    textarea.val(tempVal);
                 }
             });
 
@@ -727,13 +743,14 @@
             $(document).on('click', '.btn-submit-reply', function(e) {
                 e.preventDefault();
                 var id = $(this).data('id');
+                var parentId = $(this).data('parent-id');
                 var content = $('#reply-content-' + id).val().trim();
                 if (!content) return;
                 
                 var btn = $(this);
                 btn.prop('disabled', true).text('Posting...');
                 
-                $.post('/api/comments/' + id + '/reply', {
+                $.post('/api/comments/' + parentId + '/reply', {
                     content: content
                 }).done(function() {
                     loadComments();
