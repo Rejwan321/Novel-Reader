@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Entity
 @Scope("prototype")
 @Data
-@Table(name = "reader")
+@Table(name = "reader_internal")
 public class User {
 
     @Id
@@ -20,6 +20,7 @@ public class User {
     private String email;
     private String password;
     private String user_type;
+    private Integer balance = 100;
 
     public User() {
 
@@ -31,6 +32,16 @@ public class User {
         this.email = email;
         this.password = password;
         this.user_type = user_type;
+        this.balance = 100;
+    }
+
+    public User(Long id, String name, String email, String password, String user_type, Integer balance) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.user_type = user_type;
+        this.balance = balance;
     }
 
 
@@ -50,8 +61,11 @@ public class User {
     public String getUser_type() { return user_type; }
     public void setUser_type(String user_type) { this.user_type = user_type; }
 
+    public Integer getBalance() { return balance; }
+    public void setBalance(Integer balance) { this.balance = balance; }
+
     @Override
     public String toString() {
-        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "'}";
+        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + "}";
     }
 }

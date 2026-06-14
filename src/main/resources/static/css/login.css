@@ -47,15 +47,8 @@ span {
     width: 100%;
     height: 100%;
     backdrop-filter: blur(5px);
-    transition: 0.1s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.show-popup .blur-bg-overlay {
-    opacity: 1;
-    pointer-events: auto;
+    transition:0.1s ease;
+    z-index: 1080; /* Ensure overlay sits below the modal but above content */
 }
 
 .container {
@@ -88,13 +81,17 @@ span {
     color: #333333;
     font-size: .85rem;
     text-decoration: none;
-    margin: 15px 0;
+    margin: 8px 0;
 }
 
 .log-button, .ghost {
     border-radius: 20px;
-    border: 1px solid #27CDA7;
-    background-color: #27CDA7;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    -ms-border-radius: 20px;
+    -o-border-radius: 20px;
+    border: 1px solid #5e63b6;
+    background-color: #5e63b6;
     color: #FFFFFF;
     font-size: .75rem;
     font-weight: 500;
@@ -106,7 +103,8 @@ span {
 }
 
 .log-button:hover {
-    background-color: #37DFB8;
+    background-color: #474b94;
+    border-color: #474b94;
 }
 
 .log-button:active, .ghost:active {
@@ -129,17 +127,48 @@ span {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 0 50px;
+    padding: 0 40px;
     height: 100%;
     text-align: center;
+    width: 100%;
+    color: #12121e;
 }
 
 .insert {
     background-color: #EEEEEE;
     border: none;
-    padding: 12px 15px;
-    margin: 8px 0;
+    padding: 10px 12px;
+    margin: 6px 0;
     width: 100%;
+    font-size: 16px !important;
+}
+
+.auth-container {
+    top: 50%;
+    left: 50%;
+    background-color: white;
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    -ms-border-radius: 10px;
+    -o-border-radius: 10px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, .25), 0 10px 10px rgba(0, 0, 0, .22);
+    position: fixed; /* Use fixed for popups so it aligns with overlay */
+    overflow: hidden;
+    opacity:0;
+    pointer-events:none;
+    width: 768px;
+    max-width: 90%;
+    min-height: 550px;
+    transform: translate(-50%, -50%) scale(0.9);
+    transition: all 0.3s ease;
+    z-index: 1090; /* Sit on top of overlay */
+}
+
+.show-popup .auth-container {
+    opacity:1;
+    pointer-events:auto;
+    transform: translate(-50%, -50%) scale(1);
 }
 
 .form-container {
@@ -156,7 +185,7 @@ span {
     z-index: 2;
 }
 
-.container.right-panel-active .login-container {
+.auth-container.right-panel-active .login-container {
     transform: translateX(100%);
 }
 
@@ -167,16 +196,14 @@ span {
     z-index: 1;
 }
 
-.container.right-panel-active .signup-container {
+.auth-container.right-panel-active .signup-container {
     transform: translateX(100%);
     opacity: 1;
     z-index: 5;
     animation: show .5s;
 }
 
-.social-container {
-    margin: 20px 0;
-}
+.social-container { margin: 8px 0; }
 
 .social-container a {
     border: 1px solid #DDDDDD;
@@ -187,6 +214,14 @@ span {
     margin: 0 5px;
     height: 40px;
     width: 40px;
+}
+
+.social-container a i {
+    font-size: 14px;
+}
+
+.social-container a:hover {
+    background-color: #f1f1f1;
 }
 
 @keyframes show {
@@ -205,12 +240,12 @@ span {
     z-index: 100;
 }
 
-.container.right-panel-active .overlay-container {
+.auth-container.right-panel-active .overlay-container{
     transform: translateX(-100%);
 }
 
 .overlay {
-    background: linear-gradient(to right, #37DFB8, #E87B37, #E8375A);
+    background: linear-gradient(135deg, #027bfd 0%, #011d8d 50%, #00d2ff 100%);
     background-size: cover;
     background-position: center;
     color: #FFFFFF;
@@ -222,7 +257,7 @@ span {
     transition: transform .5s ease-in-out;
 }
 
-.container.right-panel-active .overlay {
+.auth-container.right-panel-active .overlay {
     transform: translateX(50%);
 }
 
@@ -245,7 +280,7 @@ span {
     transform: translateX(-20%);
 }
 
-.container.right-panel-active .overlay-left {
+.auth-container.right-panel-active .overlay-left {
     transform: translateX(0);
 }
 
@@ -254,15 +289,137 @@ span {
     transform: translateX(0);
 }
 
-.container.right-panel-active .overlay-right {
+.auth-container.right-panel-active .overlay-right {
     transform: translateX(20%);
 }
 
-@media (max-width: 730px) {
-    h1 { font-size: 1.2rem; }
+.mobile-auth-toggle {
+    display: none;
 }
 
-main, .hero, .books-grid, .discover-gallery {
-    position: relative;
-    z-index: 1;
+@media (max-width: 768px) {
+    h1 { font-size: 1.2rem; }
+    
+    .auth-container {
+        width: 350px !important;
+        max-width: 95% !important;
+        height: 480px !important;
+    }
+    
+    .overlay-container {
+        display: none !important;
+    }
+    
+    .login-container, .signup-container {
+        width: 100% !important;
+        height: 100% !important;
+        position: relative !important;
+    }
+    
+    /* When not active: hide signup, show login */
+    .auth-container:not(.right-panel-active) .signup-container {
+        display: none !important;
+        opacity: 0 !important;
+        z-index: 1 !important;
+    }
+    .auth-container:not(.right-panel-active) .login-container {
+        display: flex !important;
+        opacity: 1 !important;
+        z-index: 2 !important;
+    }
+    
+    /* When active: show signup, hide login */
+    .auth-container.right-panel-active .signup-container {
+        display: flex !important;
+        transform: none !important;
+        opacity: 1 !important;
+        z-index: 5 !important;
+    }
+    .auth-container.right-panel-active .login-container {
+        display: none !important;
+        opacity: 0 !important;
+        z-index: 1 !important;
+    }
+    
+    .mobile-auth-toggle {
+        display: block !important;
+        margin-top: 15px;
+        font-size: 0.8rem;
+    }
+    .mobile-auth-toggle a {
+        color: #5e63b6;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .mobile-auth-toggle a:hover {
+        text-decoration: underline;
+    }
+
+    .form-con {
+        padding: 0 24px !important;
+        background: linear-gradient(135deg, #027bfd 0%, #011d8d 50%, #00d2ff 100%) !important;
+        color: #ffffff !important;
+    }
+    
+    .auth-container {
+        background: linear-gradient(135deg, #027bfd 0%, #011d8d 50%, #00d2ff 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    }
+    
+    .insert {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+    }
+    
+    .insert::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .form-con span {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .form-con h1 {
+        color: #ffffff !important;
+    }
+
+    .social-container a {
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: #ffffff !important;
+    }
+    
+    .social-container a:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .social-container a i {
+        color: #ffffff !important;
+    }
+    
+    .mobile-auth-toggle span {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    .mobile-auth-toggle a {
+        color: #df9eff !important;
+    }
+    
+    .social {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    .social-container {
+        margin: 4px 0 !important;
+    }
+    
+    .social-container a {
+        height: 34px !important;
+        width: 34px !important;
+    }
+    
+    p {
+        margin: 10px 0 15px !important;
+    }
 }
