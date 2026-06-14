@@ -99,6 +99,51 @@
             color: #ff3366;
             background: rgba(255, 51, 102, 0.1);
         }
+        /* Likes, Dislikes, and Reply buttons styling */
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+        .comment-action-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .comment-action-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .comment-action-btn.btn-liked {
+            color: #00e5ff !important;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+        .comment-action-btn.btn-disliked {
+            color: #ff3366 !important;
+            text-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+        }
+        .reply-container {
+            margin-left: 48px;
+            margin-top: 12px;
+            border-left: 2px solid rgba(255, 255, 255, 0.06);
+            padding-left: 16px;
+        }
+        .reply-form-container {
+            background: rgba(15, 15, 27, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body class="dark-theme" id="reader-body">
@@ -490,9 +535,82 @@
             var currentUserId = [[${session.user != null ? session.user.id : null}]];
             var currentUserRole = [[${session.user != null ? session.user.user_type : null}]];
 
+            function buildCommentCard(comment, isReply) {
+                var author = comment.user;
+                var initials = (author.name || "U").substring(0, 1).toUpperCase();
+                
+                var badgeClass = 'badge-reader';
+                var roleName = author.user_type || 'READER';
+                if (roleName === 'OWNER') badgeClass = 'badge-owner';
+                else if (roleName === 'ADMIN') badgeClass = 'badge-admin';
+                else if (roleName === 'EDITOR') badgeClass = 'badge-editor';
+                else if (roleName === 'PROOFREADER') badgeClass = 'badge-proofreader';
+                
+                var date = new Date(comment.createdAt);
+                var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                var canDelete = (currentUserId && (currentUserId === author.id || currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
+                var deleteBtnHtml = canDelete ? 
+                    '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
+                
+                var liked = comment.likedUserIds && comment.likedUserIds.indexOf(currentUserId) !== -1;
+                var disliked = comment.dislikedUserIds && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
+                
+                var likeClass = liked ? 'btn-liked' : '';
+                var dislikeClass = disliked ? 'btn-disliked' : '';
+                
+                var likeIcon = liked ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up';
+                var dislikeIcon = disliked ? 'fa-solid fa-thumbs-down' : 'fa-regular fa-thumbs-down';
+                
+                var likesCount = comment.likedUserIds ? comment.likedUserIds.length : 0;
+                var dislikesCount = comment.dislikedUserIds ? comment.dislikedUserIds.length : 0;
+                
+                var replyBtnHtml = !isReply ? 
+                    '<button class="comment-action-btn btn-reply-comment-action" data-id="' + comment.id + '" title="Reply">' +
+                    '  <i class="fa-solid fa-reply"></i> Reply' +
+                    '</button>' : '';
+                
+                var cardHtml = 
+                    '<div class="comment-card" id="comment-card-' + comment.id + '">' +
+                    '  <div class="d-flex gap-3">' +
+                    '    <div class="comment-avatar">' + initials + '</div>' +
+                    '    <div class="flex-grow-1">' +
+                    '      <div class="comment-header">' +
+                    '        <div class="comment-meta">' +
+                    '          <span class="comment-author-name">' + author.name + '</span>' +
+                    '          <span class="comment-badge ' + badgeClass + '">' + roleName + '</span>' +
+                    '          <span class="comment-time">' + formattedTime + '</span>' +
+                    '        </div>' +
+                    '        ' + deleteBtnHtml +
+                    '      </div>' +
+                    '      <div class="comment-body">' + escapeHtml(comment.content) + '</div>' +
+                    '      <div class="comment-actions">' +
+                    '        <button class="comment-action-btn btn-like-comment-action ' + likeClass + '" data-id="' + comment.id + '" title="Like">' +
+                    '          <i class="' + likeIcon + '"></i> <span class="like-count">' + likesCount + '</span>' +
+                    '        </button>' +
+                    '        <button class="comment-action-btn btn-dislike-comment-action ' + dislikeClass + '" data-id="' + comment.id + '" title="Dislike">' +
+                    '          <i class="' + dislikeIcon + '"></i> <span class="dislike-count">' + dislikesCount + '</span>' +
+                    '        </button>' +
+                    '        ' + replyBtnHtml +
+                    '      </div>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '</div>';
+                
+                return cardHtml;
+            }
+
             function loadComments() {
                 $.getJSON('/api/chapters/' + chapterId + '/comments', function(comments) {
-                    $('#comment-count').text(comments.length);
+                    var totalCount = 0;
+                    comments.forEach(function(c) {
+                        totalCount++;
+                        if (c.replies) {
+                            totalCount += c.replies.length;
+                        }
+                    });
+                    $('#comment-count').text(totalCount);
+                    
                     var feed = $('#comments-feed');
                     feed.empty();
                     
@@ -502,43 +620,22 @@
                     }
                     
                     comments.forEach(function(comment) {
-                        var author = comment.user;
-                        var initials = (author.name || "U").substring(0, 1).toUpperCase();
+                        var commentHtml = buildCommentCard(comment, false);
+                        var commentWrapper = $('<div class="comment-wrapper-node" id="comment-wrapper-' + comment.id + '"></div>');
+                        commentWrapper.append(commentHtml);
                         
-                        var badgeClass = 'badge-reader';
-                        var roleName = author.user_type || 'READER';
-                        if (roleName === 'OWNER') badgeClass = 'badge-owner';
-                        else if (roleName === 'ADMIN') badgeClass = 'badge-admin';
-                        else if (roleName === 'EDITOR') badgeClass = 'badge-editor';
-                        else if (roleName === 'PROOFREADER') badgeClass = 'badge-proofreader';
+                        var repliesContainer = $('<div class="reply-container" id="reply-container-' + comment.id + '"></div>');
+                        if (comment.replies && comment.replies.length > 0) {
+                            comment.replies.forEach(function(reply) {
+                                var replyHtml = buildCommentCard(reply, true);
+                                repliesContainer.append(replyHtml);
+                            });
+                        } else {
+                            repliesContainer.hide();
+                        }
                         
-                        // Parse creation date
-                        var date = new Date(comment.createdAt);
-                        var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
-                        // Show delete button if user is Admin, Owner, or the author of the comment
-                        var canDelete = (currentUserId && (currentUserId === author.id || currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
-                        var deleteBtnHtml = canDelete ? 
-                            '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
-                        
-                        var cardHtml = 
-                            '<div class="comment-card" id="comment-card-' + comment.id + '">' +
-                            '  <div class="d-flex gap-3">' +
-                            '    <div class="comment-avatar">' + initials + '</div>' +
-                            '    <div class="flex-grow-1">' +
-                            '      <div class="comment-header">' +
-                            '        <div class="comment-meta">' +
-                            '          <span class="comment-author-name">' + author.name + '</span>' +
-                            '          <span class="comment-badge ' + badgeClass + '">' + roleName + '</span>' +
-                            '          <span class="comment-time">' + formattedTime + '</span>' +
-                            '        </div>' +
-                            '        ' + deleteBtnHtml +
-                            '      </div>' +
-                            '      <div class="comment-body">' + escapeHtml(comment.content) + '</div>' +
-                            '    </div>' +
-                            '  </div>' +
-                            '</div>';
-                        feed.append(cardHtml);
+                        commentWrapper.append(repliesContainer);
+                        feed.append(commentWrapper);
                     });
                 });
             }
@@ -582,14 +679,142 @@
                 }).done(function() {
                     $('#comment-card-' + id).fadeOut(300, function() {
                         $(this).remove();
-                        // Update comment count manually or reload
-                        var currentCount = parseInt($('#comment-count').text()) || 0;
-                        if (currentCount > 0) {
-                            $('#comment-count').text(currentCount - 1);
-                        }
+                        loadComments();
                     });
                 }).fail(function(err) {
                     alert("Error deleting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                });
+            });
+
+            // Toggle reply form
+            $(document).on('click', '.btn-reply-comment-action', function(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    alert("Please login to post replies.");
+                    return;
+                }
+                var commentId = $(this).data('id');
+                var existingForm = $('#reply-form-node-' + commentId);
+                
+                if (existingForm.length > 0) {
+                    existingForm.slideUp(200, function() { $(this).remove(); });
+                } else {
+                    $('.reply-form-container').slideUp(200, function() { $(this).remove(); });
+                    
+                    var formHtml = 
+                        '<div class="reply-form-container" id="reply-form-node-' + commentId + '" style="display:none;">' +
+                        '  <textarea class="form-control text-white border-secondary mb-2" id="reply-content-' + commentId + '" rows="2" placeholder="Write a reply..." style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px; font-size: 0.9rem;" required></textarea>' +
+                        '  <div class="d-flex justify-content-end gap-2">' +
+                        '    <button class="btn btn-sm btn-outline-light btn-cancel-reply" data-id="' + commentId + '">Cancel</button>' +
+                        '    <button class="btn btn-sm btn-premium btn-submit-reply" data-id="' + commentId + '">Reply</button>' +
+                        '  </div>' +
+                        '</div>';
+                    
+                    $('#comment-card-' + commentId).after(formHtml);
+                    $('#reply-form-node-' + commentId).slideDown(200);
+                    $('#reply-content-' + commentId).focus();
+                }
+            });
+
+            // Cancel reply
+            $(document).on('click', '.btn-cancel-reply', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                $('#reply-form-node-' + id).slideUp(200, function() { $(this).remove(); });
+            });
+
+            // Submit reply
+            $(document).on('click', '.btn-submit-reply', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var content = $('#reply-content-' + id).val().trim();
+                if (!content) return;
+                
+                var btn = $(this);
+                btn.prop('disabled', true).text('Posting...');
+                
+                $.post('/api/comments/' + id + '/reply', {
+                    content: content
+                }).done(function() {
+                    loadComments();
+                }).fail(function(err) {
+                    alert("Error posting reply: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                }).always(function() {
+                    btn.prop('disabled', false).text('Reply');
+                });
+            });
+
+            // Like comment handler
+            $(document).on('click', '.btn-like-comment-action', function(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    alert("Please login to like comments.");
+                    return;
+                }
+                var id = $(this).data('id');
+                var btnLike = $(this);
+                var btnDislike = btnLike.siblings('.btn-dislike-comment-action');
+                
+                $.post('/api/comments/' + id + '/like')
+                .done(function(res) {
+                    btnLike.find('.like-count').text(res.likes);
+                    btnDislike.find('.dislike-count').text(res.dislikes);
+                    
+                    if (res.liked) {
+                        btnLike.addClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnLike.removeClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                    
+                    if (res.disliked) {
+                        btnDislike.addClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnDislike.removeClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                })
+                .fail(function(err) {
+                    alert("Error liking comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                });
+            });
+
+            // Dislike comment handler
+            $(document).on('click', '.btn-dislike-comment-action', function(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    alert("Please login to dislike comments.");
+                    return;
+                }
+                var id = $(this).data('id');
+                var btnDislike = $(this);
+                var btnLike = btnDislike.siblings('.btn-like-comment-action');
+                
+                $.post('/api/comments/' + id + '/dislike')
+                .done(function(res) {
+                    btnLike.find('.like-count').text(res.likes);
+                    btnDislike.find('.dislike-count').text(res.dislikes);
+                    
+                    if (res.liked) {
+                        btnLike.addClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnLike.removeClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                    
+                    if (res.disliked) {
+                        btnDislike.addClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnDislike.removeClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                })
+                .fail(function(err) {
+                    alert("Error disliking comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
                 });
             });
         });
