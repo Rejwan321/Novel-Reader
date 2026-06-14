@@ -10,9 +10,12 @@
     align-items: center;
     flex-direction: column;
     font-family: 'Poppins';
-    height: 100vh;
-    margin: 20px 0 50px;
+    height: auto;              
+    min-height: 450px;         
+    margin: 0;                 
+    padding: 30px 0;           
 }
+
 
 h1 {
     font-weight: 600;
@@ -31,26 +34,48 @@ p {
     margin: 20px 0 30px;
 }
 
-span { font-size: .75rem; }
+span {
+    font-size: .75rem;
+}
 
-.blur-bg-overlay{
-    position:fixed;
-    top:0;
-    left:0;
-    opacity:0;
-    pointer-events:none;
-    max-width:100%;
-    width:100%;
-    height:100%;
+.blur-bg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
     backdrop-filter: blur(5px);
     transition:0.1s ease;
     z-index: 1080; /* Ensure overlay sits below the modal but above content */
 }
 
-.show-popup .blur-bg-overlay{
-    opacity:1;
-    pointer-events:auto;
+.container {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, .25),
+                0 10px 10px rgba(0, 0, 0, .22);
+    width: 768px;
+    max-width: 95%;
+    min-height: 450px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: 9999;
 }
+
+.show-popup .container {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
 
 .social {
     color: #333333;
@@ -74,10 +99,6 @@ span { font-size: .75rem; }
     letter-spacing: 1px;
     text-transform: uppercase;
     transition: all .25s ease-in;
-    -webkit-transition: all .25s ease-in;
-    -moz-transition: all .25s ease-in;
-    -ms-transition: all .25s ease-in;
-    -o-transition: all .25s ease-in;
     cursor: pointer;
 }
 
@@ -88,10 +109,6 @@ span { font-size: .75rem; }
 
 .log-button:active, .ghost:active {
     transform: scale(.95);
-    -webkit-transform: scale(.95rem);
-    -moz-transform: scale(.95);
-    -ms-transform: scale(.95);
-    -o-transform: scale(.95);
 }
 
 .log-button:focus, .ghost:focus {
@@ -106,7 +123,7 @@ span { font-size: .75rem; }
 .form-con {
     background-color: white;
     display: flex;
-    overflow:hidden;
+    overflow: hidden;
     align-items: center;
     justify-content: center;
     flex-direction: column;
@@ -157,12 +174,9 @@ span { font-size: .75rem; }
 .form-container {
     position: absolute;
     top: 0;
-    height: 100%;
+    height: 100%;              
+    max-height: 100%;          
     transition: all .5s ease-in-out;
-    -webkit-transition: all .5s ease-in-out;
-    -moz-transition: all .5s ease-in-out;
-    -ms-transition: all .5s ease-in-out;
-    -o-transition: all .5s ease-in-out;
 }
 
 .login-container {
@@ -173,24 +187,20 @@ span { font-size: .75rem; }
 
 .auth-container.right-panel-active .login-container {
     transform: translateX(100%);
-    -webkit-transform: translateX(100%);
-    -moz-transform: translateX(100%);
-    -ms-transform: translateX(100%);
-    -o-transform: translateX(100%);
 }
 
-.signup-container { left: 0; width: 50%; opacity: 0; z-index: 1; }
+.signup-container {
+    left: 0;
+    width: 50%;
+    opacity: 0;
+    z-index: 1;
+}
 
 .auth-container.right-panel-active .signup-container {
     transform: translateX(100%);
-    -webkit-transform: translateX(100%);
-    -moz-transform: translateX(100%);
-    -ms-transform: translateX(100%);
-    -o-transform: translateX(100%);
     opacity: 1;
     z-index: 5;
     animation: show .5s;
-    -webkit-animation: show .5s;
 }
 
 .social-container { margin: 8px 0; }
@@ -198,10 +208,6 @@ span { font-size: .75rem; }
 .social-container a {
     border: 1px solid #DDDDDD;
     border-radius: 50%;
-    -webkit-border-radius: 50%;
-    -moz-border-radius: 50%;
-    -ms-border-radius: 50%;
-    -o-border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -231,19 +237,11 @@ span { font-size: .75rem; }
     height: 100%;
     overflow: hidden;
     transition: all .5s ease-in-out;
-    -webkit-transition: all .5s ease-in-out;
-    -moz-transition: all .5s ease-in-out;
-    -ms-transition: all .5s ease-in-out;
-    -o-transition: all .5s ease-in-out;
     z-index: 100;
 }
 
 .auth-container.right-panel-active .overlay-container{
     transform: translateX(-100%);
-    -webkit-transform: translateX(-100%);
-    -moz-transform: translateX(-100%);
-    -ms-transform: translateX(-100%);
-    -o-transform: translateX(-100%);
 }
 
 .overlay {
@@ -256,23 +254,11 @@ span { font-size: .75rem; }
     height: 100%;
     width: 200%;
     transform: translateX(0);
-    -webkit-transform: translateX(0);
-    -moz-transform: translateX(0);
-    -ms-transform: translateX(0);
-    -o-transform: translateX(0);
     transition: transform .5s ease-in-out;
-    -webkit-transition: transform .5s ease-in-out;
-    -moz-transition: transform .5s ease-in-out;
-    -ms-transition: transform .5s ease-in-out;
-    -o-transition: transform .5s ease-in-out;
 }
 
 .auth-container.right-panel-active .overlay {
     transform: translateX(50%);
-    -webkit-transform: translateX(50%);
-    -moz-transform: translateX(50%);
-    -ms-transform: translateX(50%);
-    -o-transform: translateX(50%);
 }
 
 .overlay-panel {
@@ -287,48 +273,24 @@ span { font-size: .75rem; }
     height: 100%;
     width: 50%;
     transform: translateX(0);
-    -webkit-transform: translateX(0);
-    -moz-transform: translateX(0);
-    -ms-transform: translateX(0);
-    -o-transform: translateX(0);
     transition: transform .5s ease-in-out;
-    -webkit-transition: transform .5s ease-in-out;
-    -moz-transition: transform .5s ease-in-out;
-    -ms-transition: transform .5s ease-in-out;
-    -o-transition: transform .5s ease-in-out;
 }
 
 .overlay-left {
     transform: translateX(-20%);
-    -webkit-transform: translateX(-20%);
-    -moz-transform: translateX(-20%);
-    -ms-transform: translateX(-20%);
-    -o-transform: translateX(-20%);
 }
 
 .auth-container.right-panel-active .overlay-left {
     transform: translateX(0);
-    -webkit-transform: translateX(0);
-    -moz-transform: translateX(0);
-    -ms-transform: translateX(0);
-    -o-transform: translateX(0);
 }
 
 .overlay-right {
     right: 0;
     transform: translateX(0);
-    -webkit-transform: translateX(0);
-    -moz-transform: translateX(0);
-    -ms-transform: translateX(0);
-    -o-transform: translateX(0);
 }
 
 .auth-container.right-panel-active .overlay-right {
     transform: translateX(20%);
-    -webkit-transform: translateX(20%);
-    -moz-transform: translateX(20%);
-    -ms-transform: translateX(20%);
-    -o-transform: translateX(20%);
 }
 
 .mobile-auth-toggle {

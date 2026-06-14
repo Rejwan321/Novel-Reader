@@ -1,0 +1,7 @@
+.tabs { display:flex; gap:8px; margin: 10px 0 16px; }
+.tabs button { padding:6px 10px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; }
+.tabs button.active { background:#111; color:#fff; }
+.rank-list { list-style:none; padding:0; display:grid; gap:10px; }
+.rank-list li { display:grid; grid-template-columns: 40px 40px 1fr 120px; gap:12px; align-items:center; border:1px solid #eee; border-radius:8px; padding:8px 10px; }
+.rank-list img { width:40px; height:56px; object-fit:cover; border-radius:4px; }
+.genre { color:#666; font-size:0.9rem; }
