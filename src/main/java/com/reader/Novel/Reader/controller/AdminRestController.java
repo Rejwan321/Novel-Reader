@@ -5,6 +5,8 @@ import com.reader.Novel.Reader.model.Novel;
 import com.reader.Novel.Reader.model.Chapter;
 import com.reader.Novel.Reader.model.Purchase;
 import com.reader.Novel.Reader.model.FlakePackage;
+import com.reader.Novel.Reader.model.Review;
+import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,9 @@ public class AdminRestController {
 
     @Autowired
     private NovelService novelService;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
 
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
@@ -1294,5 +1299,37 @@ public class AdminRestController {
         } catch (IOException e) {
             System.err.println("Error synchronizing chapter text file: " + e.getMessage());
         }
+    }
+
+    // GET all reviews for Admin/Owner dashboard
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getAllReviews(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        return ResponseEntity.ok(reviewRepository.findAll());
+    }
+
+    // DELETE a review
+    @DeleteMapping("/reviews/{id}")
+    public ResponseEntity<?> deleteReview(@PathVariable Long id, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        if (!reviewRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Review not found."));
+        }
+        reviewRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("success", true));
     }
 }
