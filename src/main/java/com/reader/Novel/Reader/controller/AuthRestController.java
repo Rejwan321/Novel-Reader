@@ -88,4 +88,60 @@ public class AuthRestController {
         }
         return ResponseEntity.ok(user);
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestParam("token") String token, HttpSession session) {
+        if (token == null || token.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Token is required."));
+        }
+
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = restTemplate.getForObject(url, Map.class);
+            
+            if (payload == null || payload.containsKey("error")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Google token."));
+            }
+
+            // Verify audience
+            String aud = (String) payload.get("aud");
+            String expectedClientId = "883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com";
+            if (!expectedClientId.equals(aud)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token was not generated for this application."));
+            }
+
+            String email = (String) payload.get("email");
+            String name = (String) payload.get("name");
+            String emailVerified = (String) payload.get("email_verified");
+
+            if (!"true".equals(emailVerified)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Google email is not verified."));
+            }
+
+            // Check if user already exists
+            Optional<User> userOpt = userService.getUserByEmail(email);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                // First time sign-in, register automatically!
+                String randomPassword = java.util.UUID.randomUUID().toString();
+                String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(randomPassword);
+                
+                user = new User(null, name, email, hashedPassword, "READER");
+                userService.addUser(user);
+            }
+
+            // Log user in
+            session.setAttribute("user", user);
+            return ResponseEntity.ok(Map.of("success", true, "user", user));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Google authentication error: " + e.getMessage()));
+        }
+    }
 }
