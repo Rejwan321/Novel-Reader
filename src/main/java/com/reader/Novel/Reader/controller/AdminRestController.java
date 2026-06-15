@@ -45,6 +45,9 @@ public class AdminRestController {
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.service.EmailService emailService;
+
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
             User loggedInUser = (User) session.getAttribute("user");
@@ -1479,5 +1482,60 @@ public class AdminRestController {
         if (appBaseUrl != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("app.base_url", appBaseUrl.trim()));
 
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // POST /sendmail admin email dispatch
+    @PostMapping("/sendmail")
+    public ResponseEntity<?> sendAdminEmail(
+            @RequestParam String recipientMode,
+            @RequestParam(required = false) List<String> selectedEmails,
+            @RequestParam(required = false) String customEmails,
+            @RequestParam String subject,
+            @RequestParam String body,
+            HttpSession session) {
+
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied. Only admins or owners can send emails."));
+        }
+
+        if (subject == null || subject.trim().isEmpty() || body == null || body.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Subject and message body are required."));
+        }
+
+        java.util.Set<String> recipients = new java.util.HashSet<>();
+        if ("select".equals(recipientMode)) {
+            if (selectedEmails != null) {
+                for (String email : selectedEmails) {
+                    if (email != null && !email.trim().isEmpty()) {
+                        recipients.add(email.trim());
+                    }
+                }
+            }
+        } else if ("custom".equals(recipientMode)) {
+            if (customEmails != null) {
+                String[] parts = customEmails.split(",");
+                for (String part : parts) {
+                    if (part != null && !part.trim().isEmpty()) {
+                        recipients.add(part.trim());
+                    }
+                }
+            }
+        }
+
+        if (recipients.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No valid recipients specified."));
+        }
+
+        // Dispatch emails asynchronously
+        for (String email : recipients) {
+            emailService.sendCustomEmailAsync(email, subject.trim(), body.trim());
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Email dispatch initiated successfully for " + recipients.size() + " recipient(s)."));
     }
 }
