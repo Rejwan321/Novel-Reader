@@ -420,6 +420,20 @@
         .flatpickr-months .flatpickr-month {
             color: #ffffff !important;
         }
+        /* Style the visible flatpickr input field to match other form inputs */
+        .flatpickr-input,
+        .flatpickr-input[readonly] {
+            background-color: #12121e !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .flatpickr-input::placeholder {
+            color: rgba(255, 255, 255, 0.5) !important;
+        }
+        .flatpickr-input:focus,
+        .flatpickr-input[readonly]:focus {
+            border-color: var(--theme-primary) !important;
+        }
     </style>
 </head>
 <body class="dark-theme">
