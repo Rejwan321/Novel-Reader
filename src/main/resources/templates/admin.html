@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,6 +386,39 @@
         }
         .animate-spin {
             animation: fa-spin 2s linear infinite;
+        }
+        /* Custom themed Flatpickr */
+        .flatpickr-calendar {
+            background: #1a1538 !important;
+            border: 1px solid rgba(189, 83, 237, 0.4) !important;
+            box-shadow: 0 0 15px rgba(189, 83, 237, 0.2) !important;
+            border-radius: 12px !important;
+        }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover {
+            background: #bd53ed !important;
+            border-color: #bd53ed !important;
+            color: #ffffff !important;
+        }
+        .flatpickr-day:hover {
+            background: rgba(189, 83, 237, 0.2) !important;
+        }
+        .flatpickr-time {
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .flatpickr-time input:hover, .flatpickr-time .flatpickr-am-pm:hover, .flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus {
+            background: rgba(189, 83, 237, 0.2) !important;
+        }
+        .flatpickr-time input {
+            color: #ffffff !important;
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:after {
+            border-bottom-color: #ffffff !important;
+        }
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-top-color: #ffffff !important;
+        }
+        .flatpickr-months .flatpickr-month {
+            color: #ffffff !important;
         }
     </style>
 </head>
@@ -1337,6 +1372,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script th:inline="javascript">
         const allNovelsMeta = /*[[${novels}]]*/ [];
         const currentUserSession = /*[[${session.user}]]*/ null;
@@ -1632,6 +1668,17 @@
         }
 
         $(document).ready(function() {
+            // Initialize Flatpickr for publish date & time (calendar and clock)
+            window.publishAtPicker = null;
+            if ($("#chapter-publish-at").length > 0) {
+                window.publishAtPicker = flatpickr("#chapter-publish-at", {
+                    enableTime: true,
+                    dateFormat: "Y-m-d\\TH:i",
+                    altInput: true,
+                    altFormat: "F j, Y, h:i K",
+                    time_24hr: false
+                });
+            }
 
             // AJAX: User role selection changed
             $(".user-role-select").change(function() {
@@ -2075,7 +2122,11 @@
                 if (publishAt && publishAt.length > 16) {
                     publishAt = publishAt.substring(0, 16);
                 }
-                $("#chapter-publish-at").val(publishAt);
+                if (window.publishAtPicker) {
+                    window.publishAtPicker.setDate(publishAt || "");
+                } else {
+                    $("#chapter-publish-at").val(publishAt);
+                }
 
                 // Update form mode parameters
                 var form = $("#form-add-chapter");
@@ -2104,7 +2155,11 @@
                 form.attr("data-mode", "create");
                 form.attr("data-edit-id", "");
                 $("#chapter-price").val(0);
-                $("#chapter-publish-at").val("");
+                if (window.publishAtPicker) {
+                    window.publishAtPicker.clear();
+                } else {
+                    $("#chapter-publish-at").val("");
+                }
 
                 $("#title-add-chapter").html('<i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter');
                 $("#btn-submit-chapter").html('<i class="fa fa-plus me-2"></i>Add Chapter').addClass("btn-premium").removeClass("btn-warning text-dark");
