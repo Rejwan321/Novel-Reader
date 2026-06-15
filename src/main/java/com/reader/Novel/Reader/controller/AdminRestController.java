@@ -562,7 +562,8 @@ public class AdminRestController {
         }
 
         Chapter chapter = new Chapter(null, novel, title.trim(), chapterNumber, content.trim(), price);
-        if (publishAt != null && !publishAt.trim().isEmpty()) {
+        boolean canEditPublishAt = "ADMIN".equals(role) || "OWNER".equals(role) || "PROOFREADER".equals(role);
+        if (canEditPublishAt && publishAt != null && !publishAt.trim().isEmpty()) {
             try {
                 chapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
             } catch (Exception e) {
@@ -718,14 +719,18 @@ public class AdminRestController {
         existingChapter.setChapterNumber(chapterNumber);
         existingChapter.setContent(content.trim());
         existingChapter.setPrice(price);
-        if (publishAt != null && !publishAt.trim().isEmpty()) {
-            try {
-                existingChapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
-            } catch (Exception e) {
-                // ignore parsing error
+        
+        boolean canEditPublishAt = "ADMIN".equals(role) || "OWNER".equals(role) || "PROOFREADER".equals(role);
+        if (canEditPublishAt) {
+            if (publishAt != null && !publishAt.trim().isEmpty()) {
+                try {
+                    existingChapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
+                } catch (Exception e) {
+                    // ignore parsing error
+                }
+            } else {
+                existingChapter.setPublishAt(null);
             }
-        } else {
-            existingChapter.setPublishAt(null);
         }
 
         Chapter saved = novelService.saveChapter(existingChapter);

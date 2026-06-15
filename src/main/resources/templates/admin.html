@@ -592,7 +592,7 @@
                                     <label class="form-label-admin">Price (Snow Flakes)</label>
                                     <input type="number" class="form-input-admin" id="chapter-price" required min="0" value="0" placeholder="0 for free chapters">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6" th:style="${userRole == 'ADMIN' or userRole == 'OWNER' or userRole == 'PROOFREADER'} ? '' : 'display: none;'">
                                     <label class="form-label-admin">Publish Date & Time (Optional)</label>
                                     <input type="datetime-local" class="form-input-admin" id="chapter-publish-at">
                                 </div>
