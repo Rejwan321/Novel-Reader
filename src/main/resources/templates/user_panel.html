@@ -464,18 +464,71 @@
             toast.show();
         }
 
-        // Sync count to navbar dynamically
+        // Sync count to navbar dynamically (Fixed to update dropdown count badge too)
         function updateNavbarUnreadBadge() {
             $.get("/api/user/notifications/unread-count")
                 .done(function(res) {
-                    var badge = $("#navbar-unread-badge");
                     if (res.count > 0) {
-                        badge.text(res.count).removeClass('d-none');
+                        $("#navbar-unread-badge").removeClass('d-none');
+                        $("#navbar-unread-dropdown-badge").text(res.count).removeClass('d-none');
                     } else {
-                        badge.addClass('d-none');
+                        $("#navbar-unread-badge").addClass('d-none');
+                        $("#navbar-unread-dropdown-badge").addClass('d-none');
                     }
                 });
         }
+
+        // SSE Real-time Notification Prepend
+        window.appendNotificationRealtime = function(notif) {
+            var container = $("#notifications-list");
+            
+            // Remove empty placeholder if present
+            if (container.children().first().text().indexOf("no notifications yet") !== -1) {
+                container.empty();
+            }
+            
+            var dateStr = notif.createdAt ? new Date(notif.createdAt).toLocaleString() : new Date().toLocaleString();
+            var isUnread = !notif.read;
+            
+            var itemHtml = `
+                <div class="notification-item ${isUnread ? 'unread' : ''}" id="notif-card-${notif.id}" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                             <div class="notif-title">
+                                 ${notif.comment ? `
+                                     <span class="text-info">@${notif.mentionerName}</span> mentioned you in a comment on 
+                                 ` : `
+                                     New chapter published for 
+                                 `}
+                                 <a href="/novel/${notif.novelId}/read/${notif.chapterNumber}" class="notif-link fw-bold">${notif.novelTitle} - Ch. ${notif.chapterNumber}</a>
+                             </div>
+                             <div class="notif-snippet">${notif.comment ? `"${notif.snippet}"` : `${notif.snippet}`}</div>
+                            <div class="notif-meta">
+                                <i class="fa-regular fa-clock me-1"></i>${dateStr}
+                                <span class="ms-3 badge ${isUnread ? 'bg-warning text-dark' : 'bg-secondary'}" id="notif-badge-${notif.id}">
+                                    ${isUnread ? 'Unread' : 'Read'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn-action-notif" onclick="toggleNotifRead(${notif.id}, ${isUnread})" title="${isUnread ? 'Mark as Read' : 'Mark as Unread'}">
+                                <i class="fa-solid ${isUnread ? 'fa-envelope-open' : 'fa-envelope'}"></i>
+                            </button>
+                            <button class="btn-action-notif btn-action-delete" onclick="deleteNotif(${notif.id})" title="Delete Notification">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            var newNotif = $(itemHtml);
+            container.prepend(newNotif);
+            newNotif.slideDown(300);
+            
+            // Sync badges
+            updateNavbarUnreadBadge();
+        };
     </script>
 </body>
 </html>
