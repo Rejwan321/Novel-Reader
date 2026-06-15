@@ -216,14 +216,91 @@ public class CommentRestController {
         Comment comment = commentOpt.get();
         String role = loggedInUser.getUser_type();
         
-        boolean isAuthor = comment.getUser().getId().equals(loggedInUser.getId());
         boolean isAdminOrOwner = "ADMIN".equals(role) || "OWNER".equals(role);
 
-        if (!isAuthor && !isAdminOrOwner) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not have permission to delete this comment."));
+        if (!isAdminOrOwner) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not have permission to delete this comment. Only admins can delete comments."));
         }
 
         commentRepository.delete(comment);
         return ResponseEntity.ok(Map.of("success", true, "message", "Comment deleted successfully."));
+    }
+
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<?> editComment(
+            @PathVariable Long commentId,
+            @RequestParam String content,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to edit comments."));
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Comment content cannot be empty."));
+        }
+
+        if (content.length() > 2000) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Comment length cannot exceed 2000 characters."));
+        }
+
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+        if (commentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comment not found."));
+        }
+
+        Comment comment = commentOpt.get();
+        
+        // Verify user has permission to edit (must be the author)
+        if (!comment.getUser().getId().equals(loggedInUser.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not have permission to edit this comment."));
+        }
+
+        comment.setContent(content.trim());
+        Comment saved = commentRepository.save(comment);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/comments/{commentId}/report")
+    public ResponseEntity<?> reportComment(
+            @PathVariable Long commentId,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to report comments."));
+        }
+
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+        if (commentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comment not found."));
+        }
+
+        Comment comment = commentOpt.get();
+        
+        // Increment reportsCount
+        int currentCount = comment.getReportsCount() != null ? comment.getReportsCount() : 0;
+        comment.setReportsCount(currentCount + 1);
+        commentRepository.save(comment);
+
+        // Fetch Novel and Chapter to get context for email
+        chapterRepository.findById(comment.getChapterId()).ifPresent(chapter -> {
+            com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
+            if (novel != null) {
+                String readLink = baseUrl + "/novel/" + novel.getId() + "/read/" + chapter.getChapterNumber();
+                emailService.sendCommentReportEmailAsync(
+                    loggedInUser.getName(),
+                    comment.getUser().getName(),
+                    comment.getContent(),
+                    novel.getTitle(),
+                    chapter.getChapterNumber(),
+                    readLink,
+                    comment.getId()
+                );
+            }
+        });
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Comment reported successfully."));
     }
 }

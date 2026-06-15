@@ -171,6 +171,11 @@ public class CommentRestControllerTest {
 
     @Test
     public void testDeleteParentCommentCascadesToReplies() throws Exception {
+        // Change user role to ADMIN so they have permission to delete comments
+        testUser.setUser_type("ADMIN");
+        testUser = userRepository.save(testUser);
+        session.setAttribute("user", testUser);
+
         Comment parentComment = new Comment(testChapter.getId(), testUser, "Parent comment");
         parentComment = commentRepository.save(parentComment);
 
@@ -199,5 +204,36 @@ public class CommentRestControllerTest {
 
         // Verify reply is also deleted (cascading / orphan removal)
         assertFalse(commentRepository.findById(replyId).isPresent());
+    }
+
+    @Test
+    public void testEditComment() throws Exception {
+        Comment comment = new Comment(testChapter.getId(), testUser, "Original content");
+        comment = commentRepository.save(comment);
+
+        mockMvc.perform(put("/api/comments/" + comment.getId())
+                .session(session)
+                .param("content", "Updated content text"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("Updated content text"));
+
+        // Verify edited in database
+        Comment updated = commentRepository.findById(comment.getId()).orElseThrow();
+        assertEquals("Updated content text", updated.getContent());
+    }
+
+    @Test
+    public void testReportComment() throws Exception {
+        Comment comment = new Comment(testChapter.getId(), testUser, "Offensive content");
+        comment = commentRepository.save(comment);
+
+        mockMvc.perform(post("/api/comments/" + comment.getId() + "/report")
+                .session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        // Verify report count incremented in database
+        Comment updated = commentRepository.findById(comment.getId()).orElseThrow();
+        assertEquals(1, updated.getReportsCount());
     }
 }
