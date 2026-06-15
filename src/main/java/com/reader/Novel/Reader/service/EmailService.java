@@ -166,4 +166,27 @@ public class EmailService {
             System.err.println("Failed to send review alert email: " + e.getMessage());
         }
     }
+
+    @Async
+    public void sendCustomEmailAsync(String to, String subject, String body) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
+            System.err.println("JavaMailSender not configured. Skipping custom email.");
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            String activeFrom = getFromAddress();
+            message.setFrom(activeFrom);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+
+            activeSender.send(message);
+            System.out.println("Custom email sent successfully to " + to);
+        } catch (Exception e) {
+            System.err.println("Failed to send custom email to " + to + ": " + e.getMessage());
+        }
+    }
 }

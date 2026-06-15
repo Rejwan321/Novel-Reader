@@ -445,6 +445,10 @@
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-credentials-btn" onclick="switchTab('credentials')">
                         <i class="fa-solid fa-key text-info"></i>Credentials Settings
                     </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-sendmail-btn" onclick="switchTab('sendmail')">
+                        <i class="fa-solid fa-paper-plane text-success"></i>Send Email
+                    </button>
 
                     <!-- Self-Destruct / Recovery Button (OWNER only) -->
                     <div th:if="${userRole == 'OWNER'}" class="mt-4 pt-3 border-top border-secondary">
@@ -1027,6 +1031,72 @@
                     </form>
                 </div>
 
+                <!-- Send Email Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-sendmail" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1"><i class="fa-solid fa-paper-plane text-success me-2"></i>Send Email to Users</h2>
+                            <p class="text-muted small mb-0">Dispatch a custom email to selected users or enter custom email addresses.</p>
+                        </div>
+                    </div>
+
+                    <form id="form-admin-sendmail">
+                        <!-- Recipient Mode -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label-admin">Recipient Option</label>
+                                <div class="d-flex gap-3 mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recipient-mode" id="mode-select" value="select" checked>
+                                        <label class="form-check-label text-white" for="mode-select">Select from Users List</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recipient-mode" id="mode-custom" value="custom">
+                                        <label class="form-check-label text-white" for="mode-custom">Enter Custom Email</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option A: Select User from List -->
+                        <div class="row g-3 mb-4" id="group-select-user">
+                            <div class="col-12">
+                                <label for="sendmail-user-select" class="form-label-admin">Select Recipient User(s)</label>
+                                <select class="form-input-admin" id="sendmail-user-select" multiple style="height: 150px;">
+                                    <option th:each="u : ${users}" th:value="${u.email}" th:text="${u.name + ' (' + u.email + ')'}"></option>
+                                </select>
+                                <small class="text-muted d-block mt-1">Hold Ctrl (or Cmd) to select multiple users.</small>
+                            </div>
+                        </div>
+
+                        <!-- Option B: Custom Email -->
+                        <div class="row g-3 mb-4 d-none" id="group-custom-email">
+                            <div class="col-12">
+                                <label for="sendmail-custom-input" class="form-label-admin">Recipient Email Address(es)</label>
+                                <input type="text" class="form-input-admin" id="sendmail-custom-input" placeholder="e.g. user1@example.com, user2@example.com">
+                                <small class="text-muted d-block mt-1">Separate multiple emails with commas.</small>
+                            </div>
+                        </div>
+
+                        <!-- Subject & Message Content -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="sendmail-subject" class="form-label-admin">Subject</label>
+                                <input type="text" class="form-input-admin" id="sendmail-subject" required placeholder="Email Subject">
+                            </div>
+                            <div class="col-12">
+                                <label for="sendmail-body" class="form-label-admin">Message Body</label>
+                                <textarea class="form-input-admin" id="sendmail-body" required rows="8" placeholder="Type your message here..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4 gap-2">
+                            <button type="reset" class="btn btn-outline-light px-4">Reset</button>
+                            <button type="submit" class="btn btn-premium px-5" id="btn-submit-sendmail"><i class="fa-solid fa-paper-plane me-2"></i>Send Email</button>
+                        </div>
+                    </form>
+                </div>
+
 
                 <!-- Analytics Dashboard Pane -->
                 <div th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-card" id="pane-analytics" style="display: none;">
@@ -1274,13 +1344,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials', 'sendmail'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -2930,13 +3000,72 @@
                 });
             });
 
+            // Toggle Send Email recipient mode input fields
+            $('input[name="recipient-mode"]').change(function() {
+                if ($(this).val() === 'select') {
+                    $('#group-select-user').removeClass('d-none');
+                    $('#group-custom-email').addClass('d-none');
+                    $("#sendmail-custom-input").prop('required', false);
+                } else {
+                    $('#group-select-user').addClass('d-none');
+                    $('#group-custom-email').removeClass('d-none');
+                    $("#sendmail-custom-input").prop('required', true);
+                }
+            });
+
+            // AJAX: Submit Send Email form
+            $("#form-admin-sendmail").submit(function(e) {
+                e.preventDefault();
+                var btn = $("#btn-submit-sendmail");
+                var originalHtml = btn.html();
+                
+                var recipientMode = $('input[name="recipient-mode"]:checked').val();
+                var selectedEmails = $("#sendmail-user-select").val() || [];
+                var customEmails = $("#sendmail-custom-input").val();
+                var subject = $("#sendmail-subject").val();
+                var body = $("#sendmail-body").val();
+
+                if (recipientMode === 'select' && selectedEmails.length === 0) {
+                    showToast("Please select at least one recipient user.", "error");
+                    return;
+                }
+
+                btn.html('<i class="fa fa-spinner fa-spin me-2"></i>Sending...').prop("disabled", true);
+
+                $.ajax({
+                    url: "/api/admin/sendmail",
+                    type: "POST",
+                    data: {
+                        recipientMode: recipientMode,
+                        selectedEmails: selectedEmails.join(","), // jquery post lists as array or comma separated
+                        customEmails: customEmails,
+                        subject: subject,
+                        body: body
+                    },
+                    success: function(res) {
+                        showToast(res.message || "Emails sent successfully!");
+                        $("#form-admin-sendmail")[0].reset();
+                        // Reset visibility
+                        $('#group-select-user').removeClass('d-none');
+                        $('#group-custom-email').addClass('d-none');
+                        $("#sendmail-custom-input").prop('required', false);
+                        btn.html(originalHtml).prop("disabled", false);
+                    },
+                    error: function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to send email.";
+                        showToast(msg, "error");
+                        btn.html(originalHtml).prop("disabled", false);
+                    }
+                });
+            });
+
             // Restore last active tab if present
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);
