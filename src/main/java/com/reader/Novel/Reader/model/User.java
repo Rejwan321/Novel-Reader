@@ -25,6 +25,7 @@ public class User {
     private String loginType = "LOCAL";
     private String updatesEmail;
     private Boolean subscribedToUpdates = false;
+    private Boolean subscribedToMentions = true;
 
     public User() {
 
@@ -92,8 +93,16 @@ public class User {
         this.subscribedToUpdates = subscribedToUpdates;
     }
 
+    public Boolean getSubscribedToMentions() {
+        return subscribedToMentions != null ? subscribedToMentions : true;
+    }
+
+    public void setSubscribedToMentions(Boolean subscribedToMentions) {
+        this.subscribedToMentions = subscribedToMentions;
+    }
+
     @Override
     public String toString() {
-        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + "}";
+        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + ", subscribedToMentions=" + subscribedToMentions + "}";
     }
 }

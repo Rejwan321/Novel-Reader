@@ -42,6 +42,9 @@ public class Notification {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "user_id", nullable = true)
+    private Long userId;
+
     public Notification() {
     }
 
@@ -55,5 +58,26 @@ public class Notification {
         this.chapterId = chapterId;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public Notification(Comment comment, String mentionerName, String snippet, Long novelId, String novelTitle, Double chapterNumber, Long chapterId, Long userId) {
+        this.comment = comment;
+        this.mentionerName = mentionerName;
+        this.snippet = snippet;
+        this.novelId = novelId;
+        this.novelTitle = novelTitle;
+        this.chapterNumber = chapterNumber;
+        this.chapterId = chapterId;
+        this.userId = userId;
+        this.isRead = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

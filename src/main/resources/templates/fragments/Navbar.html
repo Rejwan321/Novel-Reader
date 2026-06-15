@@ -64,13 +64,15 @@
                             <span id="navbar-user-balance" th:text="${session.user.user_type == 'ADMIN' or session.user.user_type == 'OWNER' ? '∞' : session.user.balance}">100</span>
                             <i class="fa-solid fa-snowflake ms-2" style="color: #00e5ff;"></i>
                         </span>
-                        <button class="btn btn-profile-dropdown dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-profile-dropdown dropdown-toggle position-relative" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa fa-user-circle me-1"></i>
                             <span th:if="${session.user.user_type == 'OWNER'}">Owner Panel</span>
                             <span th:if="${session.user.user_type == 'ADMIN'}">Admin Panel</span>
                             <span th:if="${session.user.user_type == 'EDITOR'}">Editor Panel</span>
                             <span th:if="${session.user.user_type == 'PROOFREADER'}">Proofreader Panel</span>
                             <span th:if="${session.user.user_type != 'OWNER' and session.user.user_type != 'ADMIN' and session.user.user_type != 'EDITOR' and session.user.user_type != 'PROOFREADER'}" th:text="${session.user.name}">Reader</span>
+                            <!-- Unread badge dot -->
+                            <span id="navbar-unread-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger d-none" style="font-size: 0.55rem; padding: 3px 5px; border: 1px solid #1a1538;">&nbsp;</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="background-color: rgba(104, 85, 224, 0.6); border: 1px solid #5e63b6; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                             <li th:if="${session.user.user_type == 'OWNER'}">
@@ -84,6 +86,13 @@
                             </li>
                             <li th:if="${session.user.user_type == 'PROOFREADER'}">
                                 <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Proofreader Panel</a>
+                            </li>
+                            <!-- User Panel accessible to everyone -->
+                            <li>
+                                <a class="dropdown-item text-info" href="/user/panel">
+                                    <i class="fa-solid fa-user me-2"></i> User Panel
+                                    <span id="navbar-unread-dropdown-badge" class="badge bg-danger rounded-pill ms-2 d-none">0</span>
+                                </a>
                             </li>
                             <li><hr class="dropdown-divider" style="background-color: #5e63b6;"></li>
                             <li><a class="dropdown-item text-danger" href="#" id="btn-logout"><i class="fa-solid fa-sign-out-alt me-2"></i> Log Out</a></li>
@@ -331,6 +340,21 @@ $(document).ready(function() {
             btn.prop('disabled', false).text('Subscribe');
         });
     });
+
+    // Fetch unread notification counts dynamically
+    var loggedIn = [[${session.user != null}]];
+    if (loggedIn) {
+        $.get("/api/user/notifications/unread-count")
+            .done(function(res) {
+                if (res.count > 0) {
+                    $("#navbar-unread-badge").removeClass('d-none');
+                    $("#navbar-unread-dropdown-badge").text(res.count).removeClass('d-none');
+                } else {
+                    $("#navbar-unread-badge").addClass('d-none');
+                    $("#navbar-unread-dropdown-badge").addClass('d-none');
+                }
+            });
+    }
 });
 </script>
 </div>

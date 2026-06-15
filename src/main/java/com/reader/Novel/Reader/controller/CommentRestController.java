@@ -7,6 +7,7 @@ import com.reader.Novel.Reader.model.User;
 import com.reader.Novel.Reader.repository.ChapterRepository;
 import com.reader.Novel.Reader.repository.CommentRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
+import com.reader.Novel.Reader.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.reader.Novel.Reader.service.EmailService;
@@ -34,6 +35,9 @@ public class CommentRestController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Value("${app.base-url:https://nazuna.dpdns.org}")
     private String baseUrl;
 
@@ -41,6 +45,8 @@ public class CommentRestController {
         String content = comment.getContent();
         if (content == null) return;
         String lower = content.toLowerCase();
+        
+        // Admin mentions
         if (lower.contains("@admin") || lower.contains("@system admin") || lower.contains("@systemadmin")) {
             chapterRepository.findById(comment.getChapterId()).ifPresent(chapter -> {
                 com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
@@ -68,6 +74,51 @@ public class CommentRestController {
                     );
                 }
             });
+        }
+
+        // Mentions of other registered users
+        List<User> allUsers = userRepository.findAll();
+        for (User u : allUsers) {
+            // Avoid notifying the author of the comment
+            if (u.getId().equals(comment.getUser().getId())) continue;
+
+            String nameMention = "@" + u.getName().toLowerCase();
+            String emailMention = "@" + u.getEmail().toLowerCase();
+            if (lower.contains(nameMention) || lower.contains(emailMention)) {
+                chapterRepository.findById(comment.getChapterId()).ifPresent(chapter -> {
+                    com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
+                    if (novel != null) {
+                        String snippet = content.length() > 100 ? content.substring(0, 97) + "..." : content;
+                        Notification notification = new Notification(
+                            comment,
+                            comment.getUser().getName(),
+                            snippet,
+                            novel.getId(),
+                            novel.getTitle(),
+                            chapter.getChapterNumber(),
+                            chapter.getId(),
+                            u.getId()
+                        );
+                        notificationRepository.save(notification);
+
+                        // If user is subscribed to mentions, send email notification
+                        if (u.getSubscribedToMentions() == null || u.getSubscribedToMentions()) {
+                            String targetEmail = (u.getUpdatesEmail() != null && !u.getUpdatesEmail().trim().isEmpty()) 
+                                    ? u.getUpdatesEmail() : u.getEmail();
+                            String readLink = baseUrl + "/novel/" + novel.getId() + "/read/" + chapter.getChapterNumber();
+
+                            emailService.sendMentionEmailAsyncToRecipient(
+                                targetEmail,
+                                comment.getUser().getName(),
+                                content,
+                                novel.getTitle(),
+                                chapter.getChapterNumber(),
+                                readLink
+                            );
+                        }
+                    }
+                });
+            }
         }
     }
 
