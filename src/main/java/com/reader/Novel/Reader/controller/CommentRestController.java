@@ -84,6 +84,13 @@ public class CommentRestController {
 
             String nameMention = "@" + u.getName().toLowerCase();
             String emailMention = "@" + u.getEmail().toLowerCase();
+            
+            // Skip general admin role mentions that are already handled by the admin-mentions block above
+            if (nameMention.equals("@admin") || nameMention.equals("@system admin") || nameMention.equals("@systemadmin")
+                    || emailMention.equals("@admin") || emailMention.equals("@system admin") || emailMention.equals("@systemadmin")) {
+                continue;
+            }
+
             if (lower.contains(nameMention) || lower.contains(emailMention)) {
                 chapterRepository.findById(comment.getChapterId()).ifPresent(chapter -> {
                     com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
