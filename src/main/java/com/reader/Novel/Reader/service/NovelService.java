@@ -221,11 +221,15 @@ public class NovelService {
         synchronized (this) {
             com.reader.Novel.Reader.model.User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found."));
-            if (user.getBalance() < price) {
-                throw new IllegalArgumentException("Insufficient balance.");
+            String role = user.getUser_type();
+            boolean isInfinite = "ADMIN".equals(role) || "OWNER".equals(role);
+            if (!isInfinite) {
+                if (user.getBalance() < price) {
+                    throw new IllegalArgumentException("Insufficient balance.");
+                }
+                user.setBalance(user.getBalance() - price);
+                userRepository.save(user);
             }
-            user.setBalance(user.getBalance() - price);
-            userRepository.save(user);
             purchaseRepository.save(new Purchase(null, userId, chapterId, java.time.LocalDateTime.now()));
         }
     }

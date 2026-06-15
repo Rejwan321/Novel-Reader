@@ -2307,7 +2307,12 @@
                     // If the admin updated their own balance, update navbar balance dynamically
                     const currentLoggedInId = /*[[${session.user.id}]]*/ null;
                     if (userId == currentLoggedInId) {
-                        $("#navbar-user-balance").text(balance);
+                        const userType = /*[[${session.user.user_type}]]*/ '';
+                        if (userType === 'ADMIN' || userType === 'OWNER') {
+                            $("#navbar-user-balance").text('∞');
+                        } else {
+                            $("#navbar-user-balance").text(balance);
+                        }
                     }
                 })
                 .fail(function(err) {
