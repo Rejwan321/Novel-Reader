@@ -98,6 +98,40 @@ public class EmailService {
     }
 
     @Async
+    public void sendMentionEmailAsyncToRecipient(String recipientEmail, String authorName, String commentContent, String novelTitle, Double chapterNumber, String readLink) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
+            System.err.println("JavaMailSender not configured. Skipping email notification.");
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            String activeFrom = getFromAddress();
+            message.setFrom(activeFrom);
+            message.setTo(recipientEmail);
+            message.setSubject("[Yuki Tales] You were mentioned in a comment!");
+            message.setText(String.format(
+                "Hello,\n\n" +
+                "You were mentioned in a comment on Yuki Tales:\n\n" +
+                "User: %s\n" +
+                "Comment: \"%s\"\n" +
+                "Novel: %s (Chapter %s)\n\n" +
+                "You can view the comment here: %s\n\n" +
+                "If you wish to change your notification preferences, you can do so in your User Panel.\n\n" +
+                "Best regards,\n" +
+                "Yuki Tales Support",
+                authorName, commentContent, novelTitle, chapterNumber, readLink
+            ));
+
+            activeSender.send(message);
+            System.out.println("Mention notification email sent successfully to recipient: " + recipientEmail);
+        } catch (Exception e) {
+            System.err.println("Failed to send mention notification email to recipient: " + e.getMessage());
+        }
+    }
+
+    @Async
     public void sendCommentReportEmailAsync(String reporterName, String commentAuthor, String commentContent, String novelTitle, Double chapterNumber, String readLink, Long commentId) {
         JavaMailSender activeSender = getDynamicMailSender();
         if (activeSender == null) {
