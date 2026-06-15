@@ -1552,24 +1552,25 @@
             });
         }
 
-        $(document).ready(function() {
-            // Toast Notification Helper
-            function showToast(message, type = "success") {
-                var toastEl = document.getElementById('actionToast');
-                if (!toastEl) return;
-                var toastBody = document.getElementById('toast-message-body');
-                toastBody.innerText = message;
-                toastEl.className = "toast align-items-center text-white border-0";
-                if (type === "success") {
-                    toastEl.classList.add("bg-toast-success");
-                } else if (type === "error") {
-                    toastEl.classList.add("bg-toast-error");
-                } else {
-                    toastEl.classList.add("bg-toast-info");
-                }
-                var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-                toast.show();
+        // Toast Notification Helper
+        function showToast(message, type = "success") {
+            var toastEl = document.getElementById('actionToast');
+            if (!toastEl) return;
+            var toastBody = document.getElementById('toast-message-body');
+            toastBody.innerText = message;
+            toastEl.className = "toast align-items-center text-white border-0";
+            if (type === "success") {
+                toastEl.classList.add("bg-toast-success");
+            } else if (type === "error") {
+                toastEl.classList.add("bg-toast-error");
+            } else {
+                toastEl.classList.add("bg-toast-info");
             }
+            var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            toast.show();
+        }
+
+        $(document).ready(function() {
 
             // AJAX: User role selection changed
             $(".user-role-select").change(function() {
