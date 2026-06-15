@@ -132,8 +132,12 @@ public class AuthRestController {
                 String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(randomPassword);
                 
                 user = new User(null, name, email, hashedPassword, "READER");
-                userService.addUser(user);
             }
+
+            user.setLoginType("GOOGLE");
+            user.setSubscribedToUpdates(true);
+            user.setUpdatesEmail(email);
+            userService.addUser(user);
 
             // Log user in
             session.setAttribute("user", user);
@@ -143,5 +147,29 @@ public class AuthRestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Google authentication error: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/subscribe-updates")
+    public ResponseEntity<?> subscribeUpdates(@RequestParam String email, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to subscribe."));
+        }
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
+        }
+        
+        Optional<User> userOpt = userService.getUserByEmail(loggedInUser.getEmail());
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setSubscribedToUpdates(true);
+            user.setUpdatesEmail(email.trim());
+            userService.updateUser(user);
+            
+            // Sync session
+            session.setAttribute("user", user);
+            return ResponseEntity.ok(user);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
     }
 }

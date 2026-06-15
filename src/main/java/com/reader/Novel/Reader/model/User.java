@@ -22,6 +22,10 @@ public class User {
     private String user_type;
     private Integer balance = 100;
 
+    private String loginType = "LOCAL";
+    private String updatesEmail;
+    private Boolean subscribedToUpdates = false;
+
     public User() {
 
     }
@@ -64,8 +68,32 @@ public class User {
     public Integer getBalance() { return balance; }
     public void setBalance(Integer balance) { this.balance = balance; }
 
+    public String getLoginType() {
+        return loginType != null ? loginType : "LOCAL";
+    }
+
+    public void setLoginType(String loginType) {
+        this.loginType = loginType;
+    }
+
+    public String getUpdatesEmail() {
+        return updatesEmail;
+    }
+
+    public void setUpdatesEmail(String updatesEmail) {
+        this.updatesEmail = updatesEmail;
+    }
+
+    public Boolean getSubscribedToUpdates() {
+        return subscribedToUpdates != null ? subscribedToUpdates : false;
+    }
+
+    public void setSubscribedToUpdates(Boolean subscribedToUpdates) {
+        this.subscribedToUpdates = subscribedToUpdates;
+    }
+
     @Override
     public String toString() {
-        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + "}";
+        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + "}";
     }
 }
