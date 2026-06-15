@@ -971,9 +971,18 @@
                             <h2 class="h4 fw-bold text-white mb-1"><i class="fa-solid fa-key text-info me-2"></i>Credentials Settings</h2>
                             <p class="text-muted small mb-0">Manage Google Sign-In and Mailing SMTP Configuration.</p>
                         </div>
-                        <button class="btn btn-sm btn-outline-info" onclick="loadCredentials()">
-                            <i class="fa-solid fa-arrows-rotate me-1"></i>Refresh
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-success" onclick="exportCredentials()">
+                                <i class="fa-solid fa-file-export me-1"></i>Export
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="triggerImportCredentials()">
+                                <i class="fa-solid fa-file-import me-1"></i>Import
+                            </button>
+                            <input type="file" id="import-credentials-file" class="d-none" accept=".json" onchange="importCredentials(event)">
+                            <button class="btn btn-sm btn-outline-info" onclick="loadCredentials()">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i>Refresh
+                            </button>
+                        </div>
                     </div>
 
                     <form id="form-admin-credentials">
@@ -1390,6 +1399,58 @@
                 var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
                 showToast(msg, "error");
             });
+        };
+
+        window.exportCredentials = function() {
+            var creds = {
+                googleClientId: $("#cred-google-client-id").val(),
+                mailHost: $("#cred-mail-host").val(),
+                mailPort: $("#cred-mail-port").val(),
+                mailUsername: $("#cred-mail-username").val(),
+                mailPassword: $("#cred-mail-password").val(),
+                mailSender: $("#cred-mail-sender").val(),
+                mailRecipient: $("#cred-mail-recipient").val(),
+                appBaseUrl: $("#cred-app-base-url").val()
+            };
+            
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
+            var downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "yuki_tales_credentials.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Credentials exported successfully!");
+        };
+
+        window.triggerImportCredentials = function() {
+            $("#import-credentials-file").click();
+        };
+
+        window.importCredentials = function(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var creds = JSON.parse(e.target.result);
+                    $("#cred-google-client-id").val(creds.googleClientId || "");
+                    $("#cred-mail-host").val(creds.mailHost || "");
+                    $("#cred-mail-port").val(creds.mailPort || "");
+                    $("#cred-mail-username").val(creds.mailUsername || "");
+                    $("#cred-mail-password").val(creds.mailPassword || "");
+                    $("#cred-mail-sender").val(creds.mailSender || "");
+                    $("#cred-mail-recipient").val(creds.mailRecipient || "");
+                    $("#cred-app-base-url").val(creds.appBaseUrl || "");
+
+                    showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
+                } catch (err) {
+                    showToast("Failed to parse credentials file.", "error");
+                }
+                $("#import-credentials-file").val(""); // reset
+            };
+            reader.readAsText(file);
         };
 
         function loadReviews() {
