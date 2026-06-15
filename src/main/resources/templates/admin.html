@@ -408,7 +408,7 @@
         .flatpickr-time input:hover, .flatpickr-time .flatpickr-am-pm:hover, .flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus {
             background: rgba(189, 83, 237, 0.2) !important;
         }
-        .flatpickr-time input {
+        .flatpickr-time, .flatpickr-time input, .flatpickr-time .flatpickr-time-separator, .flatpickr-time .flatpickr-am-pm {
             color: #ffffff !important;
         }
         .flatpickr-time .numInputWrapper span.arrowUp:after {
@@ -629,7 +629,7 @@
                                 </div>
                                 <div class="col-md-6" th:style="${userRole == 'ADMIN' or userRole == 'OWNER' or userRole == 'PROOFREADER'} ? '' : 'display: none;'">
                                     <label class="form-label-admin">Publish Date & Time (Optional)</label>
-                                    <input type="datetime-local" class="form-input-admin" id="chapter-publish-at">
+                                    <input type="text" class="form-input-admin" id="chapter-publish-at" placeholder="Select Date & Time...">
                                 </div>
                                 <div class="col-md-6 d-none">
                                     <label class="form-label-admin">Or Upload Content Image</label>
@@ -1676,7 +1676,8 @@
                     dateFormat: "Y-m-d\\TH:i",
                     altInput: true,
                     altFormat: "F j, Y, h:i K",
-                    time_24hr: false
+                    time_24hr: false,
+                    disableMobile: true
                 });
             }
 
