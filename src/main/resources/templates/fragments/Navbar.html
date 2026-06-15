@@ -61,7 +61,7 @@
                     <!-- Shown when User IS logged in -->
                     <div th:if="${session.user != null}" class="dropdown d-flex align-items-center">
                         <span id="btn-navbar-balance" class="badge rounded-pill me-2 px-3 py-2 d-flex align-items-center" style="background-color: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); color: #00e5ff; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" title="Purchase Snow Flakes">
-                            <span id="navbar-user-balance" th:text="${session.user.balance}">100</span>
+                            <span id="navbar-user-balance" th:text="${session.user.user_type == 'ADMIN' or session.user.user_type == 'OWNER' ? '∞' : session.user.balance}">100</span>
                             <i class="fa-solid fa-snowflake ms-2" style="color: #00e5ff;"></i>
                         </span>
                         <button class="btn btn-profile-dropdown dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
