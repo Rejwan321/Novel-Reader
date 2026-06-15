@@ -87,7 +87,7 @@ jobs:
       run: |
         mvn -B -ntp -T ${{ inputs.thread_count || '1C' }} clean package \
           ${{ inputs.skip_tests == true && '-DskipTests' || '' }} \
-          --file pom.xml
+          --file "pom.xml"
 
     # Capture diagnostic log artifact upon compilation or test failure
     - name: Auto-Remediation Diagnostic Collector
