@@ -364,11 +364,15 @@
                             <div class="notification-item ${isUnread ? 'unread' : ''}" id="notif-card-${notif.id}">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <div class="notif-title">
-                                            <span class="text-info">@${notif.mentionerName}</span> mentioned you in a comment on 
-                                            <a href="/novel/${notif.novelId}/read/${notif.chapterNumber}" class="notif-link fw-bold">${notif.novelTitle} - Ch. ${notif.chapterNumber}</a>
-                                        </div>
-                                        <div class="notif-snippet">"${notif.snippet}"</div>
+                                         <div class="notif-title">
+                                             ${notif.comment ? `
+                                                 <span class="text-info">@${notif.mentionerName}</span> mentioned you in a comment on 
+                                             ` : `
+                                                 New chapter published for 
+                                             `}
+                                             <a href="/novel/${notif.novelId}/read/${notif.chapterNumber}" class="notif-link fw-bold">${notif.novelTitle} - Ch. ${notif.chapterNumber}</a>
+                                         </div>
+                                         <div class="notif-snippet">${notif.comment ? `"${notif.snippet}"` : `${notif.snippet}`}</div>
                                         <div class="notif-meta">
                                             <i class="fa-regular fa-clock me-1"></i>${dateStr}
                                             <span class="ms-3 badge ${isUnread ? 'bg-warning text-dark' : 'bg-secondary'}" id="notif-badge-${notif.id}">
