@@ -557,9 +557,8 @@
                 var editBtnHtml = canEdit ? 
                     '<button class="comment-action-btn btn-edit-comment-action" data-id="' + comment.id + '" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : '';
                 
-                var showReport = (currentUserId && currentUserId !== author.id);
-                var reportBtnHtml = showReport ? 
-                    '<button class="comment-action-btn btn-report-comment-action" data-id="' + comment.id + '" title="Report NSFW"><i class="fa-solid fa-circle-exclamation text-danger"></i> Report</button>' : '';
+                var reportBtnHtml = 
+                    '<button class="comment-action-btn btn-report-comment-action" data-id="' + comment.id + '" title="Report NSFW"><i class="fa-solid fa-circle-exclamation text-danger"></i> Report</button>';
 
                 var liked = comment.likedUserIds && comment.likedUserIds.indexOf(currentUserId) !== -1;
                 var disliked = comment.dislikedUserIds && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
