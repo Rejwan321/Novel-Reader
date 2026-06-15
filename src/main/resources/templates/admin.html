@@ -421,15 +421,22 @@
             color: #ffffff !important;
         }
         /* Style the visible flatpickr input field to match other form inputs */
+        .form-input-admin[readonly],
+        .form-input-admin:disabled,
+        .form-input-admin.flatpickr-input,
         .flatpickr-input,
-        .flatpickr-input[readonly] {
+        .flatpickr-input[readonly],
+        #chapter-publish-at + input,
+        #chapter-publish-at + .flatpickr-input {
             background-color: #12121e !important;
             color: #ffffff !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
+        .form-input-admin[readonly]::placeholder,
         .flatpickr-input::placeholder {
             color: rgba(255, 255, 255, 0.5) !important;
         }
+        .form-input-admin[readonly]:focus,
         .flatpickr-input:focus,
         .flatpickr-input[readonly]:focus {
             border-color: var(--theme-primary) !important;
