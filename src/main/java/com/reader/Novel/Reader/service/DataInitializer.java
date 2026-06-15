@@ -55,10 +55,16 @@ public class DataInitializer implements CommandLineRunner {
             // Ensure comments table has reports_count column
             jdbcTemplate.execute("ALTER TABLE comments ADD COLUMN IF NOT EXISTS reports_count INT DEFAULT 0 NOT NULL");
 
+            // Ensure notifications table allows NULL comment_id for chapter publish updates
+            jdbcTemplate.execute("ALTER TABLE notifications ALTER COLUMN comment_id DROP NOT NULL");
+
             // Re-map any references of the legacy editor (ID 2) to the admin (ID 1)
             jdbcTemplate.update("UPDATE novels SET creator_id = 1 WHERE creator_id = 2");
+            jdbcTemplate.update("DELETE FROM bookmarks WHERE user_id = 2 AND novel_id IN (SELECT novel_id FROM bookmarks WHERE user_id = 1)");
             jdbcTemplate.update("UPDATE bookmarks SET user_id = 1 WHERE user_id = 2");
+            jdbcTemplate.update("DELETE FROM purchases WHERE user_id = 2 AND chapter_id IN (SELECT chapter_id FROM purchases WHERE user_id = 1)");
             jdbcTemplate.update("UPDATE purchases SET user_id = 1 WHERE user_id = 2");
+            jdbcTemplate.update("DELETE FROM ratings WHERE user_id = 2 AND novel_id IN (SELECT novel_id FROM ratings WHERE user_id = 1)");
             jdbcTemplate.update("UPDATE ratings SET user_id = 1 WHERE user_id = 2");
 
             // Clean up Slice Of Life capitalization inconsistency

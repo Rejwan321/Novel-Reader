@@ -29,6 +29,9 @@ public class PublishSchedulerService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private SseService sseService;
+
     @Value("${app.base-url:https://nazuna.dpdns.org}")
     private String baseUrl;
 
@@ -67,7 +70,8 @@ public class PublishSchedulerService {
                         chapter.getId(),
                         user.getId()
                     );
-                    notificationRepository.save(notification);
+                    Notification savedNotif = notificationRepository.save(notification);
+                    sseService.sendNotification(user.getId(), savedNotif);
 
                     // 2. Send email notification
                     String recipientEmail = (user.getUpdatesEmail() != null && !user.getUpdatesEmail().trim().isEmpty())
