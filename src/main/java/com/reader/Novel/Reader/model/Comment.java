@@ -49,7 +49,7 @@ public class Comment {
     @Column(name = "user_id")
     private java.util.Set<Long> dislikedUserIds = new java.util.HashSet<>();
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer reportsCount = 0;
 
     public Comment() {

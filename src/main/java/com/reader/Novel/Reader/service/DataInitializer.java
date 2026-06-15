@@ -51,6 +51,10 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
         try {
             jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS DECRYPT_PASSWORD FOR 'com.reader.Novel.Reader.util.PasswordUtils.decryptForH2'");
+            
+            // Ensure comments table has reports_count column
+            jdbcTemplate.execute("ALTER TABLE comments ADD COLUMN IF NOT EXISTS reports_count INT DEFAULT 0 NOT NULL");
+
             // Re-map any references of the legacy editor (ID 2) to the admin (ID 1)
             jdbcTemplate.update("UPDATE novels SET creator_id = 1 WHERE creator_id = 2");
             jdbcTemplate.update("UPDATE bookmarks SET user_id = 1 WHERE user_id = 2");
