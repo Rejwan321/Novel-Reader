@@ -13,23 +13,70 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
     @Value("${app.mail.sender:yukitales@nazuna.dpdns.org}")
     private String fromAddress;
 
     @Value("${app.mail.recipient:yukitales.novel@gmail.com}")
     private String toAddress;
 
+    private JavaMailSender getDynamicMailSender() {
+        String host = systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("");
+        String portStr = systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("587");
+        String username = systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("");
+        String password = systemSettingRepository.findById("mail.password").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("");
+
+        if (host.isEmpty() || username.isEmpty() || password.isEmpty()) {
+            return mailSender;
+        }
+
+        org.springframework.mail.javamail.JavaMailSenderImpl sender = new org.springframework.mail.javamail.JavaMailSenderImpl();
+        sender.setHost(host);
+        try {
+            sender.setPort(Integer.parseInt(portStr));
+        } catch (NumberFormatException e) {
+            sender.setPort(587);
+        }
+        sender.setUsername(username);
+        sender.setPassword(password);
+
+        java.util.Properties props = sender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "false");
+
+        return sender;
+    }
+
+    private String getFromAddress() {
+        return systemSettingRepository.findById("mail.sender")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(fromAddress);
+    }
+
+    private String getToAddress() {
+        return systemSettingRepository.findById("mail.recipient")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(toAddress);
+    }
+
     @Async
     public void sendMentionEmailAsync(String authorName, String commentContent, String novelTitle, Double chapterNumber, String readLink) {
-        if (mailSender == null) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
             System.err.println("JavaMailSender not configured. Skipping email notification.");
             return;
         }
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(toAddress);
+            String activeFrom = getFromAddress();
+            String activeTo = getToAddress();
+            message.setFrom(activeFrom);
+            message.setTo(activeTo);
             message.setSubject("[Yuki Tales] Admin Mention Alert");
             message.setText(String.format(
                 "Hello Admin,\n\n" +
@@ -43,8 +90,8 @@ public class EmailService {
                 authorName, commentContent, novelTitle, chapterNumber, readLink
             ));
 
-            mailSender.send(message);
-            System.out.println("Mention notification email sent successfully to " + toAddress);
+            activeSender.send(message);
+            System.out.println("Mention notification email sent successfully to " + activeTo);
         } catch (Exception e) {
             System.err.println("Failed to send mention notification email: " + e.getMessage());
         }
@@ -52,15 +99,18 @@ public class EmailService {
 
     @Async
     public void sendCommentReportEmailAsync(String reporterName, String commentAuthor, String commentContent, String novelTitle, Double chapterNumber, String readLink, Long commentId) {
-        if (mailSender == null) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
             System.err.println("JavaMailSender not configured. Skipping email notification.");
             return;
         }
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(toAddress);
+            String activeFrom = getFromAddress();
+            String activeTo = getToAddress();
+            message.setFrom(activeFrom);
+            message.setTo(activeTo);
             message.setSubject("[Yuki Tales] NSFW Comment Report Alert");
             message.setText(String.format(
                 "Hello Admin,\n\n" +
@@ -77,8 +127,8 @@ public class EmailService {
                 commentId, reporterName, commentAuthor, commentContent, novelTitle, chapterNumber, readLink
             ));
 
-            mailSender.send(message);
-            System.out.println("Comment report email sent successfully to " + toAddress);
+            activeSender.send(message);
+            System.out.println("Comment report email sent successfully to " + activeTo);
         } catch (Exception e) {
             System.err.println("Failed to send comment report email: " + e.getMessage());
         }
@@ -86,15 +136,18 @@ public class EmailService {
 
     @Async
     public void sendReviewEmailAsync(String reviewerName, Integer rating, String feedbackComment) {
-        if (mailSender == null) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
             System.err.println("JavaMailSender not configured. Skipping email notification.");
             return;
         }
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(toAddress);
+            String activeFrom = getFromAddress();
+            String activeTo = getToAddress();
+            message.setFrom(activeFrom);
+            message.setTo(activeTo);
             message.setSubject("[Yuki Tales] New User Review/Feedback Alert");
             message.setText(String.format(
                 "Hello Admin,\n\n" +
@@ -107,8 +160,8 @@ public class EmailService {
                 reviewerName, rating, feedbackComment
             ));
 
-            mailSender.send(message);
-            System.out.println("Review alert email sent successfully to " + toAddress);
+            activeSender.send(message);
+            System.out.println("Review alert email sent successfully to " + activeTo);
         } catch (Exception e) {
             System.err.println("Failed to send review alert email: " + e.getMessage());
         }

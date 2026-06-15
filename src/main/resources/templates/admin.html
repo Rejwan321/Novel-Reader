@@ -441,6 +441,10 @@
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-notifications-btn" onclick="switchTab('notifications')">
                         <i class="fa-solid fa-bell text-warning"></i>Notifications
                     </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-credentials-btn" onclick="switchTab('credentials')">
+                        <i class="fa-solid fa-key text-info"></i>Credentials Settings
+                    </button>
 
                     <!-- Self-Destruct / Recovery Button (OWNER only) -->
                     <div th:if="${userRole == 'OWNER'}" class="mt-4 pt-3 border-top border-secondary">
@@ -956,6 +960,74 @@
                     </div>
                 </div>
 
+                <!-- Credentials Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-credentials" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1"><i class="fa-solid fa-key text-info me-2"></i>Credentials Settings</h2>
+                            <p class="text-muted small mb-0">Manage Google Sign-In and Mailing SMTP Configuration.</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-info" onclick="loadCredentials()">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>Refresh
+                        </button>
+                    </div>
+
+                    <form id="form-admin-credentials">
+                        <!-- Google Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-google text-danger me-2"></i>Google Authentication Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="cred-google-client-id" class="form-label-admin">Google OAuth Client ID</label>
+                                <input type="text" class="form-input-admin" id="cred-google-client-id" placeholder="e.g. 883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com">
+                            </div>
+                        </div>
+
+                        <!-- Mail Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-9">
+                                <label for="cred-mail-host" class="form-label-admin">SMTP Host</label>
+                                <input type="text" class="form-input-admin" id="cred-mail-host" placeholder="e.g. smtp.gmail.com">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="cred-mail-port" class="form-label-admin">SMTP Port</label>
+                                <input type="number" class="form-input-admin" id="cred-mail-port" placeholder="e.g. 587">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-username" class="form-label-admin">SMTP Username (Email)</label>
+                                <input type="email" class="form-input-admin" id="cred-mail-username" placeholder="e.g. your-app@gmail.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-password" class="form-label-admin">SMTP Password (App Password)</label>
+                                <input type="password" class="form-input-admin" id="cred-mail-password" placeholder="App Password" autocomplete="new-password">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-sender" class="form-label-admin">Sender Address (From)</label>
+                                <input type="text" class="form-input-admin" id="cred-mail-sender" placeholder="e.g. Yuki Tales &lt;yukitales@nazuna.dpdns.org&gt;">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-recipient" class="form-label-admin">Recipient Address (Admin Email)</label>
+                                <input type="email" class="form-input-admin" id="cred-mail-recipient" placeholder="e.g. admin@gmail.com">
+                            </div>
+                        </div>
+
+                        <!-- Application Config -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-globe text-info me-2"></i>General Application Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="cred-app-base-url" class="form-label-admin">App Base URL (Used in links)</label>
+                                <input type="url" class="form-input-admin" id="cred-app-base-url" placeholder="e.g. https://nazuna.dpdns.org">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4 gap-2">
+                            <button type="button" class="btn btn-outline-light px-4" onclick="loadCredentials()">Reset</button>
+                            <button type="submit" class="btn btn-premium px-5"><i class="fa-solid fa-floppy-disk me-2"></i>Save Credentials</button>
+                        </div>
+                    </form>
+                </div>
+
+
                 <!-- Analytics Dashboard Pane -->
                 <div th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-card" id="pane-analytics" style="display: none;">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1202,13 +1274,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -1227,8 +1299,28 @@
                 loadReviews();
             } else if (tab === 'notifications') {
                 loadNotifications();
+            } else if (tab === 'credentials') {
+                loadCredentials();
             }
         }
+
+        window.loadCredentials = function() {
+            $.get("/api/admin/credentials")
+            .done(function(data) {
+                $("#cred-google-client-id").val(data.googleClientId || "");
+                $("#cred-mail-host").val(data.mailHost || "");
+                $("#cred-mail-port").val(data.mailPort || "");
+                $("#cred-mail-username").val(data.mailUsername || "");
+                $("#cred-mail-password").val(data.mailPassword || "");
+                $("#cred-mail-sender").val(data.mailSender || "");
+                $("#cred-mail-recipient").val(data.mailRecipient || "");
+                $("#cred-app-base-url").val(data.appBaseUrl || "");
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
+                showToast(msg, "error");
+            });
+        };
 
         function loadReviews() {
             var tbody = $("#reviews-table-body");
@@ -2807,13 +2899,44 @@
                 $(window).on("mouseup touchend mouseleave touchcancel", endHold);
             }
 
+            // AJAX: Submit credentials form
+            $("#form-admin-credentials").submit(function(e) {
+                e.preventDefault();
+                var googleClientId = $("#cred-google-client-id").val();
+                var mailHost = $("#cred-mail-host").val();
+                var mailPort = $("#cred-mail-port").val();
+                var mailUsername = $("#cred-mail-username").val();
+                var mailPassword = $("#cred-mail-password").val();
+                var mailSender = $("#cred-mail-sender").val();
+                var mailRecipient = $("#cred-mail-recipient").val();
+                var appBaseUrl = $("#cred-app-base-url").val();
+
+                $.post("/api/admin/credentials", {
+                    googleClientId: googleClientId,
+                    mailHost: mailHost,
+                    mailPort: mailPort,
+                    mailUsername: mailUsername,
+                    mailPassword: mailPassword,
+                    mailSender: mailSender,
+                    mailRecipient: mailRecipient,
+                    appBaseUrl: appBaseUrl
+                })
+                .done(function(res) {
+                    showToast("Credentials saved successfully!");
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to save credentials.";
+                    showToast(msg, "error");
+                });
+            });
+
             // Restore last active tab if present
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);

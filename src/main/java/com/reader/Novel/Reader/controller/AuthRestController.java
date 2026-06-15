@@ -17,6 +17,9 @@ public class AuthRestController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(
             @RequestParam String name,
@@ -108,7 +111,9 @@ public class AuthRestController {
 
             // Verify audience
             String aud = (String) payload.get("aud");
-            String expectedClientId = "883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com";
+            String expectedClientId = systemSettingRepository.findById("google.client_id")
+                    .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                    .orElse("your-google-client-id");
             if (!expectedClientId.equals(aud)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token was not generated for this application."));
             }
