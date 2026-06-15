@@ -35,6 +35,7 @@
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#letUsKnowModal"><i class="fa-solid fa-comment-dots me-2"></i>Let Us Know</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fa-solid fa-heart me-2"></i>Support Us</a></li>
                         <li><a class="dropdown-item" href="https://discord.gg/EGynhrKAHk" target="_blank"><i class="fab fa-discord me-2"></i>Discord</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#futureUpdatesModal"><i class="fa-solid fa-envelope-open-text me-2"></i>Future Updates</a></li>
                     </ul>
                 </li>
             </ul>
@@ -178,6 +179,69 @@
     </div>
 </div>
 
+<!-- Future Updates Modal -->
+<div class="modal fade" id="futureUpdatesModal" tabindex="-1" aria-labelledby="futureUpdatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white" style="background: rgba(26, 21, 56, 0.95); border: 1px solid rgba(189, 83, 237, 0.4); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title h4 fw-bold font-outfit" id="futureUpdatesModalLabel" style="color: #00e5ff;">
+                    <i class="fa-solid fa-envelope-open-text me-2"></i>Future Updates & News
+                </h2>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <!-- If user is NOT logged in -->
+                <div th:if="${session.user == null}" class="text-center py-3">
+                    <p class="text-muted mb-3">Please sign in to subscribe to future publishes and news updates.</p>
+                    <button class="btn btn-premium px-4" onclick="$('#futureUpdatesModal').modal('hide'); $('.log').first().click();">Sign In</button>
+                </div>
+                
+                <!-- If user IS logged in -->
+                <div th:if="${session.user != null}">
+                    <!-- Google User -->
+                    <div th:if="${session.user.loginType == 'GOOGLE'}" class="text-center py-3">
+                        <div class="mb-3 text-success fs-2">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <p class="mb-1 fw-bold text-white">Automatically Subscribed!</p>
+                        <p class="text-muted small">Your Google email address is registered for future updates:</p>
+                        <p class="badge bg-violet font-size-sm px-3 py-2 text-white" th:text="${session.user.email}">user@gmail.com</p>
+                    </div>
+                    
+                    <!-- Local User -->
+                    <div th:if="${session.user.loginType != 'GOOGLE'}">
+                        <!-- Subscribed -->
+                        <div th:if="${session.user.subscribedToUpdates}" class="text-center py-3 updates-subscribed-view">
+                            <div class="mb-3 text-success fs-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <p class="mb-1 fw-bold text-white">You are Subscribed!</p>
+                            <p class="text-muted small">Receiving updates at:</p>
+                            <p class="badge bg-violet font-size-sm px-3 py-2 text-white mb-3" th:text="${session.user.updatesEmail}">user@email.com</p>
+                            <div>
+                                <a href="#" class="btn-change-updates-email text-violet text-decoration-none small">Change email address</a>
+                            </div>
+                        </div>
+                        
+                        <!-- Not Subscribed or Edit Mode -->
+                        <form id="form-subscribe-updates" th:style="${session.user.subscribedToUpdates} ? 'display: none;' : ''">
+                            <p class="text-muted small mb-3">Add your email address to receive future publishes, schedule updates, and stories news.</p>
+                            <div class="mb-3">
+                                <label for="updates-email-input" class="form-label text-muted">Email Address</label>
+                                <input type="email" class="form-control bg-dark text-white border-secondary" id="updates-email-input" required placeholder="e.g. you@example.com" th:value="${session.user.updatesEmail != null ? session.user.updatesEmail : session.user.email}">
+                            </div>
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-outline-light me-2 px-4" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-premium px-4" id="btn-submit-updates-subscribe">Subscribe</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Global Toast Notification Container -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
     <div id="actionToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -242,6 +306,29 @@ $(document).ready(function() {
             alert("Thank you for your feedback! Your review has been submitted.");
         }).fail(function(err) {
             alert("Error submitting review: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+        });
+    });
+    // Toggle change email view for updates
+    $(document).on('click', '.btn-change-updates-email', function(e) {
+        e.preventDefault();
+        $('.updates-subscribed-view').hide();
+        $('#form-subscribe-updates').fadeIn(200);
+    });
+
+    // Handle updates subscription submit
+    $(document).on('submit', '#form-subscribe-updates', function(e) {
+        e.preventDefault();
+        var email = $('#updates-email-input').val();
+        var btn = $('#btn-submit-updates-subscribe');
+        btn.prop('disabled', true).text('Subscribing...');
+        
+        $.post('/api/auth/subscribe-updates', {
+            email: email
+        }).done(function() {
+            window.location.reload();
+        }).fail(function(err) {
+            alert("Error subscribing: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+            btn.prop('disabled', false).text('Subscribe');
         });
     });
 });
