@@ -42,6 +42,9 @@ public class AdminRestController {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
             User loggedInUser = (User) session.getAttribute("user");
@@ -1415,6 +1418,66 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Notification not found."));
         }
         notificationRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // GET credentials settings
+    @GetMapping("/credentials")
+    public ResponseEntity<?> getCredentials(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        // Return current credentials from DB
+        java.util.Map<String, String> creds = new java.util.HashMap<>();
+        creds.put("googleClientId", systemSettingRepository.findById("google.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailHost", systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailPort", systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailUsername", systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailPassword", systemSettingRepository.findById("mail.password").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailSender", systemSettingRepository.findById("mail.sender").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailRecipient", systemSettingRepository.findById("mail.recipient").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("appBaseUrl", systemSettingRepository.findById("app.base_url").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+
+        return ResponseEntity.ok(creds);
+    }
+
+    // POST credentials settings
+    @PostMapping("/credentials")
+    public ResponseEntity<?> saveCredentials(
+            @RequestParam(required = false) String googleClientId,
+            @RequestParam(required = false) String mailHost,
+            @RequestParam(required = false) String mailPort,
+            @RequestParam(required = false) String mailUsername,
+            @RequestParam(required = false) String mailPassword,
+            @RequestParam(required = false) String mailSender,
+            @RequestParam(required = false) String mailRecipient,
+            @RequestParam(required = false) String appBaseUrl,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        if (googleClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_id", googleClientId.trim()));
+        if (mailHost != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.host", mailHost.trim()));
+        if (mailPort != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.port", mailPort.trim()));
+        if (mailUsername != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.username", mailUsername.trim()));
+        if (mailPassword != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.password", mailPassword.trim()));
+        if (mailSender != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.sender", mailSender.trim()));
+        if (mailRecipient != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.recipient", mailRecipient.trim()));
+        if (appBaseUrl != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("app.base_url", appBaseUrl.trim()));
+
         return ResponseEntity.ok(Map.of("success", true));
     }
 }
