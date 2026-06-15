@@ -8,6 +8,8 @@ import com.reader.Novel.Reader.repository.ChapterRepository;
 import com.reader.Novel.Reader.repository.CommentRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import com.reader.Novel.Reader.service.EmailService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +31,12 @@ public class CommentRestController {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Value("${app.base-url:https://nazuna.dpdns.org}")
+    private String baseUrl;
+
     private void checkAndCreateNotification(Comment comment) {
         String content = comment.getContent();
         if (content == null) return;
@@ -48,6 +56,16 @@ public class CommentRestController {
                         chapter.getId()
                     );
                     notificationRepository.save(notification);
+
+                    // Send Async Email Alert
+                    String readLink = baseUrl + "/novel/" + novel.getId() + "/read/" + chapter.getChapterNumber();
+                    emailService.sendMentionEmailAsync(
+                        comment.getUser().getName(),
+                        content,
+                        novel.getTitle(),
+                        chapter.getChapterNumber(),
+                        readLink
+                    );
                 }
             });
         }
