@@ -101,6 +101,20 @@ public class SseService {
         }
     }
 
+    public void sendGlobalEvent(String eventType, Object data) {
+        List<SseEmitter> failed = new ArrayList<>();
+        for (SseEmitter emitter : globalEmitters) {
+            try {
+                emitter.send(SseEmitter.event().name(eventType).data(data));
+            } catch (Exception e) {
+                failed.add(emitter);
+            }
+        }
+        for (SseEmitter f : failed) {
+            globalEmitters.remove(f);
+        }
+    }
+
     @Scheduled(fixedRate = 15000) // Send a ping every 15 seconds
     public void sendHeartbeat() {
         List<SseEmitter> failed = new ArrayList<>();

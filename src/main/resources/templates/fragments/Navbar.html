@@ -367,6 +367,14 @@ $(document).ready(function() {
             }
         });
 
+        sse.addEventListener('user_deleted', function(e) {
+            var data = JSON.parse(e.data);
+            console.log("SSE: User deleted:", data);
+            if (typeof handleUserDeletedRealtime === 'function') {
+                handleUserDeletedRealtime(data.userId);
+            }
+        });
+
         sse.onerror = function(err) {
             console.error("SSE stream error, trying to reconnect...");
         };
