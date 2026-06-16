@@ -35,4 +35,25 @@ public class GlobalModelAttributeAdvice {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("");
     }
+
+    @ModelAttribute("googleAuthEnabled")
+    public boolean isGoogleAuthEnabled() {
+        return systemSettingRepository.findById("google.auth.enabled")
+                .map(s -> "true".equalsIgnoreCase(s.getSettingValue()))
+                .orElse(true); // Default to true
+    }
+
+    @ModelAttribute("facebookAuthEnabled")
+    public boolean isFacebookAuthEnabled() {
+        return systemSettingRepository.findById("facebook.auth.enabled")
+                .map(s -> "true".equalsIgnoreCase(s.getSettingValue()))
+                .orElse(false); // Default to false
+    }
+
+    @ModelAttribute("xAuthEnabled")
+    public boolean isXAuthEnabled() {
+        return systemSettingRepository.findById("x.auth.enabled")
+                .map(s -> "true".equalsIgnoreCase(s.getSettingValue()))
+                .orElse(false); // Default to false
+    }
 }

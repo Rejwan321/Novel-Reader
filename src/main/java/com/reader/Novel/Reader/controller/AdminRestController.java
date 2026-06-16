@@ -1550,9 +1550,12 @@ public class AdminRestController {
         // Return current credentials from DB
         java.util.Map<String, String> creds = new java.util.HashMap<>();
         creds.put("googleClientId", systemSettingRepository.findById("google.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("googleAuthEnabled", systemSettingRepository.findById("google.auth.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("true"));
         creds.put("facebookAppId", systemSettingRepository.findById("facebook.app_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("facebookAuthEnabled", systemSettingRepository.findById("facebook.auth.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("false"));
         creds.put("xClientId", systemSettingRepository.findById("x.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("xClientSecret", systemSettingRepository.findById("x.client_secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("xAuthEnabled", systemSettingRepository.findById("x.auth.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("false"));
         creds.put("mailHost", systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailPort", systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailUsername", systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
@@ -1568,9 +1571,12 @@ public class AdminRestController {
     @PostMapping("/credentials")
     public ResponseEntity<?> saveCredentials(
             @RequestParam(required = false) String googleClientId,
+            @RequestParam(required = false) String googleAuthEnabled,
             @RequestParam(required = false) String facebookAppId,
+            @RequestParam(required = false) String facebookAuthEnabled,
             @RequestParam(required = false) String xClientId,
             @RequestParam(required = false) String xClientSecret,
+            @RequestParam(required = false) String xAuthEnabled,
             @RequestParam(required = false) String mailHost,
             @RequestParam(required = false) String mailPort,
             @RequestParam(required = false) String mailUsername,
@@ -1590,9 +1596,12 @@ public class AdminRestController {
         }
 
         if (googleClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_id", googleClientId.trim()));
+        if (googleAuthEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.auth.enabled", googleAuthEnabled.trim()));
         if (facebookAppId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("facebook.app_id", facebookAppId.trim()));
+        if (facebookAuthEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("facebook.auth.enabled", facebookAuthEnabled.trim()));
         if (xClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("x.client_id", xClientId.trim()));
         if (xClientSecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("x.client_secret", xClientSecret.trim()));
+        if (xAuthEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("x.auth.enabled", xAuthEnabled.trim()));
         if (mailHost != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.host", mailHost.trim()));
         if (mailPort != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.port", mailPort.trim()));
         if (mailUsername != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.username", mailUsername.trim()));
