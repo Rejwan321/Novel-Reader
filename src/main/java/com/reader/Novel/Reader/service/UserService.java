@@ -31,6 +31,12 @@ public class UserService {
     @Autowired
     private com.reader.Novel.Reader.repository.RatingRepository ratingRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.CommentRepository commentRepository;
+
+    @Autowired
+    private com.reader.Novel.Reader.repository.NotificationRepository notificationRepository;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -65,9 +71,40 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long userId) {
+        // 1. Delete bookmarks
         List<Bookmark> bookmarks = bookmarkRepository.findByUserIdOrderByUpdatedAtDesc(userId);
         bookmarkRepository.deleteAll(bookmarks);
+
+        // 2. Delete ratings
         ratingRepository.deleteByUserId(userId);
+
+        // 3. Delete targeting notifications
+        List<com.reader.Novel.Reader.model.Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        notificationRepository.deleteAll(notifications);
+
+        // 4. Delete comments and replies posted by this user
+        List<com.reader.Novel.Reader.model.Comment> userComments = commentRepository.findByUserId(userId);
+        List<com.reader.Novel.Reader.model.Comment> replies = new ArrayList<>();
+        List<com.reader.Novel.Reader.model.Comment> parents = new ArrayList<>();
+        for (com.reader.Novel.Reader.model.Comment c : userComments) {
+            if (c.getParent() != null) {
+                replies.add(c);
+            } else {
+                parents.add(c);
+            }
+        }
+        for (com.reader.Novel.Reader.model.Comment r : replies) {
+            if (r.getParent() != null && r.getParent().getReplies() != null) {
+                r.getParent().getReplies().remove(r);
+            }
+            commentRepository.delete(r);
+        }
+        commentRepository.deleteAll(parents);
+
+        // 5. Delete purchases
+        purchaseRepository.deleteByUserId(userId);
+
+        // 6. Delete user record
         userRepository.deleteById(userId);
         resetAutoIncrement();
     }

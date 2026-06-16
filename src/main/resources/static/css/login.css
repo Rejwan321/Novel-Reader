@@ -126,6 +126,36 @@
     font-size: 16px !important;
 }
 
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    margin: 6px 0;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #666666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.password-toggle:hover {
+    color: #333333;
+}
+
+.password-toggle svg {
+    pointer-events: none;
+}
+
 .auth-container {
     top: 50%;
     left: 50%;
@@ -459,5 +489,13 @@
     
     .auth-container p {
         margin: 10px 0 15px !important;
+    }
+
+    .password-toggle {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .password-toggle:hover {
+        color: #ffffff !important;
     }
 }

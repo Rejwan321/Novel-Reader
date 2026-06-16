@@ -549,10 +549,17 @@
                 var date = new Date(comment.createdAt);
                 var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
-                var canDelete = (currentUserId && (currentUserId === author.id || currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
+                var canDelete = (currentUserId && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
                 var deleteBtnHtml = canDelete ? 
                     '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
                 
+                var canEdit = (currentUserId && currentUserId === author.id);
+                var editBtnHtml = canEdit ? 
+                    '<button class="comment-action-btn btn-edit-comment-action" data-id="' + comment.id + '" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : '';
+                
+                var reportBtnHtml = 
+                    '<button class="comment-action-btn btn-report-comment-action" data-id="' + comment.id + '" title="Report NSFW"><i class="fa-solid fa-circle-exclamation text-danger"></i> Report</button>';
+
                 var liked = comment.likedUserIds && comment.likedUserIds.indexOf(currentUserId) !== -1;
                 var disliked = comment.dislikedUserIds && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
                 
@@ -593,6 +600,8 @@
                     '          <i class="' + dislikeIcon + '"></i> <span class="dislike-count">' + dislikesCount + '</span>' +
                     '        </button>' +
                     '        ' + replyBtnHtml +
+                    '        ' + editBtnHtml +
+                    '        ' + reportBtnHtml +
                     '      </div>' +
                     '    </div>' +
                     '  </div>' +
@@ -684,6 +693,86 @@
                     });
                 }).fail(function(err) {
                     alert("Error deleting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                });
+            });
+
+            // Edit comment handler (render edit form)
+            $(document).on('click', '.btn-edit-comment-action', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var card = $('#comment-card-' + id);
+                var bodyDiv = card.find('.comment-body');
+                
+                if (bodyDiv.find('.edit-textarea').length > 0) return;
+                
+                var currentText = bodyDiv.text().trim();
+                var originalHtml = bodyDiv.html();
+                
+                bodyDiv.html(
+                    '<div class="edit-comment-container mt-2">' +
+                    '  <textarea class="form-control text-white edit-textarea mb-2" rows="3" style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px;">' + currentText + '</textarea>' +
+                    '  <div class="d-flex gap-2 justify-content-end">' +
+                    '    <button class="btn btn-sm btn-outline-light btn-cancel-edit" data-id="' + id + '">Cancel</button>' +
+                    '    <button class="btn btn-sm btn-premium btn-save-edit" data-id="' + id + '">Save</button>' +
+                    '  </div>' +
+                    '</div>'
+                );
+                
+                bodyDiv.data('original-html', originalHtml);
+            });
+
+            // Cancel edit handler
+            $(document).on('click', '.btn-cancel-edit', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var bodyDiv = $('#comment-card-' + id).find('.comment-body');
+                var originalHtml = bodyDiv.data('original-html');
+                bodyDiv.html(originalHtml);
+            });
+
+            // Save edit handler
+            $(document).on('click', '.btn-save-edit', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var bodyDiv = $('#comment-card-' + id).find('.comment-body');
+                var newContent = bodyDiv.find('.edit-textarea').val().trim();
+                
+                if (!newContent) {
+                    alert("Comment content cannot be empty.");
+                    return;
+                }
+                
+                var saveBtn = $(this);
+                saveBtn.prop('disabled', true).text('Saving...');
+                
+                $.ajax({
+                    url: '/api/comments/' + id,
+                    type: 'PUT',
+                    data: { content: newContent }
+                }).done(function(updatedComment) {
+                    bodyDiv.html(escapeHtml(updatedComment.content));
+                }).fail(function(err) {
+                    alert("Error editing comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                    saveBtn.prop('disabled', false).text('Save');
+                });
+            });
+
+            // Report comment handler (NSFW report)
+            $(document).on('click', '.btn-report-comment-action', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                if (!confirm("Are you sure you want to report this comment as NSFW? This will notify the admin immediately.")) return;
+                
+                var btn = $(this);
+                btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reporting...');
+                
+                $.post('/api/comments/' + id + '/report')
+                .done(function() {
+                    alert("Thank you. The comment has been reported to the administrator.");
+                    btn.html('<i class="fa-solid fa-check text-success"></i> Reported').addClass('disabled');
+                }).fail(function(err) {
+                    alert("Error reporting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                    btn.prop('disabled', false).html('<i class="fa-solid fa-circle-exclamation text-danger"></i> Report');
                 });
             });
 
@@ -834,6 +923,77 @@
                     alert("Error disliking comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
                 });
             });
+
+            // SSE Real-time Comment Handlers
+            window.handleCommentCreatedRealtime = function(comment) {
+                if ($('#comment-card-' + comment.id).length > 0) return;
+                
+                var feed = $('#comments-feed');
+                if (feed.children().first().text().indexOf("No comments yet") !== -1) {
+                    feed.empty();
+                }
+                
+                var commentHtml = buildCommentCard(comment, false);
+                var commentWrapper = $('<div class="comment-wrapper-node" id="comment-wrapper-' + comment.id + '"></div>');
+                commentWrapper.append(commentHtml);
+                
+                var repliesContainer = $('<div class="reply-container" id="reply-container-' + comment.id + '"></div>').hide();
+                commentWrapper.append(repliesContainer);
+                
+                feed.append(commentWrapper);
+                
+                // Update total comments count
+                $('#comment-count').text($('.comment-card').length);
+            };
+
+            window.handleReplyCreatedRealtime = function(parentId, reply) {
+                if ($('#comment-card-' + reply.id).length > 0) return;
+                
+                var repliesContainer = $('#reply-container-' + parentId);
+                var replyHtml = buildCommentCard(reply, true, parentId);
+                repliesContainer.append(replyHtml).show();
+                
+                // Update total comments count
+                $('#comment-count').text($('.comment-card').length);
+            };
+
+            window.handleCommentDeletedRealtime = function(commentId) {
+                var element = $('#comment-wrapper-' + commentId);
+                if (element.length === 0) {
+                    element = $('#comment-card-' + commentId); // fallback if it is a reply
+                }
+                
+                if (element.length > 0) {
+                    element.fadeOut(300, function() {
+                        $(this).remove();
+                        $('#comment-count').text($('.comment-card').length);
+                        
+                        // If all comments are deleted, restore empty state
+                        if ($('.comment-card').length === 0) {
+                            $('#comments-feed').html('<p class="text-center text-muted my-4 font-size-sm">No comments yet. Be the first to start the conversation!</p>');
+                        }
+                    });
+                }
+            };
+
+            window.handleCommentEditedRealtime = function(comment) {
+                var card = $('#comment-card-' + comment.id);
+                if (card.length === 0) return;
+                
+                var bodyDiv = card.find('.comment-body');
+                // Avoid overwriting if this user is currently editing
+                if (bodyDiv.find('.edit-textarea').length > 0) return;
+                
+                bodyDiv.html(escapeHtml(comment.content));
+            };
+
+            window.handleCommentLikedRealtime = function(data) {
+                var card = $('#comment-card-' + data.commentId);
+                if (card.length === 0) return;
+                
+                card.find('.btn-like-comment-action .like-count').text(data.likes);
+                card.find('.btn-dislike-comment-action .dislike-count').text(data.dislikes);
+            };
         });
     </script>
 </body>

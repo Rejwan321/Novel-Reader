@@ -11,6 +11,7 @@ import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
+import com.reader.Novel.Reader.service.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,10 +38,19 @@ public class AdminRestController {
     private NovelService novelService;
 
     @Autowired
+    private SseService sseService;
+
+    @Autowired
     private ReviewRepository reviewRepository;
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
+    @Autowired
+    private com.reader.Novel.Reader.service.EmailService emailService;
 
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
@@ -123,6 +133,12 @@ public class AdminRestController {
         userToModify.setUser_type(role);
         userService.updateUser(userToModify);
 
+        try {
+            sseService.sendGlobalEvent("user_role_updated", Map.of("userId", id, "role", role));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User role updated successfully."));
     }
 
@@ -172,6 +188,12 @@ public class AdminRestController {
         User user = new User(null, name.trim(), email.trim(), com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password), role);
         userService.addUser(user);
 
+        try {
+            sseService.sendGlobalEvent("user_created", user);
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User account created successfully.", "user", user));
     }
 
@@ -210,6 +232,12 @@ public class AdminRestController {
 
         userToModify.setBalance(balance);
         userService.updateUser(userToModify);
+
+        try {
+            sseService.sendGlobalEvent("user_balance_updated", Map.of("userId", id, "balance", balance));
+        } catch (Exception e) {
+            // Log or ignore
+        }
 
         // Update session if editing self
         if (loggedInUser.getId().equals(userToModify.getId())) {
@@ -307,6 +335,12 @@ public class AdminRestController {
 
         userService.updateUser(userToModify);
 
+        try {
+            sseService.sendGlobalEvent("user_updated", Map.of("oldUserId", id, "user", userToModify));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User details updated successfully."));
     }
 
@@ -344,6 +378,12 @@ public class AdminRestController {
         }
 
         userService.deleteUser(id);
+
+        try {
+            sseService.sendGlobalEvent("user_deleted", Map.of("userId", id));
+        } catch (Exception e) {
+            // Log or ignore to avoid blocking response on SSE failure
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "User deleted successfully."));
     }
@@ -556,7 +596,8 @@ public class AdminRestController {
         }
 
         Chapter chapter = new Chapter(null, novel, title.trim(), chapterNumber, content.trim(), price);
-        if (publishAt != null && !publishAt.trim().isEmpty()) {
+        boolean canEditPublishAt = "ADMIN".equals(role) || "OWNER".equals(role) || "PROOFREADER".equals(role);
+        if (canEditPublishAt && publishAt != null && !publishAt.trim().isEmpty()) {
             try {
                 chapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
             } catch (Exception e) {
@@ -712,14 +753,18 @@ public class AdminRestController {
         existingChapter.setChapterNumber(chapterNumber);
         existingChapter.setContent(content.trim());
         existingChapter.setPrice(price);
-        if (publishAt != null && !publishAt.trim().isEmpty()) {
-            try {
-                existingChapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
-            } catch (Exception e) {
-                // ignore parsing error
+        
+        boolean canEditPublishAt = "ADMIN".equals(role) || "OWNER".equals(role) || "PROOFREADER".equals(role);
+        if (canEditPublishAt) {
+            if (publishAt != null && !publishAt.trim().isEmpty()) {
+                try {
+                    existingChapter.setPublishAt(java.time.LocalDateTime.parse(publishAt));
+                } catch (Exception e) {
+                    // ignore parsing error
+                }
+            } else {
+                existingChapter.setPublishAt(null);
             }
-        } else {
-            existingChapter.setPublishAt(null);
         }
 
         Chapter saved = novelService.saveChapter(existingChapter);
@@ -1416,5 +1461,120 @@ public class AdminRestController {
         }
         notificationRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // GET credentials settings
+    @GetMapping("/credentials")
+    public ResponseEntity<?> getCredentials(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        // Return current credentials from DB
+        java.util.Map<String, String> creds = new java.util.HashMap<>();
+        creds.put("googleClientId", systemSettingRepository.findById("google.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailHost", systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailPort", systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailUsername", systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailPassword", systemSettingRepository.findById("mail.password").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailSender", systemSettingRepository.findById("mail.sender").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("mailRecipient", systemSettingRepository.findById("mail.recipient").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("appBaseUrl", systemSettingRepository.findById("app.base_url").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+
+        return ResponseEntity.ok(creds);
+    }
+
+    // POST credentials settings
+    @PostMapping("/credentials")
+    public ResponseEntity<?> saveCredentials(
+            @RequestParam(required = false) String googleClientId,
+            @RequestParam(required = false) String mailHost,
+            @RequestParam(required = false) String mailPort,
+            @RequestParam(required = false) String mailUsername,
+            @RequestParam(required = false) String mailPassword,
+            @RequestParam(required = false) String mailSender,
+            @RequestParam(required = false) String mailRecipient,
+            @RequestParam(required = false) String appBaseUrl,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        if (googleClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_id", googleClientId.trim()));
+        if (mailHost != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.host", mailHost.trim()));
+        if (mailPort != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.port", mailPort.trim()));
+        if (mailUsername != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.username", mailUsername.trim()));
+        if (mailPassword != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.password", mailPassword.trim()));
+        if (mailSender != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.sender", mailSender.trim()));
+        if (mailRecipient != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.recipient", mailRecipient.trim()));
+        if (appBaseUrl != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("app.base_url", appBaseUrl.trim()));
+
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // POST /sendmail admin email dispatch
+    @PostMapping("/sendmail")
+    public ResponseEntity<?> sendAdminEmail(
+            @RequestParam String recipientMode,
+            @RequestParam(required = false) List<String> selectedEmails,
+            @RequestParam(required = false) String customEmails,
+            @RequestParam String subject,
+            @RequestParam String body,
+            HttpSession session) {
+
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied. Only admins or owners can send emails."));
+        }
+
+        if (subject == null || subject.trim().isEmpty() || body == null || body.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Subject and message body are required."));
+        }
+
+        java.util.Set<String> recipients = new java.util.HashSet<>();
+        if ("select".equals(recipientMode)) {
+            if (selectedEmails != null) {
+                for (String email : selectedEmails) {
+                    if (email != null && !email.trim().isEmpty()) {
+                        recipients.add(email.trim());
+                    }
+                }
+            }
+        } else if ("custom".equals(recipientMode)) {
+            if (customEmails != null) {
+                String[] parts = customEmails.split(",");
+                for (String part : parts) {
+                    if (part != null && !part.trim().isEmpty()) {
+                        recipients.add(part.trim());
+                    }
+                }
+            }
+        }
+
+        if (recipients.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No valid recipients specified."));
+        }
+
+        // Dispatch emails asynchronously
+        for (String email : recipients) {
+            emailService.sendCustomEmailAsync(email, subject.trim(), body.trim());
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Email dispatch initiated successfully for " + recipients.size() + " recipient(s)."));
     }
 }

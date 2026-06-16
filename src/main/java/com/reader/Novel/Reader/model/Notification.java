@@ -14,7 +14,7 @@ public class Notification {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "comment_id", nullable = false)
+    @JoinColumn(name = "comment_id", nullable = true)
     @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private Comment comment;
 
@@ -42,7 +42,23 @@ public class Notification {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "user_id", nullable = true)
+    private Long userId;
+
     public Notification() {
+    }
+
+    public Notification(String mentionerName, String snippet, Long novelId, String novelTitle, Double chapterNumber, Long chapterId, Long userId) {
+        this.comment = null;
+        this.mentionerName = mentionerName;
+        this.snippet = snippet;
+        this.novelId = novelId;
+        this.novelTitle = novelTitle;
+        this.chapterNumber = chapterNumber;
+        this.chapterId = chapterId;
+        this.userId = userId;
+        this.isRead = false;
+        this.createdAt = LocalDateTime.now();
     }
 
     public Notification(Comment comment, String mentionerName, String snippet, Long novelId, String novelTitle, Double chapterNumber, Long chapterId) {
@@ -55,5 +71,26 @@ public class Notification {
         this.chapterId = chapterId;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public Notification(Comment comment, String mentionerName, String snippet, Long novelId, String novelTitle, Double chapterNumber, Long chapterId, Long userId) {
+        this.comment = comment;
+        this.mentionerName = mentionerName;
+        this.snippet = snippet;
+        this.novelId = novelId;
+        this.novelTitle = novelTitle;
+        this.chapterNumber = chapterNumber;
+        this.chapterId = chapterId;
+        this.userId = userId;
+        this.isRead = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

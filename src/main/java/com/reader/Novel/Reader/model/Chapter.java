@@ -37,6 +37,7 @@ public class Chapter {
         this.chapterNumber = chapterNumber;
         this.content = content;
         this.price = 0;
+        this.publishNotificationSent = false;
     }
 
     public Chapter(Long id, Novel novel, String title, Double chapterNumber, String content, Integer price) {
@@ -46,5 +47,8 @@ public class Chapter {
         this.chapterNumber = chapterNumber;
         this.content = content;
         this.price = price;
+        this.publishNotificationSent = false;
     }
+
+    private Boolean publishNotificationSent = false;
 }
