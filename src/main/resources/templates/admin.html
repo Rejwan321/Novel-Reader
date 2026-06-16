@@ -1051,6 +1051,28 @@
                             </div>
                         </div>
 
+                        <!-- Facebook Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-facebook text-info me-2"></i>Facebook Authentication Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="cred-facebook-app-id" class="form-label-admin">Facebook App ID</label>
+                                <input type="text" class="form-input-admin" id="cred-facebook-app-id" placeholder="e.g. 159283748291038">
+                            </div>
+                        </div>
+
+                        <!-- X (Twitter) Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-x-twitter text-light me-2"></i>X (Twitter) Authentication Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="cred-x-client-id" class="form-label-admin">X Client ID</label>
+                                <input type="text" class="form-input-admin" id="cred-x-client-id" placeholder="e.g. SDBoMDRxZzJWZEQ0eUJleXU2ck86MTpjaQ">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-x-client-secret" class="form-label-admin">X Client Secret</label>
+                                <input type="text" class="form-input-admin" id="cred-x-client-secret" placeholder="e.g. jT_fS49_5h8s627nSnd8-9k120skfn">
+                            </div>
+                        </div>
+
                         <!-- Mail Section -->
                         <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
                         <div class="row g-3 mb-4">
@@ -1444,6 +1466,9 @@
             $.get("/api/admin/credentials")
             .done(function(data) {
                 $("#cred-google-client-id").val(data.googleClientId || "");
+                $("#cred-facebook-app-id").val(data.facebookAppId || "");
+                $("#cred-x-client-id").val(data.xClientId || "");
+                $("#cred-x-client-secret").val(data.xClientSecret || "");
                 $("#cred-mail-host").val(data.mailHost || "");
                 $("#cred-mail-port").val(data.mailPort || "");
                 $("#cred-mail-username").val(data.mailUsername || "");
@@ -1461,6 +1486,9 @@
         window.exportCredentials = function() {
             var creds = {
                 googleClientId: $("#cred-google-client-id").val(),
+                facebookAppId: $("#cred-facebook-app-id").val(),
+                xClientId: $("#cred-x-client-id").val(),
+                xClientSecret: $("#cred-x-client-secret").val(),
                 mailHost: $("#cred-mail-host").val(),
                 mailPort: $("#cred-mail-port").val(),
                 mailUsername: $("#cred-mail-username").val(),
@@ -1493,6 +1521,9 @@
                 try {
                     var creds = JSON.parse(e.target.result);
                     $("#cred-google-client-id").val(creds.googleClientId || "");
+                    $("#cred-facebook-app-id").val(creds.facebookAppId || "");
+                    $("#cred-x-client-id").val(creds.xClientId || "");
+                    $("#cred-x-client-secret").val(creds.xClientSecret || "");
                     $("#cred-mail-host").val(creds.mailHost || "");
                     $("#cred-mail-port").val(creds.mailPort || "");
                     $("#cred-mail-username").val(creds.mailUsername || "");
@@ -3527,6 +3558,9 @@
             $("#form-admin-credentials").submit(function(e) {
                 e.preventDefault();
                 var googleClientId = $("#cred-google-client-id").val();
+                var facebookAppId = $("#cred-facebook-app-id").val();
+                var xClientId = $("#cred-x-client-id").val();
+                var xClientSecret = $("#cred-x-client-secret").val();
                 var mailHost = $("#cred-mail-host").val();
                 var mailPort = $("#cred-mail-port").val();
                 var mailUsername = $("#cred-mail-username").val();
@@ -3537,6 +3571,9 @@
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
+                    facebookAppId: facebookAppId,
+                    xClientId: xClientId,
+                    xClientSecret: xClientSecret,
                     mailHost: mailHost,
                     mailPort: mailPort,
                     mailUsername: mailUsername,
