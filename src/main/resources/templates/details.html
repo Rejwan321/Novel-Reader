@@ -271,8 +271,9 @@
                 $('#purchase-chapter-title').text(title);
                 $('#purchase-chapter-price').text(price);
                 
-                const userBalance = parseInt($('#navbar-user-balance').text()) || 0;
-                $('#purchase-user-balance').text(userBalance);
+                const userBalanceText = $('#navbar-user-balance').text().trim();
+                const userBalance = userBalanceText === '∞' ? Infinity : (parseInt(userBalanceText) || 0);
+                $('#purchase-user-balance').text(userBalanceText);
 
                 if (userBalance < price) {
                     $('#purchase-error-msg').removeClass('d-none');

@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -385,6 +387,60 @@
         .animate-spin {
             animation: fa-spin 2s linear infinite;
         }
+        /* Custom themed Flatpickr */
+        .flatpickr-calendar {
+            background: #1a1538 !important;
+            border: 1px solid rgba(189, 83, 237, 0.4) !important;
+            box-shadow: 0 0 15px rgba(189, 83, 237, 0.2) !important;
+            border-radius: 12px !important;
+        }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover {
+            background: #bd53ed !important;
+            border-color: #bd53ed !important;
+            color: #ffffff !important;
+        }
+        .flatpickr-day:hover {
+            background: rgba(189, 83, 237, 0.2) !important;
+        }
+        .flatpickr-time {
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .flatpickr-time input:hover, .flatpickr-time .flatpickr-am-pm:hover, .flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus {
+            background: rgba(189, 83, 237, 0.2) !important;
+        }
+        .flatpickr-time, .flatpickr-time input, .flatpickr-time .flatpickr-time-separator, .flatpickr-time .flatpickr-am-pm {
+            color: #ffffff !important;
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:after {
+            border-bottom-color: #ffffff !important;
+        }
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-top-color: #ffffff !important;
+        }
+        .flatpickr-months .flatpickr-month {
+            color: #ffffff !important;
+        }
+        /* Style the visible flatpickr input field to match other form inputs */
+        .form-input-admin[readonly],
+        .form-input-admin:disabled,
+        .form-input-admin.flatpickr-input,
+        .flatpickr-input,
+        .flatpickr-input[readonly],
+        #chapter-publish-at + input,
+        #chapter-publish-at + .flatpickr-input {
+            background-color: #12121e !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .form-input-admin[readonly]::placeholder,
+        .flatpickr-input::placeholder {
+            color: rgba(255, 255, 255, 0.5) !important;
+        }
+        .form-input-admin[readonly]:focus,
+        .flatpickr-input:focus,
+        .flatpickr-input[readonly]:focus {
+            border-color: var(--theme-primary) !important;
+        }
     </style>
 </head>
 <body class="dark-theme">
@@ -440,6 +496,14 @@
                     
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-notifications-btn" onclick="switchTab('notifications')">
                         <i class="fa-solid fa-bell text-warning"></i>Notifications
+                    </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-credentials-btn" onclick="switchTab('credentials')">
+                        <i class="fa-solid fa-key text-info"></i>Credentials Settings
+                    </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-sendmail-btn" onclick="switchTab('sendmail')">
+                        <i class="fa-solid fa-paper-plane text-success"></i>Send Email
                     </button>
 
                     <!-- Self-Destruct / Recovery Button (OWNER only) -->
@@ -584,9 +648,9 @@
                                     <label class="form-label-admin">Price (Snow Flakes)</label>
                                     <input type="number" class="form-input-admin" id="chapter-price" required min="0" value="0" placeholder="0 for free chapters">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6" th:style="${userRole == 'ADMIN' or userRole == 'OWNER' or userRole == 'PROOFREADER'} ? '' : 'display: none;'">
                                     <label class="form-label-admin">Publish Date & Time (Optional)</label>
-                                    <input type="datetime-local" class="form-input-admin" id="chapter-publish-at">
+                                    <input type="text" class="form-input-admin" id="chapter-publish-at" placeholder="Select Date & Time...">
                                 </div>
                                 <div class="col-md-6 d-none">
                                     <label class="form-label-admin">Or Upload Content Image</label>
@@ -772,7 +836,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="u : ${users}">
+                                <tr th:each="u : ${users}" th:id="'admin-user-row-' + ${u.id}">
                                     <td th:text="${u.id}">1</td>
                                     <td th:text="${u.name}" class="text-white fw-bold">Sakura Reader</td>
                                     <td th:text="${u.email}">sakura@sakura.com</td>
@@ -955,6 +1019,149 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Credentials Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-credentials" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1"><i class="fa-solid fa-key text-info me-2"></i>Credentials Settings</h2>
+                            <p class="text-muted small mb-0">Manage Google Sign-In and Mailing SMTP Configuration.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-success" onclick="exportCredentials()">
+                                <i class="fa-solid fa-file-export me-1"></i>Export
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="triggerImportCredentials()">
+                                <i class="fa-solid fa-file-import me-1"></i>Import
+                            </button>
+                            <input type="file" id="import-credentials-file" class="d-none" accept=".json" onchange="importCredentials(event)">
+                            <button class="btn btn-sm btn-outline-info" onclick="loadCredentials()">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="form-admin-credentials">
+                        <!-- Google Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-google text-danger me-2"></i>Google Authentication Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="cred-google-client-id" class="form-label-admin">Google OAuth Client ID</label>
+                                <input type="text" class="form-input-admin" id="cred-google-client-id" placeholder="e.g. 883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com">
+                            </div>
+                        </div>
+
+                        <!-- Mail Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-9">
+                                <label for="cred-mail-host" class="form-label-admin">SMTP Host</label>
+                                <input type="text" class="form-input-admin" id="cred-mail-host" placeholder="e.g. smtp.gmail.com">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="cred-mail-port" class="form-label-admin">SMTP Port</label>
+                                <input type="number" class="form-input-admin" id="cred-mail-port" placeholder="e.g. 587">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-username" class="form-label-admin">SMTP Username (Email)</label>
+                                <input type="email" class="form-input-admin" id="cred-mail-username" placeholder="e.g. your-app@gmail.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-password" class="form-label-admin">SMTP Password (App Password)</label>
+                                <input type="password" class="form-input-admin" id="cred-mail-password" placeholder="App Password" autocomplete="new-password">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-sender" class="form-label-admin">Sender Address (From)</label>
+                                <input type="text" class="form-input-admin" id="cred-mail-sender" placeholder="e.g. Yuki Tales &lt;yukitales@nazuna.dpdns.org&gt;">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-mail-recipient" class="form-label-admin">Recipient Address (Admin Email)</label>
+                                <input type="email" class="form-input-admin" id="cred-mail-recipient" placeholder="e.g. admin@gmail.com">
+                            </div>
+                        </div>
+
+                        <!-- Application Config -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-globe text-info me-2"></i>General Application Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="cred-app-base-url" class="form-label-admin">App Base URL (Used in links)</label>
+                                <input type="url" class="form-input-admin" id="cred-app-base-url" placeholder="e.g. https://nazuna.dpdns.org">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4 gap-2">
+                            <button type="button" class="btn btn-outline-light px-4" onclick="loadCredentials()">Reset</button>
+                            <button type="submit" class="btn btn-premium px-5"><i class="fa-solid fa-floppy-disk me-2"></i>Save Credentials</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Send Email Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-sendmail" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1"><i class="fa-solid fa-paper-plane text-success me-2"></i>Send Email to Users</h2>
+                            <p class="text-muted small mb-0">Dispatch a custom email to selected users or enter custom email addresses.</p>
+                        </div>
+                    </div>
+
+                    <form id="form-admin-sendmail">
+                        <!-- Recipient Mode -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label-admin">Recipient Option</label>
+                                <div class="d-flex gap-3 mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recipient-mode" id="mode-select" value="select" checked>
+                                        <label class="form-check-label text-white" for="mode-select">Select from Users List</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="recipient-mode" id="mode-custom" value="custom">
+                                        <label class="form-check-label text-white" for="mode-custom">Enter Custom Email</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option A: Select User from List -->
+                        <div class="row g-3 mb-4" id="group-select-user">
+                            <div class="col-12">
+                                <label for="sendmail-user-select" class="form-label-admin">Select Recipient User(s)</label>
+                                <select class="form-input-admin" id="sendmail-user-select" multiple style="height: 150px;">
+                                    <option th:each="u : ${users}" th:value="${u.email}" th:text="${u.name + ' (' + u.email + ')'}"></option>
+                                </select>
+                                <small class="text-muted d-block mt-1">Hold Ctrl (or Cmd) to select multiple users.</small>
+                            </div>
+                        </div>
+
+                        <!-- Option B: Custom Email -->
+                        <div class="row g-3 mb-4 d-none" id="group-custom-email">
+                            <div class="col-12">
+                                <label for="sendmail-custom-input" class="form-label-admin">Recipient Email Address(es)</label>
+                                <input type="text" class="form-input-admin" id="sendmail-custom-input" placeholder="e.g. user1@example.com, user2@example.com">
+                                <small class="text-muted d-block mt-1">Separate multiple emails with commas.</small>
+                            </div>
+                        </div>
+
+                        <!-- Subject & Message Content -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label for="sendmail-subject" class="form-label-admin">Subject</label>
+                                <input type="text" class="form-input-admin" id="sendmail-subject" required placeholder="Email Subject">
+                            </div>
+                            <div class="col-12">
+                                <label for="sendmail-body" class="form-label-admin">Message Body</label>
+                                <textarea class="form-input-admin" id="sendmail-body" required rows="8" placeholder="Type your message here..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4 gap-2">
+                            <button type="reset" class="btn btn-outline-light px-4">Reset</button>
+                            <button type="submit" class="btn btn-premium px-5" id="btn-submit-sendmail"><i class="fa-solid fa-paper-plane me-2"></i>Send Email</button>
+                        </div>
+                    </form>
+                </div>
+
 
                 <!-- Analytics Dashboard Pane -->
                 <div th:if="${userRole == 'ADMIN' or userRole == 'EDITOR' or userRole == 'OWNER'}" class="admin-card" id="pane-analytics" style="display: none;">
@@ -1186,6 +1393,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script th:inline="javascript">
         const allNovelsMeta = /*[[${novels}]]*/ [];
         const currentUserSession = /*[[${session.user}]]*/ null;
@@ -1202,13 +1410,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials', 'sendmail'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -1227,8 +1435,80 @@
                 loadReviews();
             } else if (tab === 'notifications') {
                 loadNotifications();
+            } else if (tab === 'credentials') {
+                loadCredentials();
             }
         }
+
+        window.loadCredentials = function() {
+            $.get("/api/admin/credentials")
+            .done(function(data) {
+                $("#cred-google-client-id").val(data.googleClientId || "");
+                $("#cred-mail-host").val(data.mailHost || "");
+                $("#cred-mail-port").val(data.mailPort || "");
+                $("#cred-mail-username").val(data.mailUsername || "");
+                $("#cred-mail-password").val(data.mailPassword || "");
+                $("#cred-mail-sender").val(data.mailSender || "");
+                $("#cred-mail-recipient").val(data.mailRecipient || "");
+                $("#cred-app-base-url").val(data.appBaseUrl || "");
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
+                showToast(msg, "error");
+            });
+        };
+
+        window.exportCredentials = function() {
+            var creds = {
+                googleClientId: $("#cred-google-client-id").val(),
+                mailHost: $("#cred-mail-host").val(),
+                mailPort: $("#cred-mail-port").val(),
+                mailUsername: $("#cred-mail-username").val(),
+                mailPassword: $("#cred-mail-password").val(),
+                mailSender: $("#cred-mail-sender").val(),
+                mailRecipient: $("#cred-mail-recipient").val(),
+                appBaseUrl: $("#cred-app-base-url").val()
+            };
+            
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
+            var downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "yuki_tales_credentials.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Credentials exported successfully!");
+        };
+
+        window.triggerImportCredentials = function() {
+            $("#import-credentials-file").click();
+        };
+
+        window.importCredentials = function(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var creds = JSON.parse(e.target.result);
+                    $("#cred-google-client-id").val(creds.googleClientId || "");
+                    $("#cred-mail-host").val(creds.mailHost || "");
+                    $("#cred-mail-port").val(creds.mailPort || "");
+                    $("#cred-mail-username").val(creds.mailUsername || "");
+                    $("#cred-mail-password").val(creds.mailPassword || "");
+                    $("#cred-mail-sender").val(creds.mailSender || "");
+                    $("#cred-mail-recipient").val(creds.mailRecipient || "");
+                    $("#cred-app-base-url").val(creds.appBaseUrl || "");
+
+                    showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
+                } catch (err) {
+                    showToast("Failed to parse credentials file.", "error");
+                }
+                $("#import-credentials-file").val(""); // reset
+            };
+            reader.readAsText(file);
+        };
 
         function loadReviews() {
             var tbody = $("#reviews-table-body");
@@ -1390,27 +1670,40 @@
             });
         }
 
+        // Toast Notification Helper
+        function showToast(message, type = "success") {
+            var toastEl = document.getElementById('actionToast');
+            if (!toastEl) return;
+            var toastBody = document.getElementById('toast-message-body');
+            toastBody.innerText = message;
+            toastEl.className = "toast align-items-center text-white border-0";
+            if (type === "success") {
+                toastEl.classList.add("bg-toast-success");
+            } else if (type === "error") {
+                toastEl.classList.add("bg-toast-error");
+            } else {
+                toastEl.classList.add("bg-toast-info");
+            }
+            var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            toast.show();
+        }
+
         $(document).ready(function() {
-            // Toast Notification Helper
-            function showToast(message, type = "success") {
-                var toastEl = document.getElementById('actionToast');
-                if (!toastEl) return;
-                var toastBody = document.getElementById('toast-message-body');
-                toastBody.innerText = message;
-                toastEl.className = "toast align-items-center text-white border-0";
-                if (type === "success") {
-                    toastEl.classList.add("bg-toast-success");
-                } else if (type === "error") {
-                    toastEl.classList.add("bg-toast-error");
-                } else {
-                    toastEl.classList.add("bg-toast-info");
-                }
-                var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-                toast.show();
+            // Initialize Flatpickr for publish date & time (calendar and clock)
+            window.publishAtPicker = null;
+            if ($("#chapter-publish-at").length > 0) {
+                window.publishAtPicker = flatpickr("#chapter-publish-at", {
+                    enableTime: true,
+                    dateFormat: "Y-m-d\\TH:i",
+                    altInput: true,
+                    altFormat: "F j, Y, h:i K",
+                    time_24hr: false,
+                    disableMobile: true
+                });
             }
 
             // AJAX: User role selection changed
-            $(".user-role-select").change(function() {
+            $(document).on("change", ".user-role-select", function() {
                 var select = $(this);
                 var userId = select.data("id");
                 var role = select.val();
@@ -1419,7 +1712,9 @@
                 $.post("/api/admin/users/" + userId + "/role", { role: role })
                 .done(function(res) {
                     showToast(res.message || "User role updated successfully.");
-                    select.data("original", role);
+                    if (typeof handleUserRoleUpdatedRealtime === 'function') {
+                        handleUserRoleUpdatedRealtime(userId, role);
+                    }
                 })
                 .fail(function(err) {
                     var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to update role.";
@@ -1440,9 +1735,9 @@
                         type: "DELETE",
                         success: function(res) {
                             showToast(res.message || "User deleted successfully.");
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1200);
+                            if (typeof handleUserDeletedRealtime === 'function') {
+                                handleUserDeletedRealtime(userId);
+                            }
                         },
                         error: function(err) {
                             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete user.";
@@ -1451,6 +1746,198 @@
                     });
                 }
             });
+
+            window.handleUserDeletedRealtime = function(deletedUserId) {
+                var row = $("#admin-user-row-" + deletedUserId);
+                if (row.length) {
+                    row.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData = userAnalyticsData.filter(function(u) {
+                        return Number(u.userId) !== Number(deletedUserId);
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserRoleUpdatedRealtime = function(userId, role) {
+                var select = $("#admin-user-row-" + userId + " .user-role-select");
+                if (select.length) {
+                    select.val(role);
+                    select.data("original", role);
+                    select.attr("data-original", role);
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData.forEach(function(u) {
+                        if (Number(u.userId) === Number(userId)) {
+                            u.role = role;
+                        }
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserBalanceUpdatedRealtime = function(userId, balance) {
+                var input = $("#admin-user-row-" + userId + " .user-balance-input");
+                if (input.length) {
+                    input.val(balance);
+                    input.data("original", balance);
+                    input.attr("data-original", balance);
+                }
+                if (currentUserSession && Number(userId) === Number(currentUserSession.id)) {
+                    if (currentUserSession.user_type === 'ADMIN' || currentUserSession.user_type === 'OWNER') {
+                        $("#navbar-user-balance").text('∞');
+                    } else {
+                        $("#navbar-user-balance").text(balance);
+                    }
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData.forEach(function(u) {
+                        if (Number(u.userId) === Number(userId)) {
+                            u.balance = balance;
+                        }
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserCreatedRealtime = function(user) {
+                if ($("#admin-user-row-" + user.id).length) return;
+
+                var isSelf = currentUserSession && Number(user.id) === Number(currentUserSession.id);
+                var selectHtml = '';
+                var deleteBtnHtml = '';
+
+                if (isSelf) {
+                    selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
+                    deleteBtnHtml = '<span class="text-muted small">-</span>';
+                } else {
+                    selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
+                        '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
+                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Editor</option>' +
+                        '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
+                        '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
+                        '</select>';
+                    deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '">' +
+                        '<i class="fa-solid fa-trash-can me-1"></i>Delete' +
+                        '</button>';
+                }
+
+                var rowHtml = '<tr id="admin-user-row-' + user.id + '" style="display: none;">' +
+                    '<td>' + user.id + '</td>' +
+                    '<td class="text-white fw-bold user-row-name">' + user.name + '</td>' +
+                    '<td class="user-row-email">' + user.email + '</td>' +
+                    '<td>' + selectHtml + '</td>' +
+                    '<td>' +
+                    '<div class="d-flex align-items-center gap-1">' +
+                    '<input type="number" class="form-input-admin user-balance-input" value="' + user.balance + '" data-id="' + user.id + '" data-original="' + user.balance + '" style="width: 80px; padding: 4px 8px; font-size: 0.85rem;" min="0">' +
+                    '<button type="button" class="btn btn-sm btn-outline-success btn-update-balance" data-id="' + user.id + '">' +
+                    '<i class="fa fa-save"></i>' +
+                    '</button>' +
+                    '</div>' +
+                    '</td>' +
+                    '<td>' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-email="' + user.email + '" data-role="' + user.user_type + '">' +
+                    '<i class="fa-solid fa-pen-to-square me-1"></i>Edit' +
+                    '</button>' +
+                    deleteBtnHtml +
+                    '</div>' +
+                    '</td>' +
+                    '</tr>';
+
+                var newRow = $(rowHtml);
+                $("#pane-users tbody").prepend(newRow);
+                newRow.fadeIn(300);
+
+                if (typeof userAnalyticsData !== 'undefined') {
+                    userAnalyticsData.push({
+                        userId: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.user_type,
+                        balance: user.balance,
+                        totalSpent: 0,
+                        chaptersUnlocked: 0
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserUpdatedRealtime = function(oldUserId, user) {
+                var row = $("#admin-user-row-" + oldUserId);
+                if (row.length) {
+                    row.find(".user-row-name").text(user.name);
+                    row.find(".user-row-email").text(user.email);
+                    
+                    var select = row.find(".user-role-select");
+                    if (select.length) {
+                        select.val(user.user_type);
+                        select.data("original", user.user_type);
+                        select.attr("data-original", user.user_type);
+                    }
+
+                    var balanceInput = row.find(".user-balance-input");
+                    if (balanceInput.length) {
+                        balanceInput.val(user.balance);
+                        balanceInput.data("original", user.balance);
+                        balanceInput.attr("data-original", user.balance);
+                    }
+
+                    var editBtn = row.find(".btn-edit-user-trigger");
+                    if (editBtn.length) {
+                        editBtn.attr("data-id", user.id);
+                        editBtn.attr("data-name", user.name);
+                        editBtn.attr("data-email", user.email);
+                        editBtn.attr("data-role", user.user_type);
+                        editBtn.data("id", user.id);
+                        editBtn.data("name", user.name);
+                        editBtn.data("email", user.email);
+                        editBtn.data("role", user.user_type);
+                    }
+
+                    var deleteBtn = row.find(".btn-delete-user");
+                    if (deleteBtn.length) {
+                        deleteBtn.attr("data-id", user.id);
+                        deleteBtn.attr("data-name", user.name);
+                        deleteBtn.data("id", user.id);
+                        deleteBtn.data("name", user.name);
+                    }
+
+                    if (Number(oldUserId) !== Number(user.id)) {
+                        row.attr("id", "admin-user-row-" + user.id);
+                        row.find(".user-role-select").attr("data-id", user.id).data("id", user.id);
+                        row.find(".user-balance-input").attr("data-id", user.id).data("id", user.id);
+                        row.find(".btn-update-balance").attr("data-id", user.id).data("id", user.id);
+                        row.find("td:first").text(user.id);
+                    }
+                }
+
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData.forEach(function(u) {
+                        if (Number(u.userId) === Number(oldUserId)) {
+                            u.userId = user.id;
+                            u.name = user.name;
+                            u.email = user.email;
+                            u.role = user.user_type;
+                            u.balance = user.balance;
+                        }
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
 
             // AJAX: Delete story click handler
             $(document).on("click", ".btn-delete-story", function() {
@@ -1552,9 +2039,6 @@
                 .done(function(res) {
                     showToast(res.message || successMsg);
                     resetUserForm();
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1200);
                 })
                 .fail(function(err) {
                     var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";
@@ -1851,7 +2335,11 @@
                 if (publishAt && publishAt.length > 16) {
                     publishAt = publishAt.substring(0, 16);
                 }
-                $("#chapter-publish-at").val(publishAt);
+                if (window.publishAtPicker) {
+                    window.publishAtPicker.setDate(publishAt || "");
+                } else {
+                    $("#chapter-publish-at").val(publishAt);
+                }
 
                 // Update form mode parameters
                 var form = $("#form-add-chapter");
@@ -1880,7 +2368,11 @@
                 form.attr("data-mode", "create");
                 form.attr("data-edit-id", "");
                 $("#chapter-price").val(0);
-                $("#chapter-publish-at").val("");
+                if (window.publishAtPicker) {
+                    window.publishAtPicker.clear();
+                } else {
+                    $("#chapter-publish-at").val("");
+                }
 
                 $("#title-add-chapter").html('<i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter');
                 $("#btn-submit-chapter").html('<i class="fa fa-plus me-2"></i>Add Chapter').addClass("btn-premium").removeClass("btn-warning text-dark");
@@ -2083,7 +2575,12 @@
                     // If the admin updated their own balance, update navbar balance dynamically
                     const currentLoggedInId = /*[[${session.user.id}]]*/ null;
                     if (userId == currentLoggedInId) {
-                        $("#navbar-user-balance").text(balance);
+                        const userType = /*[[${session.user.user_type}]]*/ '';
+                        if (userType === 'ADMIN' || userType === 'OWNER') {
+                            $("#navbar-user-balance").text('∞');
+                        } else {
+                            $("#navbar-user-balance").text(balance);
+                        }
                     }
                 })
                 .fail(function(err) {
@@ -2807,13 +3304,103 @@
                 $(window).on("mouseup touchend mouseleave touchcancel", endHold);
             }
 
+            // AJAX: Submit credentials form
+            $("#form-admin-credentials").submit(function(e) {
+                e.preventDefault();
+                var googleClientId = $("#cred-google-client-id").val();
+                var mailHost = $("#cred-mail-host").val();
+                var mailPort = $("#cred-mail-port").val();
+                var mailUsername = $("#cred-mail-username").val();
+                var mailPassword = $("#cred-mail-password").val();
+                var mailSender = $("#cred-mail-sender").val();
+                var mailRecipient = $("#cred-mail-recipient").val();
+                var appBaseUrl = $("#cred-app-base-url").val();
+
+                $.post("/api/admin/credentials", {
+                    googleClientId: googleClientId,
+                    mailHost: mailHost,
+                    mailPort: mailPort,
+                    mailUsername: mailUsername,
+                    mailPassword: mailPassword,
+                    mailSender: mailSender,
+                    mailRecipient: mailRecipient,
+                    appBaseUrl: appBaseUrl
+                })
+                .done(function(res) {
+                    showToast("Credentials saved successfully!");
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to save credentials.";
+                    showToast(msg, "error");
+                });
+            });
+
+            // Toggle Send Email recipient mode input fields
+            $('input[name="recipient-mode"]').change(function() {
+                if ($(this).val() === 'select') {
+                    $('#group-select-user').removeClass('d-none');
+                    $('#group-custom-email').addClass('d-none');
+                    $("#sendmail-custom-input").prop('required', false);
+                } else {
+                    $('#group-select-user').addClass('d-none');
+                    $('#group-custom-email').removeClass('d-none');
+                    $("#sendmail-custom-input").prop('required', true);
+                }
+            });
+
+            // AJAX: Submit Send Email form
+            $("#form-admin-sendmail").submit(function(e) {
+                e.preventDefault();
+                var btn = $("#btn-submit-sendmail");
+                var originalHtml = btn.html();
+                
+                var recipientMode = $('input[name="recipient-mode"]:checked').val();
+                var selectedEmails = $("#sendmail-user-select").val() || [];
+                var customEmails = $("#sendmail-custom-input").val();
+                var subject = $("#sendmail-subject").val();
+                var body = $("#sendmail-body").val();
+
+                if (recipientMode === 'select' && selectedEmails.length === 0) {
+                    showToast("Please select at least one recipient user.", "error");
+                    return;
+                }
+
+                btn.html('<i class="fa fa-spinner fa-spin me-2"></i>Sending...').prop("disabled", true);
+
+                $.ajax({
+                    url: "/api/admin/sendmail",
+                    type: "POST",
+                    data: {
+                        recipientMode: recipientMode,
+                        selectedEmails: selectedEmails.join(","), // jquery post lists as array or comma separated
+                        customEmails: customEmails,
+                        subject: subject,
+                        body: body
+                    },
+                    success: function(res) {
+                        showToast(res.message || "Emails sent successfully!");
+                        $("#form-admin-sendmail")[0].reset();
+                        // Reset visibility
+                        $('#group-select-user').removeClass('d-none');
+                        $('#group-custom-email').addClass('d-none');
+                        $("#sendmail-custom-input").prop('required', false);
+                        btn.html(originalHtml).prop("disabled", false);
+                    },
+                    error: function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to send email.";
+                        showToast(msg, "error");
+                        btn.html(originalHtml).prop("disabled", false);
+                    }
+                });
+            });
+
             // Restore last active tab if present
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);
