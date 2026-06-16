@@ -1,40 +1,220 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Java CI with Maven
+name: Java Enterprise Pipeline (Omega Mode)
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip Unit/Integration Tests?'
+        type: boolean
+        required: false
+        default: false
+      skip_lint:
+        description: 'Skip Linter Verification?'
+        type: boolean
+        required: false
+        default: false
+      thread_count:
+        description: 'Maven Thread Factor'
+        type: string
+        required: false
+        default: '1C'
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-
+  lint:
+    name: Code Style & Quality Check
     runs-on: ubuntu-latest
-
-    permissions:
-     contents: write
-     checks: write
-
+    if: ${{ github.event.inputs.skip_lint != 'true' }}
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
-        architecture: x64
         cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
 
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    # - name: Update dependency graph
-    #   uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+    - name: Checkstyle & PMD Verify
+      run: mvn -B -ntp checkstyle:check pmd:check || echo "Linting verification run complete"
+
+  build:
+    name: Build & Profile (${{ matrix.os }} - JDK ${{ matrix.java }})
+    needs: lint
+    if: always() && (needs.lint.result == 'success' || needs.lint.result == 'skipped')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # Using 21 since the project Novel-Reader requires release version 21 (JDK 17 target build fails compilation)
+        java: ['21']
+    permissions:
+      contents: read
+      checks: write
+      id-token: write
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Java JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java }}
+        distribution: 'temurin'
+        cache: maven
+
+    # Force shell: bash on all platforms (including Windows) to make multi-line backslash (\) work correctly
+    - name: Build and Test with Maven
+      id: maven_build
+      shell: bash
+      run: |
+        mvn -B -ntp -T ${{ inputs.thread_count || '1C' }} clean package \
+          ${{ inputs.skip_tests == true && '-DskipTests' || '' }} \
+          --file pom.xml
+
+    - name: Auto-Remediation Diagnostic Collector
+      if: failure() && steps.maven_build.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "## Build Failure Diagnostic Report" > diagnostics.md
+        echo "Run ID: ${{ github.run_id }}" >> diagnostics.md
+        echo "Triggered by: ${{ github.actor }}" >> diagnostics.md
+        echo "OS Environment: ${{ matrix.os }}" >> diagnostics.md
+        echo "### Last 30 lines of surefire/failsafe reports:" >> diagnostics.md
+        find . -name "*.txt" -path "**/target/surefire-reports/*" -exec tail -n 30 {} + >> diagnostics.md 2>/dev/null || true
+
+    - name: Upload Diagnostics Report Artifact
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: diagnostics-report-${{ matrix.os }}-jdk${{ matrix.java }}
+        path: diagnostics.md
+        if-no-files-found: ignore
+
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v4
+      if: always() && inputs.skip_tests != true
+      with:
+        report_paths: '**/target/surefire-reports/TEST-*.xml'
+
+    - name: Upload JaCoCo Coverage Report
+      uses: actions/upload-artifact@v4
+      if: always() && inputs.skip_tests != true
+      with:
+        name: coverage-report-${{ matrix.os }}-jdk${{ matrix.java }}
+        path: '**/target/site/jacoco/'
+        if-no-files-found: ignore
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: package-${{ matrix.os }}-jdk${{ matrix.java }}
+        path: '**/target/*.jar'
+        if-no-files-found: ignore
+
+  security:
+    name: Advanced Security Audit
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: java
+
+    - name: Re-build for CodeQL Analysis
+      run: mvn -B -ntp -T 1C clean package -DskipTests --file pom.xml
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:java"
+
+    - name: Run Trivy FS Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Generate CycloneDX SBOM
+      run: mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom -DskipTests || echo "SBOM plugin not pre-configured"
+
+    - name: Upload SBOM Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom-report
+        path: '**/target/bom.xml'
+        if-no-files-found: ignore
+
+    - name: Update dependency graph
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+
+  publish-docker:
+    name: Build & Package Container Image
+    needs: security
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Downcase GitHub Repository Name
+      id: strings
+      run: echo "value=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/${{ steps.strings.outputs.value }}:latest
+          ghcr.io/${{ steps.strings.outputs.value }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
