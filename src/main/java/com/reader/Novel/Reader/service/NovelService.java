@@ -221,11 +221,15 @@ public class NovelService {
         synchronized (this) {
             com.reader.Novel.Reader.model.User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found."));
-            if (user.getBalance() < price) {
-                throw new IllegalArgumentException("Insufficient balance.");
+            String role = user.getUser_type();
+            boolean isInfinite = "ADMIN".equals(role) || "OWNER".equals(role);
+            if (!isInfinite) {
+                if (user.getBalance() < price) {
+                    throw new IllegalArgumentException("Insufficient balance.");
+                }
+                user.setBalance(user.getBalance() - price);
+                userRepository.save(user);
             }
-            user.setBalance(user.getBalance() - price);
-            userRepository.save(user);
             purchaseRepository.save(new Purchase(null, userId, chapterId, java.time.LocalDateTime.now()));
         }
     }
@@ -266,5 +270,32 @@ public class NovelService {
         } else {
             systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("featured_novel_id", String.valueOf(novelId)));
         }
+    }
+
+    public boolean isAuthorizedToSeeFutureChapters(com.reader.Novel.Reader.model.User user, Novel novel) {
+        if (user == null) return false;
+        String role = user.getUser_type();
+        if ("ADMIN".equals(role) || "PROOFREADER".equals(role) || "OWNER".equals(role)) {
+            return true;
+        }
+        if ("EDITOR".equals(role) && novel != null && user.getId().equals(novel.getCreatorId())) {
+            return true;
+        }
+        return false;
+    }
+
+    public List<Chapter> getVisibleChapters(Novel novel, com.reader.Novel.Reader.model.User user) {
+        List<Chapter> all = chapterRepository.findByNovelIdOrderByChapterNumberAsc(novel.getId());
+        if (isAuthorizedToSeeFutureChapters(user, novel)) {
+            return all;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        return all.stream()
+                .filter(c -> c.getPublishAt() == null || !c.getPublishAt().isAfter(now))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    public List<Chapter> getUpcomingChapters() {
+        return chapterRepository.findByPublishAtAfterOrderByPublishAtAsc(LocalDateTime.now());
     }
 }

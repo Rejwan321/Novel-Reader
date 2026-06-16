@@ -14,6 +14,9 @@ public class ReviewRestController {
     @Autowired
     private ReviewRepository reviewRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.service.EmailService emailService;
+
     @PostMapping("/submit")
     public ResponseEntity<?> submitReview(
             @RequestParam(required = false) String name,
@@ -30,6 +33,9 @@ public class ReviewRestController {
         String reviewerName = (name == null || name.trim().isEmpty()) ? "Anonymous Reader" : name.trim();
         Review review = new Review(reviewerName, rating, comment.trim());
         Review saved = reviewRepository.save(review);
+
+        // Send email alert to admin
+        emailService.sendReviewEmailAsync(reviewerName, rating, comment.trim());
 
         return ResponseEntity.ok(Map.of("success", true, "review", saved));
     }
