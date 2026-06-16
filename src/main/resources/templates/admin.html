@@ -691,8 +691,8 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr th:each="n : ${novels}">
+                                <tbody id="admin-stories-tbody">
+                                    <tr th:each="n : ${novels}" th:id="'admin-story-row-' + ${n.id}">
                                         <td>
                                             <img th:src="${n.coverUrl}" alt="Cover" class="cover-img-premium">
                                         </td>
@@ -1854,9 +1854,26 @@
                     '</td>' +
                     '</tr>';
 
-                var newRow = $(rowHtml);
-                $("#pane-users tbody").prepend(newRow);
-                newRow.fadeIn(300);
+                // Find correct position to insert new row based on numerical ID ascending
+                var inserted = false;
+                var tbody = $("#pane-users tbody");
+                tbody.find("tr").each(function() {
+                    var rowId = $(this).attr("id");
+                    if (rowId && rowId.indexOf("admin-user-row-") === 0) {
+                        var existingId = Number(rowId.replace("admin-user-row-", ""));
+                        if (existingId > Number(user.id)) {
+                            $(rowHtml).insertBefore($(this)).fadeIn(300);
+                            inserted = true;
+                            return false; // break loop
+                        }
+                    }
+                });
+
+                if (!inserted) {
+                    var newRow = $(rowHtml);
+                    tbody.append(newRow);
+                    newRow.fadeIn(300);
+                }
 
                 if (typeof userAnalyticsData !== 'undefined') {
                     userAnalyticsData.push({
@@ -1920,6 +1937,25 @@
                         row.find(".user-balance-input").attr("data-id", user.id).data("id", user.id);
                         row.find(".btn-update-balance").attr("data-id", user.id).data("id", user.id);
                         row.find("td:first").text(user.id);
+
+                        // Move the row to its new sorted position
+                        row.detach();
+                        var inserted = false;
+                        var tbody = $("#pane-users tbody");
+                        tbody.find("tr").each(function() {
+                            var rowId = $(this).attr("id");
+                            if (rowId && rowId.indexOf("admin-user-row-") === 0) {
+                                var existingId = Number(rowId.replace("admin-user-row-", ""));
+                                if (existingId > Number(user.id)) {
+                                    row.insertBefore($(this));
+                                    inserted = true;
+                                    return false; // break loop
+                                }
+                            }
+                        });
+                        if (!inserted) {
+                            tbody.append(row);
+                        }
                     }
                 }
 
@@ -1939,6 +1975,195 @@
                 }
             };
 
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.toString()
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            window.handleStoryCreatedRealtime = function(story) {
+                if ($("#admin-story-row-" + story.id).length) return;
+
+                var featuredNovelId = window.featuredNovelId || null;
+                var isFeatured = (Number(story.id) === Number(featuredNovelId));
+                var featureBtnClass = isFeatured ? 'btn-action-featured' : 'btn-action-feature';
+                var starIconClass = isFeatured ? 'fa-solid fa-star text-warning' : 'fa-regular fa-star';
+                var featureBtnText = isFeatured ? 'Featured' : 'Feature';
+                
+                var typeClass = 'badge-format-novel';
+                if (story.type === 'COMIC') typeClass = 'badge-format-comic';
+                else if (story.type === 'MANGA') typeClass = 'badge-format-manga';
+                else if (story.type === 'MANHWA') typeClass = 'badge-format-manhwa';
+
+                var statusDotClass = (story.status === 'ONGOING' ? 'status-dot-ongoing' : 'status-dot-completed');
+                var statusText = (story.status === 'ONGOING' ? 'Ongoing' : 'Completed');
+
+                var trHtml = '<tr id="admin-story-row-' + story.id + '" style="display: none;">' +
+                    '<td><img src="' + (story.coverUrl || '') + '" alt="Cover" class="cover-img-premium"></td>' +
+                    '<td class="text-white fw-bold story-row-title">' + escapeHtml(story.title) + '</td>' +
+                    '<td>' +
+                    '<span class="badge badge-format ' + typeClass + '">' + story.type + '</span>' +
+                    '</td>' +
+                    '<td>' +
+                    '<div class="d-flex flex-wrap gap-1 story-row-genres">';
+                
+                var genres = (story.genre || "").split(",");
+                genres.forEach(function(g) {
+                    if (g.trim()) {
+                        trHtml += '<span class="genre-pill">' + escapeHtml(g.trim()) + '</span>';
+                    }
+                });
+                
+                trHtml += '</div>' +
+                    '</td>' +
+                    '<td>' +
+                    '<span class="status-indicator">' +
+                    '<span class="status-dot ' + statusDotClass + '"></span>' +
+                    '<span class="story-row-status-text">' + statusText + '</span>' +
+                    '</span>' +
+                    '</td>' +
+                    '<td>' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-toggle-feature ' + featureBtnClass + '" data-id="' + story.id + '" title="' + (isFeatured ? 'Unfeature Story' : 'Feature Story') + '">' +
+                    '<i class="' + starIconClass + '"></i> <span>' + featureBtnText + '</span>' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta" ' +
+                    'data-id="' + story.id + '" ' +
+                    'data-title="' + escapeHtml(story.title) + '" ' +
+                    'data-author="' + escapeHtml(story.author) + '" ' +
+                    'data-type="' + story.type + '" ' +
+                    'data-status="' + story.status + '" ' +
+                    'data-genre="' + escapeHtml(story.genre) + '" ' +
+                    'data-rating="' + story.rating + '" ' +
+                    'data-cover="' + escapeHtml(story.coverUrl) + '" ' +
+                    'data-desc="' + escapeHtml(story.description) + '" ' +
+                    'title="Edit Story Details">' +
+                    '<i class="fa-solid fa-pen-to-square"></i> Edit' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-chapters btn-manage-chapters" data-id="' + story.id + '" data-title="' + escapeHtml(story.title) + '" title="Manage Chapters">' +
+                    '<i class="fa-solid fa-list"></i> Chapters' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-story" data-id="' + story.id + '" data-title="' + escapeHtml(story.title) + '" title="Delete Story">' +
+                    '<i class="fa-solid fa-trash-can"></i>' +
+                    '</button>' +
+                    '</div>' +
+                    '</td>' +
+                    '</tr>';
+
+                var inserted = false;
+                var tbody = $("#admin-stories-tbody");
+                tbody.find("tr").each(function() {
+                    var rowId = $(this).attr("id");
+                    if (rowId && rowId.indexOf("admin-story-row-") === 0) {
+                        var existingId = Number(rowId.replace("admin-story-row-", ""));
+                        if (existingId > Number(story.id)) {
+                            $(trHtml).insertBefore($(this)).fadeIn(300);
+                            inserted = true;
+                            return false; // break loop
+                        }
+                    }
+                });
+
+                if (!inserted) {
+                    var newRow = $(trHtml);
+                    tbody.append(newRow);
+                    newRow.fadeIn(300);
+                }
+            };
+
+            window.handleStoryUpdatedRealtime = function(story) {
+                var row = $("#admin-story-row-" + story.id);
+                if (row.length) {
+                    row.find("img").attr("src", story.coverUrl);
+                    row.find(".story-row-title").text(story.title);
+                    
+                    var typeClass = 'badge-format-novel';
+                    if (story.type === 'COMIC') typeClass = 'badge-format-comic';
+                    else if (story.type === 'MANGA') typeClass = 'badge-format-manga';
+                    else if (story.type === 'MANHWA') typeClass = 'badge-format-manhwa';
+
+                    var badge = row.find(".badge-format");
+                    badge.removeClass("badge-format-novel badge-format-comic badge-format-manga badge-format-manhwa")
+                         .addClass(typeClass)
+                         .text(story.type);
+                         
+                    var genresContainer = row.find(".story-row-genres");
+                    genresContainer.empty();
+                    var genres = (story.genre || "").split(",");
+                    genres.forEach(function(g) {
+                        if (g.trim()) {
+                            genresContainer.append($('<span class="genre-pill">').text(g.trim()));
+                        }
+                    });
+                    
+                    var dot = row.find(".status-dot");
+                    dot.removeClass("status-dot-ongoing status-dot-completed")
+                       .addClass(story.status === 'ONGOING' ? 'status-dot-ongoing' : 'status-dot-completed');
+                    row.find(".story-row-status-text").text(story.status === 'ONGOING' ? 'Ongoing' : 'Completed');
+                    
+                    var editBtn = row.find(".btn-edit-story-meta");
+                    editBtn.attr("data-title", story.title);
+                    editBtn.attr("data-author", story.author);
+                    editBtn.attr("data-type", story.type);
+                    editBtn.attr("data-status", story.status);
+                    editBtn.attr("data-genre", story.genre);
+                    editBtn.attr("data-rating", story.rating);
+                    editBtn.attr("data-cover", story.coverUrl);
+                    editBtn.attr("data-desc", story.description);
+                    
+                    row.find(".btn-delete-story").attr("data-title", story.title);
+                    row.find(".btn-manage-chapters").attr("data-title", story.title);
+                }
+            };
+
+            window.handleStoryDeletedRealtime = function(storyId) {
+                var row = $("#admin-story-row-" + storyId);
+                if (row.length) {
+                    row.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
+                var openNovelId = $("#form-add-chapter").find("#chapter-novel-id").val();
+                if (openNovelId && Number(openNovelId) === Number(storyId)) {
+                    $("#chapters-admin-drawer").addClass("d-none");
+                    resetChapterForm();
+                }
+            };
+
+            window.handleChapterCreatedRealtime = function(chapter) {
+                var openNovelId = $("#chapter-novel-id").val();
+                if (openNovelId && Number(openNovelId) === Number(chapter.novelId)) {
+                    var btn = $(".btn-manage-chapters[data-id='" + chapter.novelId + "']");
+                    if (btn.length) {
+                        btn.click();
+                    }
+                }
+            };
+
+            window.handleChapterUpdatedRealtime = function(chapter) {
+                var openNovelId = $("#chapter-novel-id").val();
+                if (openNovelId && Number(openNovelId) === Number(chapter.novelId)) {
+                    var btn = $(".btn-manage-chapters[data-id='" + chapter.novelId + "']");
+                    if (btn.length) {
+                        btn.click();
+                    }
+                }
+            };
+
+            window.handleChapterDeletedRealtime = function(chapterId, novelId) {
+                var openNovelId = $("#chapter-novel-id").val();
+                if (openNovelId && Number(openNovelId) === Number(novelId)) {
+                    var btn = $(".btn-manage-chapters[data-id='" + novelId + "']");
+                    if (btn.length) {
+                        btn.click();
+                    }
+                }
+            };
+
             // AJAX: Delete story click handler
             $(document).on("click", ".btn-delete-story", function() {
                 var btn = $(this);
@@ -1951,9 +2176,6 @@
                         type: "DELETE",
                         success: function(res) {
                             showToast(res.message || "Story deleted successfully.");
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1200);
                         },
                         error: function(err) {
                             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete story.";
@@ -2248,9 +2470,6 @@
                 .done(function(res) {
                     showToast(successMsg);
                     resetStoryForm();
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1200);
                 })
                 .fail(function(err) {
                     var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";
