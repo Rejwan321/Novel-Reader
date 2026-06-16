@@ -1854,9 +1854,26 @@
                     '</td>' +
                     '</tr>';
 
-                var newRow = $(rowHtml);
-                $("#pane-users tbody").prepend(newRow);
-                newRow.fadeIn(300);
+                // Find correct position to insert new row based on numerical ID ascending
+                var inserted = false;
+                var tbody = $("#pane-users tbody");
+                tbody.find("tr").each(function() {
+                    var rowId = $(this).attr("id");
+                    if (rowId && rowId.indexOf("admin-user-row-") === 0) {
+                        var existingId = Number(rowId.replace("admin-user-row-", ""));
+                        if (existingId > Number(user.id)) {
+                            $(rowHtml).insertBefore($(this)).fadeIn(300);
+                            inserted = true;
+                            return false; // break loop
+                        }
+                    }
+                });
+
+                if (!inserted) {
+                    var newRow = $(rowHtml);
+                    tbody.append(newRow);
+                    newRow.fadeIn(300);
+                }
 
                 if (typeof userAnalyticsData !== 'undefined') {
                     userAnalyticsData.push({
@@ -1920,6 +1937,25 @@
                         row.find(".user-balance-input").attr("data-id", user.id).data("id", user.id);
                         row.find(".btn-update-balance").attr("data-id", user.id).data("id", user.id);
                         row.find("td:first").text(user.id);
+
+                        // Move the row to its new sorted position
+                        row.detach();
+                        var inserted = false;
+                        var tbody = $("#pane-users tbody");
+                        tbody.find("tr").each(function() {
+                            var rowId = $(this).attr("id");
+                            if (rowId && rowId.indexOf("admin-user-row-") === 0) {
+                                var existingId = Number(rowId.replace("admin-user-row-", ""));
+                                if (existingId > Number(user.id)) {
+                                    row.insertBefore($(this));
+                                    inserted = true;
+                                    return false; // break loop
+                                }
+                            }
+                        });
+                        if (!inserted) {
+                            tbody.append(row);
+                        }
                     }
                 }
 
