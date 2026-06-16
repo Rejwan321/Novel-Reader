@@ -133,6 +133,12 @@ public class AdminRestController {
         userToModify.setUser_type(role);
         userService.updateUser(userToModify);
 
+        try {
+            sseService.sendGlobalEvent("user_role_updated", Map.of("userId", id, "role", role));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User role updated successfully."));
     }
 
@@ -182,6 +188,12 @@ public class AdminRestController {
         User user = new User(null, name.trim(), email.trim(), com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password), role);
         userService.addUser(user);
 
+        try {
+            sseService.sendGlobalEvent("user_created", user);
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User account created successfully.", "user", user));
     }
 
@@ -220,6 +232,12 @@ public class AdminRestController {
 
         userToModify.setBalance(balance);
         userService.updateUser(userToModify);
+
+        try {
+            sseService.sendGlobalEvent("user_balance_updated", Map.of("userId", id, "balance", balance));
+        } catch (Exception e) {
+            // Log or ignore
+        }
 
         // Update session if editing self
         if (loggedInUser.getId().equals(userToModify.getId())) {
@@ -316,6 +334,12 @@ public class AdminRestController {
         }
 
         userService.updateUser(userToModify);
+
+        try {
+            sseService.sendGlobalEvent("user_updated", Map.of("oldUserId", id, "user", userToModify));
+        } catch (Exception e) {
+            // Log or ignore
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "User details updated successfully."));
     }

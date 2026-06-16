@@ -375,6 +375,38 @@ $(document).ready(function() {
             }
         });
 
+        sse.addEventListener('user_role_updated', function(e) {
+            var data = JSON.parse(e.data);
+            console.log("SSE: User role updated:", data);
+            if (typeof handleUserRoleUpdatedRealtime === 'function') {
+                handleUserRoleUpdatedRealtime(data.userId, data.role);
+            }
+        });
+
+        sse.addEventListener('user_balance_updated', function(e) {
+            var data = JSON.parse(e.data);
+            console.log("SSE: User balance updated:", data);
+            if (typeof handleUserBalanceUpdatedRealtime === 'function') {
+                handleUserBalanceUpdatedRealtime(data.userId, data.balance);
+            }
+        });
+
+        sse.addEventListener('user_created', function(e) {
+            var user = JSON.parse(e.data);
+            console.log("SSE: User created:", user);
+            if (typeof handleUserCreatedRealtime === 'function') {
+                handleUserCreatedRealtime(user);
+            }
+        });
+
+        sse.addEventListener('user_updated', function(e) {
+            var data = JSON.parse(e.data);
+            console.log("SSE: User updated:", data);
+            if (typeof handleUserUpdatedRealtime === 'function') {
+                handleUserUpdatedRealtime(data.oldUserId, data.user);
+            }
+        });
+
         sse.onerror = function(err) {
             console.error("SSE stream error, trying to reconnect...");
         };
