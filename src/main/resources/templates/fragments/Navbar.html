@@ -299,122 +299,168 @@ $(document).ready(function() {
     var currentChapterId = [[${chapter != null ? chapter.id : null}]];
     var chapterParam = currentChapterId ? '?chapterId=' + currentChapterId : '';
     
-    if (loggedIn || chapterParam) {
-        var sseUrl = '/api/realtime/stream' + chapterParam;
-        console.log("Connecting to SSE stream at " + sseUrl);
-        var sse = new EventSource(sseUrl);
+    var sseUrl = '/api/realtime/stream' + chapterParam;
+    console.log("Connecting to SSE stream at " + sseUrl);
+    var sse = new EventSource(sseUrl);
 
-        sse.addEventListener('connected', function(e) {
-            console.log("SSE connected:", e.data);
-        });
+    sse.addEventListener('connected', function(e) {
+        console.log("SSE connected:", e.data);
+    });
 
-        sse.addEventListener('notification_received', function(e) {
-            var notif = JSON.parse(e.data);
-            console.log("SSE: Notification received:", notif);
-            
-            // 1. Show global toast notification
-            showGlobalToast(notif);
+    sse.addEventListener('notification_received', function(e) {
+        var notif = JSON.parse(e.data);
+        console.log("SSE: Notification received:", notif);
+        
+        // 1. Show global toast notification
+        showGlobalToast(notif);
 
-            // 2. Increment navbar badges
-            $("#navbar-unread-badge").removeClass('d-none');
-            var dropdownBadge = $("#navbar-unread-dropdown-badge");
-            var currentCount = parseInt(dropdownBadge.text()) || 0;
-            dropdownBadge.text(currentCount + 1).removeClass('d-none');
+        // 2. Increment navbar badges
+        $("#navbar-unread-badge").removeClass('d-none');
+        var dropdownBadge = $("#navbar-unread-dropdown-badge");
+        var currentCount = parseInt(dropdownBadge.text()) || 0;
+        dropdownBadge.text(currentCount + 1).removeClass('d-none');
 
-            // 3. Prepend to list if viewing user panel
-            if (typeof appendNotificationRealtime === 'function') {
-                appendNotificationRealtime(notif);
-            }
-        });
+        // 3. Prepend to list if viewing user panel
+        if (typeof appendNotificationRealtime === 'function') {
+            appendNotificationRealtime(notif);
+        }
+    });
 
-        sse.addEventListener('comment_created', function(e) {
-            var comment = JSON.parse(e.data);
-            console.log("SSE: Comment created:", comment);
-            if (typeof handleCommentCreatedRealtime === 'function') {
-                handleCommentCreatedRealtime(comment);
-            }
-        });
+    sse.addEventListener('comment_created', function(e) {
+        var comment = JSON.parse(e.data);
+        console.log("SSE: Comment created:", comment);
+        if (typeof handleCommentCreatedRealtime === 'function') {
+            handleCommentCreatedRealtime(comment);
+        }
+    });
 
-        sse.addEventListener('comment_deleted', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: Comment deleted:", data);
-            if (typeof handleCommentDeletedRealtime === 'function') {
-                handleCommentDeletedRealtime(data.commentId);
-            }
-        });
+    sse.addEventListener('comment_deleted', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: Comment deleted:", data);
+        if (typeof handleCommentDeletedRealtime === 'function') {
+            handleCommentDeletedRealtime(data.commentId);
+        }
+    });
 
-        sse.addEventListener('comment_edited', function(e) {
-            var comment = JSON.parse(e.data);
-            console.log("SSE: Comment edited:", comment);
-            if (typeof handleCommentEditedRealtime === 'function') {
-                handleCommentEditedRealtime(comment);
-            }
-        });
+    sse.addEventListener('comment_edited', function(e) {
+        var comment = JSON.parse(e.data);
+        console.log("SSE: Comment edited:", comment);
+        if (typeof handleCommentEditedRealtime === 'function') {
+            handleCommentEditedRealtime(comment);
+        }
+    });
 
-        sse.addEventListener('comment_liked', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: Comment liked:", data);
-            if (typeof handleCommentLikedRealtime === 'function') {
-                handleCommentLikedRealtime(data);
-            }
-        });
+    sse.addEventListener('comment_liked', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: Comment liked:", data);
+        if (typeof handleCommentLikedRealtime === 'function') {
+            handleCommentLikedRealtime(data);
+        }
+    });
 
-        sse.addEventListener('reply_created', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: Reply created:", data);
-            if (typeof handleReplyCreatedRealtime === 'function') {
-                handleReplyCreatedRealtime(data.parentId, data.reply);
-            }
-        });
+    sse.addEventListener('reply_created', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: Reply created:", data);
+        if (typeof handleReplyCreatedRealtime === 'function') {
+            handleReplyCreatedRealtime(data.parentId, data.reply);
+        }
+    });
 
-        sse.addEventListener('user_deleted', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: User deleted:", data);
-            if (typeof handleUserDeletedRealtime === 'function') {
-                handleUserDeletedRealtime(data.userId);
-            }
-        });
+    sse.addEventListener('user_deleted', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: User deleted:", data);
+        if (typeof handleUserDeletedRealtime === 'function') {
+            handleUserDeletedRealtime(data.userId);
+        }
+    });
 
-        sse.addEventListener('user_role_updated', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: User role updated:", data);
-            if (typeof handleUserRoleUpdatedRealtime === 'function') {
-                handleUserRoleUpdatedRealtime(data.userId, data.role);
-            }
-        });
+    sse.addEventListener('user_role_updated', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: User role updated:", data);
+        if (typeof handleUserRoleUpdatedRealtime === 'function') {
+            handleUserRoleUpdatedRealtime(data.userId, data.role);
+        }
+    });
 
-        sse.addEventListener('user_balance_updated', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: User balance updated:", data);
-            if (typeof handleUserBalanceUpdatedRealtime === 'function') {
-                handleUserBalanceUpdatedRealtime(data.userId, data.balance);
-            }
-        });
+    sse.addEventListener('user_balance_updated', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: User balance updated:", data);
+        if (typeof handleUserBalanceUpdatedRealtime === 'function') {
+            handleUserBalanceUpdatedRealtime(data.userId, data.balance);
+        }
+    });
 
-        sse.addEventListener('user_created', function(e) {
-            var user = JSON.parse(e.data);
-            console.log("SSE: User created:", user);
-            if (typeof handleUserCreatedRealtime === 'function') {
-                handleUserCreatedRealtime(user);
-            }
-        });
+    sse.addEventListener('user_created', function(e) {
+        var user = JSON.parse(e.data);
+        console.log("SSE: User created:", user);
+        if (typeof handleUserCreatedRealtime === 'function') {
+            handleUserCreatedRealtime(user);
+        }
+    });
 
-        sse.addEventListener('user_updated', function(e) {
-            var data = JSON.parse(e.data);
-            console.log("SSE: User updated:", data);
-            if (typeof handleUserUpdatedRealtime === 'function') {
-                handleUserUpdatedRealtime(data.oldUserId, data.user);
-            }
-        });
+    sse.addEventListener('user_updated', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: User updated:", data);
+        if (typeof handleUserUpdatedRealtime === 'function') {
+            handleUserUpdatedRealtime(data.oldUserId, data.user);
+        }
+    });
 
-        sse.onerror = function(err) {
-            console.error("SSE stream error, trying to reconnect...");
-        };
+    sse.addEventListener('story_created', function(e) {
+        var story = JSON.parse(e.data);
+        console.log("SSE: Story created:", story);
+        if (typeof handleStoryCreatedRealtime === 'function') {
+            handleStoryCreatedRealtime(story);
+        }
+    });
 
-        window.addEventListener('beforeunload', function() {
-            sse.close();
-        });
-    }
+    sse.addEventListener('story_updated', function(e) {
+        var story = JSON.parse(e.data);
+        console.log("SSE: Story updated:", story);
+        if (typeof handleStoryUpdatedRealtime === 'function') {
+            handleStoryUpdatedRealtime(story);
+        }
+    });
+
+    sse.addEventListener('story_deleted', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: Story deleted:", data);
+        if (typeof handleStoryDeletedRealtime === 'function') {
+            handleStoryDeletedRealtime(data.storyId);
+        }
+    });
+
+    sse.addEventListener('chapter_created', function(e) {
+        var chapter = JSON.parse(e.data);
+        console.log("SSE: Chapter created:", chapter);
+        if (typeof handleChapterCreatedRealtime === 'function') {
+            handleChapterCreatedRealtime(chapter);
+        }
+    });
+
+    sse.addEventListener('chapter_updated', function(e) {
+        var chapter = JSON.parse(e.data);
+        console.log("SSE: Chapter updated:", chapter);
+        if (typeof handleChapterUpdatedRealtime === 'function') {
+            handleChapterUpdatedRealtime(chapter);
+        }
+    });
+
+    sse.addEventListener('chapter_deleted', function(e) {
+        var data = JSON.parse(e.data);
+        console.log("SSE: Chapter deleted:", data);
+        if (typeof handleChapterDeletedRealtime === 'function') {
+            handleChapterDeletedRealtime(data.chapterId, data.novelId);
+        }
+    });
+
+    sse.onerror = function(err) {
+        console.error("SSE stream error, trying to reconnect...");
+    };
+
+    window.addEventListener('beforeunload', function() {
+        sse.close();
+    });
 });
 </script>
 </div>
