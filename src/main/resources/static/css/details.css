@@ -1,0 +1,304 @@
+/* Details Page Stylesheet - Leaf Studio Premium Theme */
+
+#novel_info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+@media (min-width: 992px) {
+    #novel_info {
+        flex-direction: row;
+    }
+}
+
+#novel_info_left {
+    position: relative;
+    padding: 30px 20px;
+    text-align: center;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(24, 24, 41, 0.45);
+    border: 1px solid rgba(94, 99, 182, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 992px) {
+    #novel_info_left {
+        width: 30%;
+        max-width: 340px;
+        flex-shrink: 0;
+    }
+}
+
+.blur_cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(12px) brightness(0.4);
+    transform: scale(1.1);
+    z-index: 1;
+}
+
+#novel_cover {
+    position: relative;
+    z-index: 2;
+    width: 170px;
+    height: 240px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s;
+    margin-bottom: 20px;
+}
+
+#novel_cover:hover {
+    transform: scale(1.03);
+}
+
+#novel_status {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-block;
+}
+
+.green_status {
+    background: linear-gradient(45deg, #5e63b6, #474b94);
+    box-shadow: 0 4px 10px rgba(94, 99, 182, 0.3);
+}
+
+.blue_status {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+#start-reading, #add-novel-collection-btn {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 220px;
+    padding: 10px 16px;
+    margin: 6px 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+#start-reading {
+    background: linear-gradient(135deg, #1abc9c, #5e63b6);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(94, 99, 182, 0.25);
+}
+
+#start-reading:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(94, 99, 182, 0.4);
+    color: white;
+}
+
+#add-novel-collection-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+#add-novel-collection-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    transform: translateY(-2px);
+}
+
+#novel_info_right {
+    background: rgba(24, 24, 41, 0.65);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 24px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.novel_stats {
+    display: flex;
+    gap: 16px;
+    border: 1px solid rgba(94, 99, 182, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    margin-bottom: 20px;
+    background: rgba(94, 99, 182, 0.03);
+}
+
+.novel_stats > div {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--text-gray);
+}
+
+.novel_stats strong {
+    color: white;
+}
+
+.desc_div {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-gray);
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+#tags_div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.novel_genre {
+    background-color: rgba(94, 99, 182, 0.12);
+    color: #c1c5fa;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 15px;
+    border: 1px solid rgba(94, 99, 182, 0.25);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.novel_genre:hover {
+    background-color: var(--theme-primary);
+    color: white;
+}
+
+/* Chapter selection tabs */
+#chapter_selection_div {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 25px;
+    padding: 4px;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    max-width: 400px;
+    width: 100%;
+}
+
+#chapter_selection_div > p {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    margin: 0;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    color: var(--text-gray);
+    transition: all 0.3s;
+}
+
+#chapter_selection_div .active {
+    background: linear-gradient(45deg, var(--theme-primary), var(--theme-dgreen));
+    color: white;
+    box-shadow: 0 4px 12px rgba(94, 99, 182, 0.3);
+}
+
+.chapter_reverse_button {
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    text-align: right;
+    padding: 4px;
+    color: var(--theme-fgreen);
+    margin-bottom: 12px;
+    transition: color 0.2s;
+}
+
+.chapter_reverse_button:hover {
+    color: white;
+}
+
+/* Index of chapters */
+.novel_index {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chap {
+    text-decoration: none !important;
+    border: 1.5px solid rgba(94, 99, 182, 0.25);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    padding: 12px 16px;
+    color: var(--text-primary) !important;
+    transition: all 0.3s;
+}
+
+.chap:hover {
+    color: white !important;
+    background: rgba(94, 99, 182, 0.1);
+    border-color: var(--theme-primary);
+    transform: translateX(4px);
+}
+
+.chap.chapter-read {
+    opacity: 0.8;
+    background: rgba(94, 99, 182, 0.04);
+}
+
+.chap.chapter-read:hover {
+    opacity: 1;
+}
+
+.chap.chapter-read span {
+    color: var(--text-gray);
+}
+
+/* Star Rating System Styles */
+.star-rating {
+    cursor: pointer;
+    font-size: 1.25rem;
+    vertical-align: middle;
+}
+.star-btn {
+    transition: color 0.15s, transform 0.15s;
+    color: var(--text-gray);
+    display: inline-block;
+}
+.star-btn:hover {
+    transform: scale(1.25);
+    color: #f1c40f !important;
+}
+.star-btn.fa-solid {
+    color: #f1c40f;
+}

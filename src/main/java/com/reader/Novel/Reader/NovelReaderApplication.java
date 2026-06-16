@@ -21,8 +21,8 @@ public class NovelReaderApplication {
 
 public class NovelReaderApplication implements CommandLineRunner {
 
-    //@Autowired
-    //private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     public static void main(String[] args) {
         SpringApplication.run(NovelReaderApplication.class, args);
@@ -31,6 +31,6 @@ public class NovelReaderApplication implements CommandLineRunner {
     @Override
     public void run(String... args) {
         System.out.println("🔍 Fetching all users from the database:");
-        //userRepository.findAll().forEach(System.out::println);
+        userRepository.findAll().forEach(System.out::println);
     }
 }

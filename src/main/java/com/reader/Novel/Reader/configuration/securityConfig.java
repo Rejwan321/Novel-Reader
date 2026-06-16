@@ -48,7 +48,6 @@ public class securityConfig {
                 .roles("READER")
                 .build();
 
-        System.out.println(reader.getPassword());
         JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager(dataSource);
         jdbcUserDetailsManager.createUser(reader);
         return jdbcUserDetailsManager;
