@@ -106,9 +106,15 @@
 
                 <!-- List of Chapters -->
                 <div class="novel_index" id="chapters-list-container">
+                    <div class="text-center py-4 text-muted d-none" id="no-chapters-msg-realtime">
+                        <i class="fa-regular fa-folder-open display-6 mb-2"></i>
+                        <p>No chapters available yet.</p>
+                    </div>
                     <th:block th:each="chapter : ${chapters}" th:with="isUnlocked=${chapter.price == 0 or (session.user != null and (session.user.user_type == 'OWNER' or session.user.user_type == 'ADMIN' or session.user.user_type == 'PROOFREADER' or (session.user.user_type == 'EDITOR' and novel.creatorId == session.user.id) or purchasedChapterIds.contains(chapter.id)))}">
                         <!-- Unlocked Chapter Link -->
                         <a th:if="${isUnlocked}"
+                           th:id="'chapter-item-' + ${chapter.id}"
+                           th:data-chapter-number="${chapter.chapterNumber}"
                            th:href="@{'/novel/' + ${novel.id} + '/read/' + ${chapter.chapterNumber}}"
                            class="chap d-flex justify-content-between align-items-center"
                            th:classappend="${(chapter.price > 0 ? 'premium_chap' : 'free_chap') + (chapter.chapterNumber <= progress ? ' chapter-read' : '')}"
@@ -126,6 +132,8 @@
 
                         <!-- Locked Chapter Clickable Row -->
                         <div th:if="${!isUnlocked}"
+                             th:id="'chapter-item-' + ${chapter.id}"
+                             th:data-chapter-number="${chapter.chapterNumber}"
                              class="chap locked-chap d-flex justify-content-between align-items-center"
                              style="cursor: pointer;"
                              th:data-id="${chapter.id}"
@@ -251,6 +259,149 @@
     <script th:inline="javascript">
         $(document).ready(function() {
             let chapterToBuy = null;
+            const currentNovelId = /*[[${novel.id}]]*/ null;
+            const currentUserId = /*[[${session.user != null ? session.user.id : null}]]*/ null;
+            const currentUserRole = /*[[${session.user != null ? session.user.user_type : null}]]*/ null;
+            const novelCreatorId = /*[[${novel.creatorId}]]*/ null;
+            const purchasedChapterIds = /*[[${purchasedChapterIds}]]*/ [];
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.toString()
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function insertChapterInOrder(chapEl) {
+                var container = $('#chapters-list-container');
+                var chapterNumber = parseFloat($(chapEl).attr('data-chapter-number'));
+                var children = container.children('.chap');
+                
+                if (children.length === 0) {
+                    container.find('#no-chapters-msg-realtime').addClass('d-none');
+                    var staticMsg = container.find('.text-center.py-4.text-muted');
+                    if (staticMsg.length) staticMsg.addClass('d-none');
+                    container.append(chapEl);
+                    return;
+                }
+                
+                var inserted = false;
+                children.each(function() {
+                    var num = parseFloat($(this).attr('data-chapter-number'));
+                    if (currentSort === 'asc') {
+                        if (num > chapterNumber) {
+                            $(this).before(chapEl);
+                            inserted = true;
+                            return false; // break loop
+                        }
+                    } else {
+                        if (num < chapterNumber) {
+                            $(this).before(chapEl);
+                            inserted = true;
+                            return false; // break loop
+                        }
+                    }
+                });
+                
+                if (!inserted) {
+                    container.append(chapEl);
+                }
+            }
+
+            window.handleChapterCreatedRealtime = function(chapter) {
+                if (Number(chapter.novelId) !== Number(currentNovelId)) return;
+                if ($("#chapter-item-" + chapter.id).length) return;
+
+                var price = parseInt(chapter.price) || 0;
+                var isUnlocked = (price === 0) || 
+                    (currentUserRole === 'OWNER' || 
+                     currentUserRole === 'ADMIN' || 
+                     currentUserRole === 'PROOFREADER' || 
+                     (currentUserRole === 'EDITOR' && Number(novelCreatorId) === Number(currentUserId)) || 
+                     purchasedChapterIds.includes(chapter.id));
+
+                var chapEl;
+                if (isUnlocked) {
+                    var unlockBadge = price > 0 ? ' <span class="badge bg-success ms-2 text-dark" style="font-size: 0.75rem;">Unlocked</span>' : '';
+                    var lockIcon = price > 0 ? ' <i class="fa-solid fa-lock-open text-success me-2"></i>' : '';
+                    
+                    var html = '<a href="/novel/' + currentNovelId + '/read/' + chapter.chapterNumber + '" ' +
+                        'id="chapter-item-' + chapter.id + '" ' +
+                        'data-chapter-number="' + chapter.chapterNumber + '" ' +
+                        'class="chap d-flex justify-content-between align-items-center ' + (price > 0 ? 'premium_chap' : 'free_chap') + '" ' +
+                        'style="display: none;">' +
+                        '<span>' +
+                        '<span class="fw-bold text-success font-size-sm">Ch ' + chapter.chapterNumber + ': </span>' +
+                        '<span>' + escapeHtml(chapter.title) + '</span>' +
+                        unlockBadge +
+                        '</span>' +
+                        '<div class="d-flex align-items-center">' +
+                        lockIcon +
+                        '</div>' +
+                        '</a>';
+                    chapEl = $(html);
+                } else {
+                    var html = '<div class="chap locked-chap d-flex justify-content-between align-items-center ' + (price > 0 ? 'premium_chap' : 'free_chap') + '" ' +
+                        'id="chapter-item-' + chapter.id + '" ' +
+                        'data-chapter-number="' + chapter.chapterNumber + '" ' +
+                        'style="cursor: pointer; display: none;" ' +
+                        'data-id="' + chapter.id + '" ' +
+                        'data-price="' + price + '" ' +
+                        'data-title="' + escapeHtml(chapter.title) + '">' +
+                        '<span>' +
+                        '<span class="fw-bold text-success font-size-sm">Ch ' + chapter.chapterNumber + ': </span>' +
+                        '<span class="text-white-50">' + escapeHtml(chapter.title) + '</span>' +
+                        '</span>' +
+                        '<div class="d-flex align-items-center">' +
+                        '<span class="badge bg-warning text-dark me-2" style="font-weight: 600; font-size: 0.75rem;">' +
+                        '<span>' + price + '</span> <i class="fa-solid fa-snowflake ms-1"></i>' +
+                        '</span>' +
+                        '<i class="fa-solid fa-lock text-warning"></i>' +
+                        '</div>' +
+                        '</div>';
+                    chapEl = $(html);
+                }
+
+                insertChapterInOrder(chapEl);
+                
+                // Keep visibility state matching current selected tab
+                var activeTabType = $('#tab-free-chaps').hasClass('active') ? 'free' : 'emerald';
+                switchDetailChapters(activeTabType);
+                
+                chapEl.fadeIn(300);
+            };
+
+            window.handleChapterUpdatedRealtime = function(chapter) {
+                if (Number(chapter.novelId) !== Number(currentNovelId)) return;
+                var existing = $("#chapter-item-" + chapter.id);
+                if (existing.length) {
+                    existing.fadeOut(200, function() {
+                        $(this).remove();
+                        // Recreate
+                        window.handleChapterCreatedRealtime(chapter);
+                    });
+                }
+            };
+
+            window.handleChapterDeletedRealtime = function(chapterId, novelId) {
+                if (Number(novelId) !== Number(currentNovelId)) return;
+                var existing = $("#chapter-item-" + chapterId);
+                if (existing.length) {
+                    existing.fadeOut(300, function() {
+                        $(this).remove();
+                        // Check if list empty
+                        var container = $('#chapters-list-container');
+                        if (container.children('.chap').length === 0) {
+                            $("#no-chapters-msg-realtime").removeClass('d-none').fadeIn(300);
+                            var staticMsg = container.find('.text-center.py-4.text-muted');
+                            if (staticMsg.length) staticMsg.removeClass('d-none').fadeIn(300);
+                        }
+                    });
+                }
+            };
 
             $(document).on('click', '.locked-chap', function() {
                 const id = $(this).data('id');
@@ -271,8 +422,9 @@
                 $('#purchase-chapter-title').text(title);
                 $('#purchase-chapter-price').text(price);
                 
-                const userBalance = parseInt($('#navbar-user-balance').text()) || 0;
-                $('#purchase-user-balance').text(userBalance);
+                const userBalanceText = $('#navbar-user-balance').text().trim();
+                const userBalance = userBalanceText === '∞' ? Infinity : (parseInt(userBalanceText) || 0);
+                $('#purchase-user-balance').text(userBalanceText);
 
                 if (userBalance < price) {
                     $('#purchase-error-msg').removeClass('d-none');
