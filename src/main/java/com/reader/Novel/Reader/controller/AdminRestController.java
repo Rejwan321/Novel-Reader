@@ -427,6 +427,23 @@ public class AdminRestController {
         Novel saved = novelService.saveNovel(novel);
         syncNovelFoldersAndFiles(saved);
 
+        try {
+            sseService.sendGlobalEvent("story_created", Map.of(
+                "id", saved.getId(),
+                "title", saved.getTitle(),
+                "author", saved.getAuthor(),
+                "description", saved.getDescription(),
+                "coverUrl", saved.getCoverUrl(),
+                "type", saved.getType(),
+                "genre", saved.getGenre(),
+                "rating", saved.getRating(),
+                "status", saved.getStatus(),
+                "creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L
+            ));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "novel", saved));
     }
 
@@ -607,6 +624,19 @@ public class AdminRestController {
         Chapter saved = chapterServiceHelper(chapter);
         syncChapterFiles(saved);
 
+        try {
+            sseService.sendGlobalEvent("chapter_created", Map.of(
+                "id", saved.getId(),
+                "novelId", novelId,
+                "title", saved.getTitle(),
+                "chapterNumber", saved.getChapterNumber(),
+                "price", saved.getPrice(),
+                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : ""
+            ));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "chapter", saved));
     }
 
@@ -697,6 +727,22 @@ public class AdminRestController {
 
         Novel saved = novelService.saveNovel(existingNovel);
         syncNovelFoldersAndFiles(saved);
+        try {
+            sseService.sendGlobalEvent("story_updated", Map.of(
+                "id", saved.getId(),
+                "title", saved.getTitle(),
+                "author", saved.getAuthor(),
+                "description", saved.getDescription(),
+                "coverUrl", saved.getCoverUrl(),
+                "type", saved.getType(),
+                "genre", saved.getGenre(),
+                "rating", saved.getRating(),
+                "status", saved.getStatus(),
+                "creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L
+            ));
+        } catch (Exception e) {
+            // Log or ignore
+        }
         return ResponseEntity.ok(Map.of("success", true, "novel", saved));
     }
 
@@ -769,6 +815,18 @@ public class AdminRestController {
 
         Chapter saved = novelService.saveChapter(existingChapter);
         syncChapterFiles(saved);
+        try {
+            sseService.sendGlobalEvent("chapter_updated", Map.of(
+                "id", saved.getId(),
+                "novelId", saved.getNovel().getId(),
+                "title", saved.getTitle(),
+                "chapterNumber", saved.getChapterNumber(),
+                "price", saved.getPrice(),
+                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : ""
+            ));
+        } catch (Exception e) {
+            // Log or ignore
+        }
         return ResponseEntity.ok(Map.of("success", true, "chapter", saved));
     }
 
@@ -800,7 +858,16 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not own the parent story."));
         }
 
+        Long novelId = chapter.getNovel().getId();
         novelService.deleteChapter(id);
+        try {
+            sseService.sendGlobalEvent("chapter_deleted", Map.of(
+                "chapterId", id,
+                "novelId", novelId
+            ));
+        } catch (Exception e) {
+            // Log or ignore
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Chapter deleted successfully."));
     }
@@ -834,6 +901,11 @@ public class AdminRestController {
         }
 
         novelService.deleteNovel(id);
+        try {
+            sseService.sendGlobalEvent("story_deleted", Map.of("storyId", id));
+        } catch (Exception e) {
+            // Log or ignore
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Story deleted successfully."));
     }
