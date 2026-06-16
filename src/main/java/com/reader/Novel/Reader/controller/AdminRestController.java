@@ -11,6 +11,7 @@ import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
+import com.reader.Novel.Reader.service.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,9 @@ public class AdminRestController {
 
     @Autowired
     private NovelService novelService;
+
+    @Autowired
+    private SseService sseService;
 
     @Autowired
     private ReviewRepository reviewRepository;
@@ -350,6 +354,12 @@ public class AdminRestController {
         }
 
         userService.deleteUser(id);
+
+        try {
+            sseService.sendGlobalEvent("user_deleted", Map.of("userId", id));
+        } catch (Exception e) {
+            // Log or ignore to avoid blocking response on SSE failure
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "User deleted successfully."));
     }

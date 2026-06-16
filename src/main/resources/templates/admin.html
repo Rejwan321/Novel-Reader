@@ -836,7 +836,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="u : ${users}">
+                                <tr th:each="u : ${users}" th:id="'admin-user-row-' + ${u.id}">
                                     <td th:text="${u.id}">1</td>
                                     <td th:text="${u.name}" class="text-white fw-bold">Sakura Reader</td>
                                     <td th:text="${u.email}">sakura@sakura.com</td>
@@ -1744,6 +1744,23 @@
                     });
                 }
             });
+
+            window.handleUserDeletedRealtime = function(deletedUserId) {
+                var row = $("#admin-user-row-" + deletedUserId);
+                if (row.length) {
+                    row.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData = userAnalyticsData.filter(function(u) {
+                        return Number(u.userId) !== Number(deletedUserId);
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
 
             // AJAX: Delete story click handler
             $(document).on("click", ".btn-delete-story", function() {
