@@ -11,6 +11,7 @@ import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
+import com.reader.Novel.Reader.service.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,9 @@ public class AdminRestController {
 
     @Autowired
     private NovelService novelService;
+
+    @Autowired
+    private SseService sseService;
 
     @Autowired
     private ReviewRepository reviewRepository;
@@ -129,6 +133,12 @@ public class AdminRestController {
         userToModify.setUser_type(role);
         userService.updateUser(userToModify);
 
+        try {
+            sseService.sendGlobalEvent("user_role_updated", Map.of("userId", id, "role", role));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User role updated successfully."));
     }
 
@@ -178,6 +188,12 @@ public class AdminRestController {
         User user = new User(null, name.trim(), email.trim(), com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password), role);
         userService.addUser(user);
 
+        try {
+            sseService.sendGlobalEvent("user_created", user);
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User account created successfully.", "user", user));
     }
 
@@ -216,6 +232,12 @@ public class AdminRestController {
 
         userToModify.setBalance(balance);
         userService.updateUser(userToModify);
+
+        try {
+            sseService.sendGlobalEvent("user_balance_updated", Map.of("userId", id, "balance", balance));
+        } catch (Exception e) {
+            // Log or ignore
+        }
 
         // Update session if editing self
         if (loggedInUser.getId().equals(userToModify.getId())) {
@@ -313,6 +335,12 @@ public class AdminRestController {
 
         userService.updateUser(userToModify);
 
+        try {
+            sseService.sendGlobalEvent("user_updated", Map.of("oldUserId", id, "user", userToModify));
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "message", "User details updated successfully."));
     }
 
@@ -350,6 +378,12 @@ public class AdminRestController {
         }
 
         userService.deleteUser(id);
+
+        try {
+            sseService.sendGlobalEvent("user_deleted", Map.of("userId", id));
+        } catch (Exception e) {
+            // Log or ignore to avoid blocking response on SSE failure
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "User deleted successfully."));
     }
