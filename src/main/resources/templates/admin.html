@@ -836,7 +836,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="u : ${users}">
+                                <tr th:each="u : ${users}" th:id="'admin-user-row-' + ${u.id}">
                                     <td th:text="${u.id}">1</td>
                                     <td th:text="${u.name}" class="text-white fw-bold">Sakura Reader</td>
                                     <td th:text="${u.email}">sakura@sakura.com</td>
@@ -1703,7 +1703,7 @@
             }
 
             // AJAX: User role selection changed
-            $(".user-role-select").change(function() {
+            $(document).on("change", ".user-role-select", function() {
                 var select = $(this);
                 var userId = select.data("id");
                 var role = select.val();
@@ -1712,7 +1712,9 @@
                 $.post("/api/admin/users/" + userId + "/role", { role: role })
                 .done(function(res) {
                     showToast(res.message || "User role updated successfully.");
-                    select.data("original", role);
+                    if (typeof handleUserRoleUpdatedRealtime === 'function') {
+                        handleUserRoleUpdatedRealtime(userId, role);
+                    }
                 })
                 .fail(function(err) {
                     var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to update role.";
@@ -1733,9 +1735,9 @@
                         type: "DELETE",
                         success: function(res) {
                             showToast(res.message || "User deleted successfully.");
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1200);
+                            if (typeof handleUserDeletedRealtime === 'function') {
+                                handleUserDeletedRealtime(userId);
+                            }
                         },
                         error: function(err) {
                             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete user.";
@@ -1744,6 +1746,198 @@
                     });
                 }
             });
+
+            window.handleUserDeletedRealtime = function(deletedUserId) {
+                var row = $("#admin-user-row-" + deletedUserId);
+                if (row.length) {
+                    row.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData = userAnalyticsData.filter(function(u) {
+                        return Number(u.userId) !== Number(deletedUserId);
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserRoleUpdatedRealtime = function(userId, role) {
+                var select = $("#admin-user-row-" + userId + " .user-role-select");
+                if (select.length) {
+                    select.val(role);
+                    select.data("original", role);
+                    select.attr("data-original", role);
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData.forEach(function(u) {
+                        if (Number(u.userId) === Number(userId)) {
+                            u.role = role;
+                        }
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserBalanceUpdatedRealtime = function(userId, balance) {
+                var input = $("#admin-user-row-" + userId + " .user-balance-input");
+                if (input.length) {
+                    input.val(balance);
+                    input.data("original", balance);
+                    input.attr("data-original", balance);
+                }
+                if (currentUserSession && Number(userId) === Number(currentUserSession.id)) {
+                    if (currentUserSession.user_type === 'ADMIN' || currentUserSession.user_type === 'OWNER') {
+                        $("#navbar-user-balance").text('∞');
+                    } else {
+                        $("#navbar-user-balance").text(balance);
+                    }
+                }
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData.forEach(function(u) {
+                        if (Number(u.userId) === Number(userId)) {
+                            u.balance = balance;
+                        }
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserCreatedRealtime = function(user) {
+                if ($("#admin-user-row-" + user.id).length) return;
+
+                var isSelf = currentUserSession && Number(user.id) === Number(currentUserSession.id);
+                var selectHtml = '';
+                var deleteBtnHtml = '';
+
+                if (isSelf) {
+                    selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
+                    deleteBtnHtml = '<span class="text-muted small">-</span>';
+                } else {
+                    selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
+                        '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
+                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Editor</option>' +
+                        '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
+                        '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
+                        '</select>';
+                    deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '">' +
+                        '<i class="fa-solid fa-trash-can me-1"></i>Delete' +
+                        '</button>';
+                }
+
+                var rowHtml = '<tr id="admin-user-row-' + user.id + '" style="display: none;">' +
+                    '<td>' + user.id + '</td>' +
+                    '<td class="text-white fw-bold user-row-name">' + user.name + '</td>' +
+                    '<td class="user-row-email">' + user.email + '</td>' +
+                    '<td>' + selectHtml + '</td>' +
+                    '<td>' +
+                    '<div class="d-flex align-items-center gap-1">' +
+                    '<input type="number" class="form-input-admin user-balance-input" value="' + user.balance + '" data-id="' + user.id + '" data-original="' + user.balance + '" style="width: 80px; padding: 4px 8px; font-size: 0.85rem;" min="0">' +
+                    '<button type="button" class="btn btn-sm btn-outline-success btn-update-balance" data-id="' + user.id + '">' +
+                    '<i class="fa fa-save"></i>' +
+                    '</button>' +
+                    '</div>' +
+                    '</td>' +
+                    '<td>' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-email="' + user.email + '" data-role="' + user.user_type + '">' +
+                    '<i class="fa-solid fa-pen-to-square me-1"></i>Edit' +
+                    '</button>' +
+                    deleteBtnHtml +
+                    '</div>' +
+                    '</td>' +
+                    '</tr>';
+
+                var newRow = $(rowHtml);
+                $("#pane-users tbody").prepend(newRow);
+                newRow.fadeIn(300);
+
+                if (typeof userAnalyticsData !== 'undefined') {
+                    userAnalyticsData.push({
+                        userId: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.user_type,
+                        balance: user.balance,
+                        totalSpent: 0,
+                        chaptersUnlocked: 0
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
+
+            window.handleUserUpdatedRealtime = function(oldUserId, user) {
+                var row = $("#admin-user-row-" + oldUserId);
+                if (row.length) {
+                    row.find(".user-row-name").text(user.name);
+                    row.find(".user-row-email").text(user.email);
+                    
+                    var select = row.find(".user-role-select");
+                    if (select.length) {
+                        select.val(user.user_type);
+                        select.data("original", user.user_type);
+                        select.attr("data-original", user.user_type);
+                    }
+
+                    var balanceInput = row.find(".user-balance-input");
+                    if (balanceInput.length) {
+                        balanceInput.val(user.balance);
+                        balanceInput.data("original", user.balance);
+                        balanceInput.attr("data-original", user.balance);
+                    }
+
+                    var editBtn = row.find(".btn-edit-user-trigger");
+                    if (editBtn.length) {
+                        editBtn.attr("data-id", user.id);
+                        editBtn.attr("data-name", user.name);
+                        editBtn.attr("data-email", user.email);
+                        editBtn.attr("data-role", user.user_type);
+                        editBtn.data("id", user.id);
+                        editBtn.data("name", user.name);
+                        editBtn.data("email", user.email);
+                        editBtn.data("role", user.user_type);
+                    }
+
+                    var deleteBtn = row.find(".btn-delete-user");
+                    if (deleteBtn.length) {
+                        deleteBtn.attr("data-id", user.id);
+                        deleteBtn.attr("data-name", user.name);
+                        deleteBtn.data("id", user.id);
+                        deleteBtn.data("name", user.name);
+                    }
+
+                    if (Number(oldUserId) !== Number(user.id)) {
+                        row.attr("id", "admin-user-row-" + user.id);
+                        row.find(".user-role-select").attr("data-id", user.id).data("id", user.id);
+                        row.find(".user-balance-input").attr("data-id", user.id).data("id", user.id);
+                        row.find(".btn-update-balance").attr("data-id", user.id).data("id", user.id);
+                        row.find("td:first").text(user.id);
+                    }
+                }
+
+                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
+                    userAnalyticsData.forEach(function(u) {
+                        if (Number(u.userId) === Number(oldUserId)) {
+                            u.userId = user.id;
+                            u.name = user.name;
+                            u.email = user.email;
+                            u.role = user.user_type;
+                            u.balance = user.balance;
+                        }
+                    });
+                    if (typeof applyExcelFiltersAndSort === 'function') {
+                        applyExcelFiltersAndSort();
+                    }
+                }
+            };
 
             // AJAX: Delete story click handler
             $(document).on("click", ".btn-delete-story", function() {
@@ -1845,9 +2039,6 @@
                 .done(function(res) {
                     showToast(res.message || successMsg);
                     resetUserForm();
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1200);
                 })
                 .fail(function(err) {
                     var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Operation failed.";

@@ -923,6 +923,77 @@
                     alert("Error disliking comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
                 });
             });
+
+            // SSE Real-time Comment Handlers
+            window.handleCommentCreatedRealtime = function(comment) {
+                if ($('#comment-card-' + comment.id).length > 0) return;
+                
+                var feed = $('#comments-feed');
+                if (feed.children().first().text().indexOf("No comments yet") !== -1) {
+                    feed.empty();
+                }
+                
+                var commentHtml = buildCommentCard(comment, false);
+                var commentWrapper = $('<div class="comment-wrapper-node" id="comment-wrapper-' + comment.id + '"></div>');
+                commentWrapper.append(commentHtml);
+                
+                var repliesContainer = $('<div class="reply-container" id="reply-container-' + comment.id + '"></div>').hide();
+                commentWrapper.append(repliesContainer);
+                
+                feed.append(commentWrapper);
+                
+                // Update total comments count
+                $('#comment-count').text($('.comment-card').length);
+            };
+
+            window.handleReplyCreatedRealtime = function(parentId, reply) {
+                if ($('#comment-card-' + reply.id).length > 0) return;
+                
+                var repliesContainer = $('#reply-container-' + parentId);
+                var replyHtml = buildCommentCard(reply, true, parentId);
+                repliesContainer.append(replyHtml).show();
+                
+                // Update total comments count
+                $('#comment-count').text($('.comment-card').length);
+            };
+
+            window.handleCommentDeletedRealtime = function(commentId) {
+                var element = $('#comment-wrapper-' + commentId);
+                if (element.length === 0) {
+                    element = $('#comment-card-' + commentId); // fallback if it is a reply
+                }
+                
+                if (element.length > 0) {
+                    element.fadeOut(300, function() {
+                        $(this).remove();
+                        $('#comment-count').text($('.comment-card').length);
+                        
+                        // If all comments are deleted, restore empty state
+                        if ($('.comment-card').length === 0) {
+                            $('#comments-feed').html('<p class="text-center text-muted my-4 font-size-sm">No comments yet. Be the first to start the conversation!</p>');
+                        }
+                    });
+                }
+            };
+
+            window.handleCommentEditedRealtime = function(comment) {
+                var card = $('#comment-card-' + comment.id);
+                if (card.length === 0) return;
+                
+                var bodyDiv = card.find('.comment-body');
+                // Avoid overwriting if this user is currently editing
+                if (bodyDiv.find('.edit-textarea').length > 0) return;
+                
+                bodyDiv.html(escapeHtml(comment.content));
+            };
+
+            window.handleCommentLikedRealtime = function(data) {
+                var card = $('#comment-card-' + data.commentId);
+                if (card.length === 0) return;
+                
+                card.find('.btn-like-comment-action .like-count').text(data.likes);
+                card.find('.btn-dislike-comment-action .dislike-count').text(data.dislikes);
+            };
         });
     </script>
 </body>

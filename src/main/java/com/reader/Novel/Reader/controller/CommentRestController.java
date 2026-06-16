@@ -11,6 +11,7 @@ import com.reader.Novel.Reader.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.reader.Novel.Reader.service.EmailService;
+import com.reader.Novel.Reader.service.SseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +39,9 @@ public class CommentRestController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SseService sseService;
+
     @Value("${app.base-url:https://nazuna.dpdns.org}")
     private String baseUrl;
 
@@ -61,7 +65,8 @@ public class CommentRestController {
                         chapter.getChapterNumber(),
                         chapter.getId()
                     );
-                    notificationRepository.save(notification);
+                    Notification savedNotif = notificationRepository.save(notification);
+                    sseService.sendNotification(1L, savedNotif);
 
                     // Send Async Email Alert
                     String readLink = baseUrl + "/novel/" + novel.getId() + "/read/" + chapter.getChapterNumber();
@@ -106,7 +111,8 @@ public class CommentRestController {
                             chapter.getId(),
                             u.getId()
                         );
-                        notificationRepository.save(notification);
+                        Notification savedNotif = notificationRepository.save(notification);
+                        sseService.sendNotification(u.getId(), savedNotif);
 
                         // If user is subscribed to mentions, send email notification
                         if (u.getSubscribedToMentions() == null || u.getSubscribedToMentions()) {
@@ -157,6 +163,7 @@ public class CommentRestController {
         Comment comment = new Comment(chapterId, loggedInUser, content.trim());
         Comment saved = commentRepository.save(comment);
         checkAndCreateNotification(saved);
+        sseService.sendCommentEvent(chapterId, "comment_created", saved);
         return ResponseEntity.ok(saved);
     }
 
@@ -182,14 +189,20 @@ public class CommentRestController {
             comment.getDislikedUserIds().remove(userId);
         }
         
-        commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+        Map<String, Object> likeEvent = Map.of(
+            "commentId", saved.getId(),
+            "likes", saved.getLikedUserIds().size(),
+            "dislikes", saved.getDislikedUserIds().size()
+        );
+        sseService.sendCommentEvent(saved.getChapterId(), "comment_liked", likeEvent);
         
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "likes", comment.getLikedUserIds().size(),
-            "dislikes", comment.getDislikedUserIds().size(),
-            "liked", comment.getLikedUserIds().contains(userId),
-            "disliked", comment.getDislikedUserIds().contains(userId)
+            "likes", saved.getLikedUserIds().size(),
+            "dislikes", saved.getDislikedUserIds().size(),
+            "liked", saved.getLikedUserIds().contains(userId),
+            "disliked", saved.getDislikedUserIds().contains(userId)
         ));
     }
 
@@ -215,14 +228,20 @@ public class CommentRestController {
             comment.getLikedUserIds().remove(userId);
         }
         
-        commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+        Map<String, Object> likeEvent = Map.of(
+            "commentId", saved.getId(),
+            "likes", saved.getLikedUserIds().size(),
+            "dislikes", saved.getDislikedUserIds().size()
+        );
+        sseService.sendCommentEvent(saved.getChapterId(), "comment_liked", likeEvent);
         
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "likes", comment.getLikedUserIds().size(),
-            "dislikes", comment.getDislikedUserIds().size(),
-            "liked", comment.getLikedUserIds().contains(userId),
-            "disliked", comment.getDislikedUserIds().contains(userId)
+            "likes", saved.getLikedUserIds().size(),
+            "dislikes", saved.getDislikedUserIds().size(),
+            "liked", saved.getLikedUserIds().contains(userId),
+            "disliked", saved.getDislikedUserIds().contains(userId)
         ));
     }
 
@@ -256,6 +275,11 @@ public class CommentRestController {
         
         Comment saved = commentRepository.save(reply);
         checkAndCreateNotification(saved);
+        Map<String, Object> replyEvent = Map.of(
+            "parentId", commentId,
+            "reply", saved
+        );
+        sseService.sendCommentEvent(saved.getChapterId(), "reply_created", replyEvent);
         return ResponseEntity.ok(saved);
     }
 
@@ -280,7 +304,10 @@ public class CommentRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not have permission to delete this comment. Only admins can delete comments."));
         }
 
+        Long chapterId = comment.getChapterId();
+        Long commentIdVal = comment.getId();
         commentRepository.delete(comment);
+        sseService.sendCommentEvent(chapterId, "comment_deleted", Map.of("commentId", commentIdVal));
         return ResponseEntity.ok(Map.of("success", true, "message", "Comment deleted successfully."));
     }
 
@@ -317,6 +344,7 @@ public class CommentRestController {
 
         comment.setContent(content.trim());
         Comment saved = commentRepository.save(comment);
+        sseService.sendCommentEvent(saved.getChapterId(), "comment_edited", saved);
         return ResponseEntity.ok(saved);
     }
 
