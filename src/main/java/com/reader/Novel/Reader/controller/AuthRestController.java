@@ -93,36 +93,60 @@ public class AuthRestController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<?> googleLogin(@RequestParam("token") String token, HttpSession session) {
+    public ResponseEntity<?> googleLogin(
+            @RequestParam("token") String token,
+            @RequestParam(value = "isAccessToken", required = false) Boolean isAccessToken,
+            HttpSession session) {
         if (token == null || token.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Token is required."));
         }
 
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
-            
-            @SuppressWarnings("unchecked")
-            Map<String, Object> payload = restTemplate.getForObject(url, Map.class);
-            
-            if (payload == null || payload.containsKey("error")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Google token."));
+            Map<String, Object> payload = null;
+            boolean verified = false;
+
+            if (Boolean.TRUE.equals(isAccessToken)) {
+                String url = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + token;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> resp = restTemplate.getForObject(url, Map.class);
+                payload = resp;
+                if (payload != null && !payload.containsKey("error")) {
+                    verified = true;
+                }
+            } else {
+                String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> resp = restTemplate.getForObject(url, Map.class);
+                payload = resp;
+                if (payload != null && !payload.containsKey("error")) {
+                    // Verify audience
+                    String aud = (String) payload.get("aud");
+                    String expectedClientId = systemSettingRepository.findById("google.client_id")
+                            .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                            .orElse("your-google-client-id");
+                    if (expectedClientId.equals(aud)) {
+                        verified = true;
+                    }
+                }
             }
 
-            // Verify audience
-            String aud = (String) payload.get("aud");
-            String expectedClientId = systemSettingRepository.findById("google.client_id")
-                    .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
-                    .orElse("your-google-client-id");
-            if (!expectedClientId.equals(aud)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token was not generated for this application."));
+            if (payload == null || !verified) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Google token."));
             }
 
             String email = (String) payload.get("email");
             String name = (String) payload.get("name");
-            String emailVerified = (String) payload.get("email_verified");
+            
+            Object emailVerifiedObj = payload.get("email_verified");
+            boolean isVerified = false;
+            if (emailVerifiedObj instanceof Boolean) {
+                isVerified = (Boolean) emailVerifiedObj;
+            } else if (emailVerifiedObj instanceof String) {
+                isVerified = "true".equalsIgnoreCase((String) emailVerifiedObj);
+            }
 
-            if (!"true".equals(emailVerified)) {
+            if (!isVerified) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Google email is not verified."));
             }
 
