@@ -27,9 +27,9 @@
     <main class="container py-4 my-5" style="min-height: 80vh;">
         
         <!-- Hero Featured Section -->
-        <section class="hero-section mb-5 position-relative overflow-hidden rounded-3 p-4 p-md-5" id="hero-banner" th:if="${novels != null and !novels.isEmpty()}">
+        <section class="hero-section mb-5 position-relative overflow-hidden rounded-3 p-4 p-md-5" id="hero-banner" th:if="${novels != null and !novels.isEmpty()}" th:data-hero-novel-id="${novels[0].id}">
             <!-- Background Image Blur -->
-            <div class="hero-bg" th:style="'background-image: linear-gradient(to right, rgba(15, 15, 26, 0.95) 30%, rgba(15, 15, 26, 0.4)), url(' + ${novels[0].coverUrl} + ');'"></div>
+            <div class="hero-bg" id="hero-bg" th:style="'background-image: linear-gradient(to right, rgba(15, 15, 26, 0.95) 30%, rgba(15, 15, 26, 0.4)), url(' + ${novels[0].coverUrl} + ');'"></div>
             <div class="row align-items-center position-relative z-index-2">
                 <div class="col-lg-8">
                     <span class="badge bg-warning mb-2 text-dark font-weight-bold" th:text="${novels[0].type}">NOVEL</span>
@@ -58,7 +58,7 @@
             <div class="new-novels-container media_type_Novel">
                 <button class="new-novel-scroll-btn scroll-btn-left" onclick="scrollCarousel('popular', -240)">❮</button>
                 <div class="new-novels-div" id="carousel-popular">
-                    <a th:each="novel : ${novels}" class="new-novel-cover-div" th:href="@{'/novel/' + ${novel.id}}">
+                    <a th:each="novel : ${novels}" class="new-novel-cover-div" th:href="@{'/novel/' + ${novel.id}}" th:id="'popular-novel-' + ${novel.id}">
                         <img class="new-novel-cover" th:src="${novel.coverUrl}">
                         <h4 class="new-novel-title" th:text="${novel.title}">Title</h4>
                     </a>
@@ -71,7 +71,7 @@
             <div class="new-novels-container media_type_Novel">
                 <button class="new-novel-scroll-btn scroll-btn-left" onclick="scrollCarousel('gems', -240)">❮</button>
                 <div class="new-novels-div" id="carousel-gems">
-                    <a th:each="novel : ${novels}" th:if="${novel.rating >= 4.8}" class="new-novel-cover-div" th:href="@{'/novel/' + ${novel.id}}">
+                    <a th:each="novel : ${novels}" th:if="${novel.rating >= 4.8}" class="new-novel-cover-div" th:href="@{'/novel/' + ${novel.id}}" th:id="'gems-novel-' + ${novel.id}">
                         <img class="new-novel-cover" th:src="${novel.coverUrl}">
                         <h4 class="new-novel-title" th:text="${novel.title}">Title</h4>
                     </a>
@@ -84,12 +84,13 @@
             <div class="new-novels-container media_type_Novel">
                 <button class="new-novel-scroll-btn scroll-btn-left" onclick="scrollCarousel('completed', -240)">❮</button>
                 <div class="new-novels-div" id="carousel-completed">
-                    <a th:each="novel : ${novels}" th:if="${novel.status == 'COMPLETED'}" class="new-novel-cover-div" th:href="@{'/novel/' + ${novel.id}}">
+                    <a th:each="novel : ${novels}" th:if="${novel.status == 'COMPLETED'}" class="new-novel-cover-div" th:href="@{'/novel/' + ${novel.id}}" th:id="'completed-novel-' + ${novel.id}">
                         <img class="new-novel-cover" th:src="${novel.coverUrl}">
                         <h4 class="new-novel-title" th:text="${novel.title}">Title</h4>
                     </a>
                 </div>
                 <button class="new-novel-scroll-btn scroll-btn-right" onclick="scrollCarousel('completed', 240)">❯</button>
+            </div>
         </section>
 
         <!-- Upcoming Release Schedule Section -->
@@ -187,6 +188,198 @@
                     emeraldBtn.classList.add('chap_active');
                 }
             }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.toString()
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            window.handleStoryCreatedRealtime = function(story) {
+                // 1. Add to Popular carousel
+                if ($("#popular-novel-" + story.id).length === 0) {
+                    var popHtml = '<a class="new-novel-cover-div" href="/novel/' + story.id + '" id="popular-novel-' + story.id + '" style="display: none;">' +
+                        '<img class="new-novel-cover" src="' + (story.coverUrl || '') + '">' +
+                        '<h4 class="new-novel-title">' + escapeHtml(story.title) + '</h4>' +
+                        '</a>';
+                    $("#carousel-popular").prepend(popHtml);
+                    $("#popular-novel-" + story.id).fadeIn(300);
+                }
+
+                // 2. Add to Gems carousel if rating >= 4.8
+                if (parseFloat(story.rating) >= 4.8 && $("#gems-novel-" + story.id).length === 0) {
+                    var gemHtml = '<a class="new-novel-cover-div" href="/novel/' + story.id + '" id="gems-novel-' + story.id + '" style="display: none;">' +
+                        '<img class="new-novel-cover" src="' + (story.coverUrl || '') + '">' +
+                        '<h4 class="new-novel-title">' + escapeHtml(story.title) + '</h4>' +
+                        '</a>';
+                    $("#carousel-gems").prepend(gemHtml);
+                    $("#gems-novel-" + story.id).fadeIn(300);
+                }
+
+                // 3. Add to Completed carousel if status == 'COMPLETED'
+                if (story.status === 'COMPLETED' && $("#completed-novel-" + story.id).length === 0) {
+                    var compHtml = '<a class="new-novel-cover-div" href="/novel/' + story.id + '" id="completed-novel-' + story.id + '" style="display: none;">' +
+                        '<img class="new-novel-cover" src="' + (story.coverUrl || '') + '">' +
+                        '<h4 class="new-novel-title">' + escapeHtml(story.title) + '</h4>' +
+                        '</a>';
+                    $("#carousel-completed").prepend(compHtml);
+                    $("#completed-novel-" + story.id).fadeIn(300);
+                }
+
+                // 4. Add to Discovery Grid
+                if ($("#book-card-col-" + story.id).length === 0) {
+                    var ribbonClass = (story.type === 'NOVEL' ? 'bg-violet' : 'bg-coral');
+                    var primaryGenre = (story.genre || "").split(",")[0].trim();
+                    
+                    var gridHtml = '<div class="col book-card-col" data-type="' + story.type + '" data-genres="' + story.genre + '" id="book-card-col-' + story.id + '" style="display: none;">' +
+                        '<div class="book-card position-relative overflow-hidden h-100 rounded-3 d-flex flex-column" id="book-card-' + story.id + '">' +
+                        '<span class="card-ribbon ' + ribbonClass + '">' + story.type + '</span>' +
+                        '<div class="cover-wrapper position-relative">' +
+                        '<img src="' + (story.coverUrl || '') + '" class="card-img-top book-cover-img" alt="' + escapeHtml(story.title) + '">' +
+                        '<div class="cover-overlay d-flex align-items-center justify-content-center">' +
+                        '<a href="/novel/' + story.id + '" class="btn btn-sm btn-premium px-3"><i class="fa fa-eye me-2"></i>Details</a>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="card-body p-3 d-flex flex-column flex-grow-1">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                        '<span class="badge bg-dark text-muted font-size-xs">' + escapeHtml(primaryGenre) + '</span>' +
+                        '<span class="text-warning font-size-sm"><i class="fa fa-star me-1"></i><span>' + parseFloat(story.rating).toFixed(1) + '</span></span>' +
+                        '</div>' +
+                        '<h3 class="card-title text-white h6 fw-bold mb-1 line-clamp-2">' + escapeHtml(story.title) + '</h3>' +
+                        '<p class="card-text text-muted font-size-sm mb-3">' + escapeHtml(story.author) + '</p>' +
+                        '<div class="mt-auto d-flex justify-content-between align-items-center">' +
+                        '<span class="text-gray-accent font-size-xs">' + story.status + '</span>' +
+                        '<a href="/novel/' + story.id + '" class="btn-read-arrow text-violet text-decoration-none">Read <i class="fa fa-arrow-right font-size-xs ms-1"></i></a>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>';
+                        
+                    $("#books-grid-container").prepend(gridHtml);
+                    $("#book-card-col-" + story.id).fadeIn(300);
+                    
+                    if (typeof applyFilters === 'function') {
+                        applyFilters();
+                    }
+                }
+            };
+
+            window.handleStoryUpdatedRealtime = function(story) {
+                // 1. Update Popular carousel
+                var pop = $("#popular-novel-" + story.id);
+                if (pop.length) {
+                    pop.find("img").attr("src", story.coverUrl);
+                    pop.find(".new-novel-title").text(story.title);
+                }
+
+                // 2. Update Gems carousel
+                var gem = $("#gems-novel-" + story.id);
+                if (parseFloat(story.rating) >= 4.8) {
+                    if (gem.length) {
+                        gem.find("img").attr("src", story.coverUrl);
+                        gem.find(".new-novel-title").text(story.title);
+                    } else {
+                        var gemHtml = '<a class="new-novel-cover-div" href="/novel/' + story.id + '" id="gems-novel-' + story.id + '" style="display: none;">' +
+                            '<img class="new-novel-cover" src="' + (story.coverUrl || '') + '">' +
+                            '<h4 class="new-novel-title">' + escapeHtml(story.title) + '</h4>' +
+                            '</a>';
+                        $("#carousel-gems").prepend(gemHtml);
+                        $("#gems-novel-" + story.id).fadeIn(300);
+                    }
+                } else if (gem.length) {
+                    gem.fadeOut(300, function() { $(this).remove(); });
+                }
+
+                // 3. Update Completed carousel
+                var comp = $("#completed-novel-" + story.id);
+                if (story.status === 'COMPLETED') {
+                    if (comp.length) {
+                        comp.find("img").attr("src", story.coverUrl);
+                        comp.find(".new-novel-title").text(story.title);
+                    } else {
+                        var compHtml = '<a class="new-novel-cover-div" href="/novel/' + story.id + '" id="completed-novel-' + story.id + '" style="display: none;">' +
+                            '<img class="new-novel-cover" src="' + (story.coverUrl || '') + '">' +
+                            '<h4 class="new-novel-title">' + escapeHtml(story.title) + '</h4>' +
+                            '</a>';
+                        $("#carousel-completed").prepend(compHtml);
+                        $("#completed-novel-" + story.id).fadeIn(300);
+                    }
+                } else if (comp.length) {
+                    comp.fadeOut(300, function() { $(this).remove(); });
+                }
+
+                // 4. Update Discovery Grid
+                var col = $("#book-card-col-" + story.id);
+                if (col.length) {
+                    col.attr("data-type", story.type);
+                    col.attr("data-genres", story.genre);
+                    
+                    var card = col.find("#book-card-" + story.id);
+                    var ribbonClass = (story.type === 'NOVEL' ? 'bg-violet' : 'bg-coral');
+                    card.find(".card-ribbon")
+                        .removeClass("bg-violet bg-coral")
+                        .addClass(ribbonClass)
+                        .text(story.type);
+                        
+                    card.find(".book-cover-img").attr("src", story.coverUrl).attr("alt", story.title);
+                    
+                    var primaryGenre = (story.genre || "").split(",")[0].trim();
+                    card.find(".badge.bg-dark").text(primaryGenre);
+                    card.find(".text-warning span").text(parseFloat(story.rating).toFixed(1));
+                    card.find(".card-title").text(story.title);
+                    card.find(".card-text").text(story.author);
+                    card.find(".text-gray-accent").text(story.status);
+                    
+                    if (typeof applyFilters === 'function') {
+                        applyFilters();
+                    }
+                }
+
+                // 5. Update Hero Banner if matches
+                var hero = $("#hero-banner");
+                if (hero.length && Number(hero.attr("data-hero-novel-id")) === Number(story.id)) {
+                    $("#hero-bg").css("background-image", "linear-gradient(to right, rgba(15, 15, 26, 0.95) 30%, rgba(15, 15, 26, 0.4)), url(" + story.coverUrl + ")");
+                    hero.find(".badge.bg-warning").text(story.type);
+                    hero.find(".display-4").text(story.title);
+                    hero.find(".hero-description").text(story.description);
+                    hero.find(".text-warning span").text(parseFloat(story.rating).toFixed(1));
+                    hero.find(".text-gray").first().text(story.author);
+                    hero.find(".badge.bg-indigo-accent").text(story.status);
+                }
+            };
+
+            window.handleStoryDeletedRealtime = function(storyId) {
+                // 1. Remove from carousels
+                $("#popular-novel-" + storyId).fadeOut(300, function() { $(this).remove(); });
+                $("#gems-novel-" + storyId).fadeOut(300, function() { $(this).remove(); });
+                $("#completed-novel-" + storyId).fadeOut(300, function() { $(this).remove(); });
+                
+                // 2. Remove from Grid
+                $("#book-card-col-" + storyId).fadeOut(300, function() {
+                    $(this).remove();
+                    if (typeof applyFilters === 'function') {
+                        applyFilters();
+                    }
+                });
+
+                // 3. Remove from Recent Updates if present
+                $(".latest_chapter_release").each(function() {
+                    var href = $(this).find(".latest_release_novel_title a").attr("href");
+                    if (href === "/novel/" + storyId) {
+                        $(this).fadeOut(300, function() { $(this).remove(); });
+                    }
+                });
+
+                // 4. Handle Hero Banner deletion
+                var hero = $("#hero-banner");
+                if (hero.length && Number(hero.attr("data-hero-novel-id")) === Number(storyId)) {
+                    hero.fadeOut(300);
+                }
+            };
         </script>
 
         <!-- Discovery Filter Section -->
@@ -221,7 +414,7 @@
         <section class="grid-section">
             <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4" id="books-grid-container">
                 <!-- Loop over novels -->
-                <div class="col book-card-col" th:each="novel : ${novels}" th:data-type="${novel.type}" th:data-genres="${novel.genre}">
+                <div class="col book-card-col" th:each="novel : ${novels}" th:data-type="${novel.type}" th:data-genres="${novel.genre}" th:id="'book-card-col-' + ${novel.id}">
                     <div class="book-card position-relative overflow-hidden h-100 rounded-3 d-flex flex-column" th:id="'book-card-' + ${novel.id}">
                         <!-- Ribbon status -->
                         <span class="card-ribbon" th:classappend="${novel.type == 'NOVEL' ? 'bg-violet' : 'bg-coral'}" th:text="${novel.type}">NOVEL</span>
