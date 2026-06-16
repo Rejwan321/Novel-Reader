@@ -520,7 +520,7 @@ $(document).ready(function() {
 
     // Font Size Increase / Decrease
     $("#btn-font-increase").click(function() {
-        var currentSize = parseInt($("#reader-content-text-body").css("font-size"));
+        var currentSize = parseInt($("#reader-content-text-body").css("font-size")) || 18;
         if (currentSize < 32) {
             var newSize = currentSize + 2;
             $("#reader-content-text-body").css("font-size", newSize + "px");
@@ -530,7 +530,7 @@ $(document).ready(function() {
     });
 
     $("#btn-font-decrease").click(function() {
-        var currentSize = parseInt($("#reader-content-text-body").css("font-size"));
+        var currentSize = parseInt($("#reader-content-text-body").css("font-size")) || 18;
         if (currentSize > 12) {
             var newSize = currentSize - 2;
             $("#reader-content-text-body").css("font-size", newSize + "px");

@@ -6,9 +6,9 @@
     <meta name="description" content="Read novels and comics online. Support customizable reading environments, including fonts, sizes, and dark/sepia/light themes.">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/reader.css}"/>
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='3.1')}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/reader.css(v='3.1')}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css(v='3.1')}"/>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,20 +17,153 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <title th:text="${novel.title} + ' - Ch ' + ${chapter.chapterNumber} + ': ' + ${chapter.title} + ' - Yuki Tales'">Reader - Yuki Tales</title>
+    <style>
+        /* Comment Feed styles */
+        .comment-card {
+            background: rgba(15, 15, 27, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        .comment-card:hover {
+            background: rgba(15, 15, 27, 0.8);
+            border-color: rgba(94, 99, 182, 0.3);
+        }
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00e5ff, #bd53ed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .comment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .comment-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .comment-author-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.95rem;
+        }
+        .comment-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-owner { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
+        .badge-admin { background: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3); }
+        .badge-editor { background: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3); }
+        .badge-proofreader { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
+        .badge-reader { background: rgba(255, 255, 255, 0.07); color: #e0e0e0; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .comment-time {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .comment-body {
+            color: #d1d2d6;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .btn-delete-comment {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-delete-comment:hover {
+            color: #ff3366;
+            background: rgba(255, 51, 102, 0.1);
+        }
+        /* Likes, Dislikes, and Reply buttons styling */
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+        .comment-action-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .comment-action-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .comment-action-btn.btn-liked {
+            color: #00e5ff !important;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+        .comment-action-btn.btn-disliked {
+            color: #ff3366 !important;
+            text-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+        }
+        .reply-container {
+            margin-left: 48px;
+            margin-top: 12px;
+            border-left: 2px solid rgba(255, 255, 255, 0.06);
+            padding-left: 16px;
+        }
+        .reply-form-container {
+            background: rgba(15, 15, 27, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body class="dark-theme" id="reader-body">
     <!-- Navbar -->
     <div th:replace="~{fragments/Navbar :: navbar}"></div>
 
     <!-- Floating Sub-Navbar (Reader Toolbar) -->
-    <div class="reader-toolbar sticky-top shadow-sm py-2">
-        <div class="container position-relative d-flex align-items-center justify-content-between">
+    <div class="reader-toolbar sticky-top shadow-sm">
+        <div class="container h-100 position-relative d-flex align-items-center justify-content-between">
             <!-- Back to Details -->
             <a th:href="@{'/novel/' + ${novel.id}}" class="btn btn-sm btn-outline-light text-decoration-none">
                 <i class="fa fa-arrow-left me-1"></i> Return
             </a>
 
-
+            <!-- Chapter Info in Middle -->
+            <div class="chapter-info-center text-truncate mx-2 text-center" style="max-width: 50%;">
+                <span class="text-white-50 font-size-xs" th:text="'Chapter ' + ${chapter.chapterNumber}">Chapter 1.0</span>
+                <span class="text-muted mx-1">|</span>
+                <span class="text-white fw-bold font-outfit font-size-sm" th:text="${chapter.title}">Chapter Title</span>
+            </div>
 
             <!-- Settings Drawer Trigger (Only for Novels/Text Content) -->
             <div class="d-flex align-items-center gap-2">
@@ -83,25 +216,7 @@
 
     <!-- Main Reader Workspace -->
     <main class="container py-4 my-3 d-flex flex-column align-items-center" style="min-height: 80vh;">
-        
-        <!-- Navigation Buttons at Top -->
-        <div class="navigation-controls d-flex justify-content-between align-items-center w-100 max-width-reader mb-4">
-            <!-- Previous Button -->
-            <a id="nav-btn-prev-top" class="btn btn-premium px-4"
-               th:classappend="${prevChapterNumber == null ? 'disabled btn-secondary-muted' : ''}"
-               th:href="${prevChapterNumber != null ? '/novel/' + novel.id + '/read/' + prevChapterNumber : '#'}">
-                <i class="fa fa-chevron-left me-2"></i> Previous
-            </a>
 
-
-
-            <!-- Next Button -->
-            <a id="nav-btn-next-top" class="btn btn-premium px-4"
-               th:classappend="${nextChapterNumber == null ? 'disabled btn-secondary-muted' : ''}"
-               th:href="${nextChapterNumber != null ? '/novel/' + novel.id + '/read/' + nextChapterNumber : '#'}">
-                Next <i class="fa fa-chevron-right ms-2"></i>
-            </a>
-        </div>
 
         <!-- Novel / Text Content Viewer -->
         <div th:if="${!isImageContent}" class="novel-reader-container p-4 p-md-5 rounded shadow" id="novel-reading-frame">
@@ -142,6 +257,36 @@
                 Next <i class="fa fa-chevron-right ms-2"></i>
             </a>
         </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section w-100 max-width-reader mt-4 mb-5 p-4 rounded shadow" style="background: rgba(24, 24, 41, 0.95); border: 1px solid rgba(94, 99, 182, 0.25);">
+            <h3 class="h5 fw-bold text-white mb-4 font-outfit d-flex align-items-center gap-2">
+                <i class="fa-solid fa-comments" style="color: #00e5ff;"></i> Join the Discussion (<span id="comment-count">0</span>)
+            </h3>
+
+            <!-- Comment Input Area -->
+            <div class="comment-input-area mb-4">
+                <div th:if="${session.user != null}">
+                    <form id="comment-form">
+                        <div class="mb-3">
+                            <textarea class="form-control text-white border-secondary" id="comment-content" rows="3" placeholder="Share your thoughts on this chapter..." style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px;" required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-premium px-4" id="btn-submit-comment">Post Comment</button>
+                        </div>
+                    </form>
+                </div>
+                <div th:if="${session.user == null}" class="text-center p-3 rounded" style="background: rgba(15, 15, 27, 0.6); border: 1px dashed rgba(255, 255, 255, 0.1);">
+                    <p class="text-muted mb-2 font-size-sm">You must be logged in to post comments.</p>
+                    <button class="btn btn-sm btn-premium px-4" onclick="document.body.classList.add('show-popup')">Login / Signup</button>
+                </div>
+            </div>
+
+            <!-- Comments Feed -->
+            <div class="comments-feed" id="comments-feed">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
     </main>
 
     <!-- Login/Signup modal -->
@@ -173,8 +318,12 @@
                             <input type="number" class="form-control bg-dark text-white border-secondary" id="edit-chapter-price" th:value="${chapter.price}" required>
                         </div>
                         <div class="mb-3">
-                            <label for="edit-chapter-content" class="form-label text-muted">Content (Text for novels, comma-separated image URLs for comics/manga)</label>
+                            <div class="d-flex align-items-center mb-2 justify-content-between">
+                                <label for="edit-chapter-content" class="form-label text-muted mb-0">Content (Text for novels, comma-separated image URLs for comics/manga)</label>
+                                <button type="button" class="btn btn-sm btn-outline-info" id="btn-reader-insert-image" style="padding: 2px 8px; font-size: 0.75rem; border-color: rgba(0, 188, 212, 0.4);"><i class="fa-solid fa-image me-1"></i>Insert Image</button>
+                            </div>
                             <textarea class="form-control bg-dark text-white border-secondary" id="edit-chapter-content" rows="12" th:text="${chapter.content}" required></textarea>
+                            <input type="file" id="reader-insert-image-file" accept="image/*" class="d-none" multiple>
                         </div>
                         <div class="d-flex justify-content-end mt-4">
                             <button type="button" class="btn btn-outline-light me-2 px-4" data-bs-dismiss="modal">Cancel</button>
@@ -192,7 +341,7 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='1.1')}"></script>
+    <script th:src="@{/scripts/Script.js(v='3.1')}"></script>
     <script th:inline="javascript">
         // Convert HTML content to formatted plain text for editing
         function htmlToPlainText(html) {
@@ -268,6 +417,93 @@
                 console.log("Anonymous session, progress not synced to cloud.");
             });
 
+            // Dedicated Insert Image logic inside reader
+            $("#btn-reader-insert-image").click(function() {
+                $("#reader-insert-image-file").click();
+            });
+
+            $("#reader-insert-image-file").change(function() {
+                var fileInput = this;
+                if (fileInput.files.length === 0) return;
+                
+                var files = Array.from(fileInput.files);
+                var btn = $("#btn-reader-insert-image");
+                var originalHtml = btn.html();
+                
+                btn.html('<i class="fa fa-spinner fa-spin me-1"></i>Uploading (0/' + files.length + ')...').prop("disabled", true);
+                
+                var uploadedCount = 0;
+                
+                var uploadPromises = files.map(function(file, index) {
+                    var formData = new FormData();
+                    formData.append("file", file);
+                    
+                    return $.ajax({
+                        url: "/api/admin/upload-image",
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false
+                    }).then(function(res) {
+                        uploadedCount++;
+                        btn.html('<i class="fa fa-spinner fa-spin me-1"></i>Uploading (' + uploadedCount + '/' + files.length + ')...');
+                        return { index: index, url: res.url };
+                    }).catch(function(err) {
+                        console.error("Failed to upload file at index " + index, err);
+                        return { index: index, url: null };
+                    });
+                });
+                
+                Promise.all(uploadPromises).then(function(results) {
+                    btn.html(originalHtml).prop("disabled", false);
+                    fileInput.value = "";
+                    
+                    results.sort(function(a, b) {
+                        return a.index - b.index;
+                    });
+                    
+                    var validUrls = results.filter(function(r) {
+                        return r.url !== null;
+                    }).map(function(r) {
+                        return r.url;
+                    });
+                    
+                    if (validUrls.length > 0) {
+                        var textarea = $("#edit-chapter-content");
+                        var currentVal = textarea.val();
+                        var insertText = "";
+                        
+                        if (isImageContent) {
+                            var joinedUrls = validUrls.join(",");
+                            if (currentVal.trim() === "") {
+                                insertText = joinedUrls;
+                            } else {
+                                insertText = "," + joinedUrls;
+                            }
+                        } else {
+                            validUrls.forEach(function(url) {
+                                insertText += '\n<img src="' + url + '" style="max-width:100%; display:block; margin:20px auto; border-radius:8px;" />\n';
+                            });
+                        }
+                        
+                        var cursorPos = textarea.prop('selectionStart');
+                        var textBefore = currentVal.substring(0, cursorPos);
+                        var textAfter  = currentVal.substring(cursorPos, currentVal.length);
+                        textarea.val(textBefore + insertText + textAfter);
+                        textarea.focus();
+                    }
+                    
+                    var failedCount = results.length - validUrls.length;
+                    if (failedCount > 0) {
+                        alert(failedCount + " image(s) failed to upload.");
+                    }
+                }).catch(function() {
+                    btn.html(originalHtml).prop("disabled", false);
+                    fileInput.value = "";
+                    alert("Failed to upload some images.");
+                });
+            });
+
             // Handle dedicated edit chapter form submit
             $("#form-edit-chapter-dedicated").submit(function(e) {
                 e.preventDefault();
@@ -293,6 +529,471 @@
                     alert("Error updating chapter: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
                 });
             });
+
+            // Chapter Comments logic
+            var chapterId = [[${chapter.id}]];
+            var currentUserId = [[${session.user != null ? session.user.id : null}]];
+            var currentUserRole = [[${session.user != null ? session.user.user_type : null}]];
+
+            function buildCommentCard(comment, isReply, parentId) {
+                var author = comment.user;
+                var initials = (author.name || "U").substring(0, 1).toUpperCase();
+                
+                var badgeClass = 'badge-reader';
+                var roleName = author.user_type || 'READER';
+                if (roleName === 'OWNER') badgeClass = 'badge-owner';
+                else if (roleName === 'ADMIN') badgeClass = 'badge-admin';
+                else if (roleName === 'EDITOR') badgeClass = 'badge-editor';
+                else if (roleName === 'PROOFREADER') badgeClass = 'badge-proofreader';
+                
+                var date = new Date(comment.createdAt);
+                var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                var canDelete = (currentUserId && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
+                var deleteBtnHtml = canDelete ? 
+                    '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
+                
+                var canEdit = (currentUserId && currentUserId === author.id);
+                var editBtnHtml = canEdit ? 
+                    '<button class="comment-action-btn btn-edit-comment-action" data-id="' + comment.id + '" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : '';
+                
+                var reportBtnHtml = 
+                    '<button class="comment-action-btn btn-report-comment-action" data-id="' + comment.id + '" title="Report NSFW"><i class="fa-solid fa-circle-exclamation text-danger"></i> Report</button>';
+
+                var liked = comment.likedUserIds && comment.likedUserIds.indexOf(currentUserId) !== -1;
+                var disliked = comment.dislikedUserIds && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
+                
+                var likeClass = liked ? 'btn-liked' : '';
+                var dislikeClass = disliked ? 'btn-disliked' : '';
+                
+                var likeIcon = liked ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up';
+                var dislikeIcon = disliked ? 'fa-solid fa-thumbs-down' : 'fa-regular fa-thumbs-down';
+                
+                var likesCount = comment.likedUserIds ? comment.likedUserIds.length : 0;
+                var dislikesCount = comment.dislikedUserIds ? comment.dislikedUserIds.length : 0;
+                
+                var replyParentId = isReply ? parentId : comment.id;
+                var replyBtnHtml = 
+                    '<button class="comment-action-btn btn-reply-comment-action" data-id="' + comment.id + '" data-parent-id="' + replyParentId + '" data-is-reply="' + isReply + '" data-author-name="' + author.name + '" title="Reply">' +
+                    '  <i class="fa-solid fa-reply"></i> Reply' +
+                    '</button>';
+                
+                var cardHtml = 
+                    '<div class="comment-card" id="comment-card-' + comment.id + '">' +
+                    '  <div class="d-flex gap-3">' +
+                    '    <div class="comment-avatar">' + initials + '</div>' +
+                    '    <div class="flex-grow-1">' +
+                    '      <div class="comment-header">' +
+                    '        <div class="comment-meta">' +
+                    '          <span class="comment-author-name">' + author.name + '</span>' +
+                    '          <span class="comment-badge ' + badgeClass + '">' + roleName + '</span>' +
+                    '          <span class="comment-time">' + formattedTime + '</span>' +
+                    '        </div>' +
+                    '        ' + deleteBtnHtml +
+                    '      </div>' +
+                    '      <div class="comment-body">' + escapeHtml(comment.content) + '</div>' +
+                    '      <div class="comment-actions">' +
+                    '        <button class="comment-action-btn btn-like-comment-action ' + likeClass + '" data-id="' + comment.id + '" title="Like">' +
+                    '          <i class="' + likeIcon + '"></i> <span class="like-count">' + likesCount + '</span>' +
+                    '        </button>' +
+                    '        <button class="comment-action-btn btn-dislike-comment-action ' + dislikeClass + '" data-id="' + comment.id + '" title="Dislike">' +
+                    '          <i class="' + dislikeIcon + '"></i> <span class="dislike-count">' + dislikesCount + '</span>' +
+                    '        </button>' +
+                    '        ' + replyBtnHtml +
+                    '        ' + editBtnHtml +
+                    '        ' + reportBtnHtml +
+                    '      </div>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '</div>';
+                
+                return cardHtml;
+            }
+
+            function loadComments() {
+                $.getJSON('/api/chapters/' + chapterId + '/comments', function(comments) {
+                    var totalCount = 0;
+                    comments.forEach(function(c) {
+                        totalCount++;
+                        if (c.replies) {
+                            totalCount += c.replies.length;
+                        }
+                    });
+                    $('#comment-count').text(totalCount);
+                    
+                    var feed = $('#comments-feed');
+                    feed.empty();
+                    
+                    if (comments.length === 0) {
+                        feed.html('<p class="text-center text-muted my-4 font-size-sm">No comments yet. Be the first to start the conversation!</p>');
+                        return;
+                    }
+                    
+                    comments.forEach(function(comment) {
+                        var commentHtml = buildCommentCard(comment, false);
+                        var commentWrapper = $('<div class="comment-wrapper-node" id="comment-wrapper-' + comment.id + '"></div>');
+                        commentWrapper.append(commentHtml);
+                        
+                        var repliesContainer = $('<div class="reply-container" id="reply-container-' + comment.id + '"></div>');
+                        if (comment.replies && comment.replies.length > 0) {
+                            comment.replies.forEach(function(reply) {
+                                var replyHtml = buildCommentCard(reply, true, comment.id);
+                                repliesContainer.append(replyHtml);
+                            });
+                        } else {
+                            repliesContainer.hide();
+                        }
+                        
+                        commentWrapper.append(repliesContainer);
+                        feed.append(commentWrapper);
+                    });
+                });
+            }
+
+            function escapeHtml(str) {
+                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            }
+
+            loadComments();
+
+            // Submit comment handler
+            $('#comment-form').submit(function(e) {
+                e.preventDefault();
+                var content = $('#comment-content').val().trim();
+                if (!content) return;
+                
+                var btn = $('#btn-submit-comment');
+                btn.prop('disabled', true).text('Posting...');
+                
+                $.post('/api/chapters/' + chapterId + '/comments', {
+                    content: content
+                }).done(function() {
+                    $('#comment-content').val('');
+                    loadComments();
+                }).fail(function(err) {
+                    alert("Error posting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                }).always(function() {
+                    btn.prop('disabled', false).text('Post Comment');
+                });
+            });
+
+            // Delete comment handler
+            $(document).on('click', '.btn-delete-comment-action', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                if (!confirm("Are you sure you want to delete this comment?")) return;
+                
+                $.ajax({
+                    url: '/api/comments/' + id,
+                    type: 'DELETE'
+                }).done(function() {
+                    $('#comment-card-' + id).fadeOut(300, function() {
+                        $(this).remove();
+                        loadComments();
+                    });
+                }).fail(function(err) {
+                    alert("Error deleting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                });
+            });
+
+            // Edit comment handler (render edit form)
+            $(document).on('click', '.btn-edit-comment-action', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var card = $('#comment-card-' + id);
+                var bodyDiv = card.find('.comment-body');
+                
+                if (bodyDiv.find('.edit-textarea').length > 0) return;
+                
+                var currentText = bodyDiv.text().trim();
+                var originalHtml = bodyDiv.html();
+                
+                bodyDiv.html(
+                    '<div class="edit-comment-container mt-2">' +
+                    '  <textarea class="form-control text-white edit-textarea mb-2" rows="3" style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px;">' + currentText + '</textarea>' +
+                    '  <div class="d-flex gap-2 justify-content-end">' +
+                    '    <button class="btn btn-sm btn-outline-light btn-cancel-edit" data-id="' + id + '">Cancel</button>' +
+                    '    <button class="btn btn-sm btn-premium btn-save-edit" data-id="' + id + '">Save</button>' +
+                    '  </div>' +
+                    '</div>'
+                );
+                
+                bodyDiv.data('original-html', originalHtml);
+            });
+
+            // Cancel edit handler
+            $(document).on('click', '.btn-cancel-edit', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var bodyDiv = $('#comment-card-' + id).find('.comment-body');
+                var originalHtml = bodyDiv.data('original-html');
+                bodyDiv.html(originalHtml);
+            });
+
+            // Save edit handler
+            $(document).on('click', '.btn-save-edit', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var bodyDiv = $('#comment-card-' + id).find('.comment-body');
+                var newContent = bodyDiv.find('.edit-textarea').val().trim();
+                
+                if (!newContent) {
+                    alert("Comment content cannot be empty.");
+                    return;
+                }
+                
+                var saveBtn = $(this);
+                saveBtn.prop('disabled', true).text('Saving...');
+                
+                $.ajax({
+                    url: '/api/comments/' + id,
+                    type: 'PUT',
+                    data: { content: newContent }
+                }).done(function(updatedComment) {
+                    bodyDiv.html(escapeHtml(updatedComment.content));
+                }).fail(function(err) {
+                    alert("Error editing comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                    saveBtn.prop('disabled', false).text('Save');
+                });
+            });
+
+            // Report comment handler (NSFW report)
+            $(document).on('click', '.btn-report-comment-action', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                if (!confirm("Are you sure you want to report this comment as NSFW? This will notify the admin immediately.")) return;
+                
+                var btn = $(this);
+                btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reporting...');
+                
+                $.post('/api/comments/' + id + '/report')
+                .done(function() {
+                    alert("Thank you. The comment has been reported to the administrator.");
+                    btn.html('<i class="fa-solid fa-check text-success"></i> Reported').addClass('disabled');
+                }).fail(function(err) {
+                    alert("Error reporting comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                    btn.prop('disabled', false).html('<i class="fa-solid fa-circle-exclamation text-danger"></i> Report');
+                });
+            });
+
+            // Toggle reply form
+            $(document).on('click', '.btn-reply-comment-action', function(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    alert("Please login to post replies.");
+                    return;
+                }
+                var commentId = $(this).data('id');
+                var parentId = $(this).data('parent-id');
+                var isReply = $(this).data('is-reply');
+                var authorName = $(this).data('author-name');
+                
+                var formContainerId = 'reply-form-node-' + commentId;
+                var existingForm = $('#' + formContainerId);
+                
+                if (existingForm.length > 0) {
+                    existingForm.slideUp(200, function() { $(this).remove(); });
+                } else {
+                    $('.reply-form-container').slideUp(200, function() { $(this).remove(); });
+                    
+                    var mentionText = isReply ? '@' + authorName + ' ' : '';
+                    
+                    var formHtml = 
+                        '<div class="reply-form-container" id="' + formContainerId + '" style="display:none;">' +
+                        '  <textarea class="form-control text-white border-secondary mb-2" id="reply-content-' + commentId + '" rows="2" placeholder="Write a reply..." style="background: rgba(15, 15, 27, 0.95); resize: none; border-radius: 8px; font-size: 0.9rem;" required></textarea>' +
+                        '  <div class="d-flex justify-content-end gap-2">' +
+                        '    <button class="btn btn-sm btn-outline-light btn-cancel-reply" data-id="' + commentId + '">Cancel</button>' +
+                        '    <button class="btn btn-sm btn-premium btn-submit-reply" data-id="' + commentId + '" data-parent-id="' + parentId + '">Reply</button>' +
+                        '  </div>' +
+                        '</div>';
+                    
+                    $('#comment-card-' + commentId).after(formHtml);
+                    $('#' + formContainerId).slideDown(200);
+                    
+                    var textarea = $('#reply-content-' + commentId);
+                    textarea.val(mentionText);
+                    textarea.focus();
+                    
+                    // Force cursor to the end of the text
+                    var tempVal = textarea.val();
+                    textarea.val('');
+                    textarea.val(tempVal);
+                }
+            });
+
+            // Cancel reply
+            $(document).on('click', '.btn-cancel-reply', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                $('#reply-form-node-' + id).slideUp(200, function() { $(this).remove(); });
+            });
+
+            // Submit reply
+            $(document).on('click', '.btn-submit-reply', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var parentId = $(this).data('parent-id');
+                var content = $('#reply-content-' + id).val().trim();
+                if (!content) return;
+                
+                var btn = $(this);
+                btn.prop('disabled', true).text('Posting...');
+                
+                $.post('/api/comments/' + parentId + '/reply', {
+                    content: content
+                }).done(function() {
+                    loadComments();
+                }).fail(function(err) {
+                    alert("Error posting reply: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                }).always(function() {
+                    btn.prop('disabled', false).text('Reply');
+                });
+            });
+
+            // Like comment handler
+            $(document).on('click', '.btn-like-comment-action', function(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    alert("Please login to like comments.");
+                    return;
+                }
+                var id = $(this).data('id');
+                var btnLike = $(this);
+                var btnDislike = btnLike.siblings('.btn-dislike-comment-action');
+                
+                $.post('/api/comments/' + id + '/like')
+                .done(function(res) {
+                    btnLike.find('.like-count').text(res.likes);
+                    btnDislike.find('.dislike-count').text(res.dislikes);
+                    
+                    if (res.liked) {
+                        btnLike.addClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnLike.removeClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                    
+                    if (res.disliked) {
+                        btnDislike.addClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnDislike.removeClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                })
+                .fail(function(err) {
+                    alert("Error liking comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                });
+            });
+
+            // Dislike comment handler
+            $(document).on('click', '.btn-dislike-comment-action', function(e) {
+                e.preventDefault();
+                if (!currentUserId) {
+                    alert("Please login to dislike comments.");
+                    return;
+                }
+                var id = $(this).data('id');
+                var btnDislike = $(this);
+                var btnLike = btnDislike.siblings('.btn-like-comment-action');
+                
+                $.post('/api/comments/' + id + '/dislike')
+                .done(function(res) {
+                    btnLike.find('.like-count').text(res.likes);
+                    btnDislike.find('.dislike-count').text(res.dislikes);
+                    
+                    if (res.liked) {
+                        btnLike.addClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnLike.removeClass('btn-liked');
+                        btnLike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                    
+                    if (res.disliked) {
+                        btnDislike.addClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        btnDislike.removeClass('btn-disliked');
+                        btnDislike.find('i').removeClass('fa-solid').addClass('fa-regular');
+                    }
+                })
+                .fail(function(err) {
+                    alert("Error disliking comment: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"));
+                });
+            });
+
+            // SSE Real-time Comment Handlers
+            window.handleCommentCreatedRealtime = function(comment) {
+                if ($('#comment-card-' + comment.id).length > 0) return;
+                
+                var feed = $('#comments-feed');
+                if (feed.children().first().text().indexOf("No comments yet") !== -1) {
+                    feed.empty();
+                }
+                
+                var commentHtml = buildCommentCard(comment, false);
+                var commentWrapper = $('<div class="comment-wrapper-node" id="comment-wrapper-' + comment.id + '"></div>');
+                commentWrapper.append(commentHtml);
+                
+                var repliesContainer = $('<div class="reply-container" id="reply-container-' + comment.id + '"></div>').hide();
+                commentWrapper.append(repliesContainer);
+                
+                feed.append(commentWrapper);
+                
+                // Update total comments count
+                $('#comment-count').text($('.comment-card').length);
+            };
+
+            window.handleReplyCreatedRealtime = function(parentId, reply) {
+                if ($('#comment-card-' + reply.id).length > 0) return;
+                
+                var repliesContainer = $('#reply-container-' + parentId);
+                var replyHtml = buildCommentCard(reply, true, parentId);
+                repliesContainer.append(replyHtml).show();
+                
+                // Update total comments count
+                $('#comment-count').text($('.comment-card').length);
+            };
+
+            window.handleCommentDeletedRealtime = function(commentId) {
+                var element = $('#comment-wrapper-' + commentId);
+                if (element.length === 0) {
+                    element = $('#comment-card-' + commentId); // fallback if it is a reply
+                }
+                
+                if (element.length > 0) {
+                    element.fadeOut(300, function() {
+                        $(this).remove();
+                        $('#comment-count').text($('.comment-card').length);
+                        
+                        // If all comments are deleted, restore empty state
+                        if ($('.comment-card').length === 0) {
+                            $('#comments-feed').html('<p class="text-center text-muted my-4 font-size-sm">No comments yet. Be the first to start the conversation!</p>');
+                        }
+                    });
+                }
+            };
+
+            window.handleCommentEditedRealtime = function(comment) {
+                var card = $('#comment-card-' + comment.id);
+                if (card.length === 0) return;
+                
+                var bodyDiv = card.find('.comment-body');
+                // Avoid overwriting if this user is currently editing
+                if (bodyDiv.find('.edit-textarea').length > 0) return;
+                
+                bodyDiv.html(escapeHtml(comment.content));
+            };
+
+            window.handleCommentLikedRealtime = function(data) {
+                var card = $('#comment-card-' + data.commentId);
+                if (card.length === 0) return;
+                
+                card.find('.btn-like-comment-action .like-count').text(data.likes);
+                card.find('.btn-dislike-comment-action .dislike-count').text(data.dislikes);
+            };
         });
     </script>
 </body>
