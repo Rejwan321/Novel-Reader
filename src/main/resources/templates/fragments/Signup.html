@@ -113,48 +113,47 @@
     
     <script th:inline="javascript">
         /*<![CDATA[*/
+        var googleTokenClient;
+
         function handleGoogleLogin() {
             var googleClientId = /*[[${googleClientId}]]*/ '';
             if (!googleClientId || googleClientId === 'your-google-client-id' || googleClientId.trim() === '') {
                 alert("Google Sign-In is not configured yet.");
                 return;
             }
-            var redirectUri = window.location.origin;
-            var nonce = Math.random().toString(36).substring(2);
-            var authUrl = "https://accounts.google.com/o/oauth2/v2/auth"
-                + "?client_id=" + encodeURIComponent(googleClientId)
-                + "&redirect_uri=" + encodeURIComponent(redirectUri)
-                + "&response_type=id_token"
-                + "&scope=" + encodeURIComponent("openid profile email")
-                + "&nonce=" + encodeURIComponent(nonce);
-            window.location.href = authUrl;
-        }
 
-        $(document).ready(function() {
-            // Check for id_token in URL hash
-            if (window.location.hash) {
-                var hash = window.location.hash.substring(1);
-                var params = new URLSearchParams(hash);
-                var idToken = params.get("id_token");
-                if (idToken) {
-                    // Clear the hash from address bar
-                    window.history.replaceState(null, null, window.location.pathname + window.location.search);
-                    
-                    $.ajax({
-                        url: '/api/auth/google',
-                        type: 'POST',
-                        data: { token: idToken },
-                        success: function(res) {
-                            window.location.reload();
-                        },
-                        error: function(err) {
-                            var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Google Sign-In failed.";
-                            alert(errMsg);
-                        }
-                    });
-                }
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+                alert("Google API client library is still loading. Please try again in a moment.");
+                return;
             }
-        });
+
+            if (!googleTokenClient) {
+                googleTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: googleClientId,
+                    scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+                    callback: function(tokenResponse) {
+                        if (tokenResponse && tokenResponse.access_token) {
+                            $.ajax({
+                                url: '/api/auth/google',
+                                type: 'POST',
+                                data: { 
+                                    token: tokenResponse.access_token,
+                                    isAccessToken: true
+                                },
+                                success: function(res) {
+                                    window.location.reload();
+                                },
+                                error: function(err) {
+                                    var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Google Sign-In failed.";
+                                    alert(errMsg);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            googleTokenClient.requestAccessToken();
+        }
         /*]]>*/
     </script>
 
