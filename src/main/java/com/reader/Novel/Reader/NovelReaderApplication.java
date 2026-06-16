@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 
 @SpringBootApplication
 @Configuration
+@org.springframework.scheduling.annotation.EnableAsync
+@org.springframework.scheduling.annotation.EnableScheduling
 /*
 public class NovelReaderApplication {
 

@@ -49,13 +49,14 @@ public class NovelController {
             }
         }
         model.addAttribute("novels", novels);
+        model.addAttribute("upcomingChapters", novelService.getUpcomingChapters());
         return "home";
     }
 
     @GetMapping("/novel/{id}")
     public String novelDetails(@PathVariable Long id, HttpSession session, Model model) {
+        User loggedInUser = (User) session.getAttribute("user");
         if (novelService.isSecuredMode()) {
-            User loggedInUser = (User) session.getAttribute("user");
             if (loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type())) {
                 return "redirect:/";
             }
@@ -65,9 +66,8 @@ public class NovelController {
             return "redirect:/";
         }
         model.addAttribute("novel", novel);
-        model.addAttribute("chapters", novelService.getChaptersByNovelId(id));
+        model.addAttribute("chapters", novelService.getVisibleChapters(novel, loggedInUser));
 
-        User loggedInUser = (User) session.getAttribute("user");
         boolean isBookmarked = false;
         Double progress = 0.0;
         java.util.List<Long> purchasedChapterIds = new java.util.ArrayList<>();
@@ -97,8 +97,8 @@ public class NovelController {
 
     @GetMapping("/novel/{id}/read/{chapterNumber}")
     public String readChapter(@PathVariable Long id, @PathVariable Double chapterNumber, HttpSession session, Model model) {
+        User loggedInUser = (User) session.getAttribute("user");
         if (novelService.isSecuredMode()) {
-            User loggedInUser = (User) session.getAttribute("user");
             if (loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type())) {
                 return "redirect:/";
             }
@@ -112,9 +112,15 @@ public class NovelController {
             return "redirect:/novel/" + id;
         }
 
+        // Security check for scheduled chapters
+        if (chapter.getPublishAt() != null && chapter.getPublishAt().isAfter(java.time.LocalDateTime.now())) {
+            if (!novelService.isAuthorizedToSeeFutureChapters(loggedInUser, novel)) {
+                return "redirect:/novel/" + id + "?error=scheduled_chapter";
+            }
+        }
+
         // Security check for paid chapters
         if (chapter.getPrice() > 0) {
-            User loggedInUser = (User) session.getAttribute("user");
             if (loggedInUser == null) {
                 return "redirect:/novel/" + id + "?showLogin=true&error=login_required";
             }
@@ -130,7 +136,7 @@ public class NovelController {
         model.addAttribute("novel", novel);
         model.addAttribute("chapter", chapter);
         
-        List<Chapter> chapters = novelService.getChaptersByNovelId(id);
+        List<Chapter> chapters = novelService.getVisibleChapters(novel, loggedInUser);
         model.addAttribute("chapters", chapters);
         
         Double prevChapterNumber = null;
@@ -150,7 +156,6 @@ public class NovelController {
         model.addAttribute("nextChapterNumber", nextChapterNumber);
 
         // Save progress if logged in
-        User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser != null) {
             novelService.updateBookmarkProgress(loggedInUser.getId(), id, chapterNumber);
         }
