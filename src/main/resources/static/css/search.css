@@ -254,7 +254,7 @@
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    width: 310px;
+    width: 480px;
     background: rgba(24, 24, 41, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -326,6 +326,7 @@
     outline: none;
     cursor: pointer;
     transition: border-color 0.2s ease;
+    width: 100%;
 }
 
 .search-filter-select:focus {

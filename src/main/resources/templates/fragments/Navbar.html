@@ -44,9 +44,13 @@
                     <div class="search-bar">
                         <form id="search-form" action="/" method="get">
                             <input type="text" name="search" class="input" placeholder="Search..." th:value="${param.search}">
-                            <input type="hidden" name="type" id="search-filter-type-val" th:value="${param.type != null ? param.type : 'ALL'}">
                             <input type="hidden" name="genre" id="search-filter-genre-val" th:value="${param.genre != null ? param.genre : 'ALL'}">
+                            <input type="hidden" name="year" id="search-filter-year-val" th:value="${param.year != null ? param.year : 'ALL'}">
+                            <input type="hidden" name="sort" id="search-filter-sort-val" th:value="${param.sort != null ? param.sort : 'POPULARITY'}">
                             <input type="hidden" name="status" id="search-filter-status-val" th:value="${param.status != null ? param.status : 'ALL'}">
+                            <input type="hidden" name="tags" id="search-filter-tags-val" th:value="${param.tags != null ? param.tags : 'ALL'}">
+                            <input type="hidden" name="country" id="search-filter-country-val" th:value="${param.country != null ? param.country : 'ALL'}">
+                            <input type="hidden" name="source" id="search-filter-source-val" th:value="${param.source != null ? param.source : 'ALL'}">
                         </form>
                         <i class="fa-solid fa-sliders" id="search-filter-icon-btn" title="Filter Options" style="display: none;"></i>
                         <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
@@ -56,37 +60,107 @@
                     
                     <!-- Search Filter Popover Panel -->
                     <div id="search-filter-panel" class="d-none search-filter-panel-menu">
-                        <div class="search-filter-group mb-3">
-                            <span class="search-filter-label">Format / Type</span>
-                            <div class="search-filter-options">
-                                <button type="button" class="search-filter-opt active" data-filter-type="ALL">All</button>
-                                <button type="button" class="search-filter-opt" data-filter-type="NOVEL">Novel</button>
-                                <button type="button" class="search-filter-opt" data-filter-type="COMIC">Comic</button>
-                                <button type="button" class="search-filter-opt" data-filter-type="MANHWA">Manhwa</button>
-                                <button type="button" class="search-filter-opt" data-filter-type="MANGA">Manga</button>
+                        <div class="row g-2">
+                            <!-- Genres -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Genres</span>
+                                    <select id="search-filter-genre-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option value="Action">Action</option>
+                                        <option value="Fantasy">Fantasy</option>
+                                        <option value="Romance">Romance</option>
+                                        <option value="Sci-Fi">Sci-Fi</option>
+                                        <option value="Mystery">Mystery</option>
+                                        <option value="Adventure">Adventure</option>
+                                        <option value="Comedy">Comedy</option>
+                                        <option value="Drama">Drama</option>
+                                        <option value="Slice of Life">Slice of Life</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        <div class="search-filter-group mb-3">
-                            <span class="search-filter-label">Release Status</span>
-                            <div class="search-filter-options">
-                                <button type="button" class="search-filter-opt active" data-filter-status="ALL">All</button>
-                                <button type="button" class="search-filter-opt" data-filter-status="ONGOING">Ongoing</button>
-                                <button type="button" class="search-filter-opt" data-filter-status="COMPLETED">Completed</button>
+                            <!-- Year -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Year</span>
+                                    <select id="search-filter-year-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2022">2022</option>
+                                        <option value="2021">2021</option>
+                                        <option value="2020">2020</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        <div class="search-filter-group">
-                            <span class="search-filter-label">Genre Selection</span>
-                            <select id="search-filter-genre-select" class="search-filter-select">
-                                <option value="ALL">All Genres</option>
-                                <option value="Action">Action</option>
-                                <option value="Fantasy">Fantasy</option>
-                                <option value="Romance">Romance</option>
-                                <option value="Sci-Fi">Sci-Fi</option>
-                                <option value="Mystery">Mystery</option>
-                                <option value="Adventure">Adventure</option>
-                                <option value="Comedy">Comedy</option>
-                                <option value="Drama">Drama</option>
-                            </select>
+                            <!-- Sort -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Sort</span>
+                                    <select id="search-filter-sort-select" class="search-filter-select">
+                                        <option value="POPULARITY">Popularity</option>
+                                        <option value="TITLE">Title</option>
+                                        <option value="RATING">Rating</option>
+                                        <option value="NEWEST">Newest</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Airing Status -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Airing Status</span>
+                                    <select id="search-filter-status-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option value="ONGOING">Ongoing</option>
+                                        <option value="COMPLETED">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Tags -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Tags</span>
+                                    <select id="search-filter-tags-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option value="Reincarnation">Reincarnation</option>
+                                        <option value="Overpowered">Overpowered</option>
+                                        <option value="System">System</option>
+                                        <option value="Male Lead">Male Lead</option>
+                                        <option value="Female Lead">Female Lead</option>
+                                        <option value="Magic">Magic</option>
+                                        <option value="School Life">School Life</option>
+                                        <option value="Historical">Historical</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Country of Origin -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Country of Origin</span>
+                                    <select id="search-filter-country-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option value="Korea">Korea</option>
+                                        <option value="Japan">Japan</option>
+                                        <option value="China">China</option>
+                                        <option value="USA">USA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Source -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Source</span>
+                                    <select id="search-filter-source-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option value="Light Novel">Light Novel</option>
+                                        <option value="Web Novel">Web Novel</option>
+                                        <option value="Manga">Manga</option>
+                                        <option value="Original">Original</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
