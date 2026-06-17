@@ -315,6 +315,18 @@
                 if (Number(chapter.novelId) !== Number(currentNovelId)) return;
                 if ($("#chapter-item-" + chapter.id).length) return;
 
+                // Check if chapter is scheduled for the future
+                var isAuthorized = (currentUserRole === 'OWNER' || 
+                                     currentUserRole === 'ADMIN' || 
+                                     currentUserRole === 'PROOFREADER' || 
+                                     (currentUserRole === 'EDITOR' && Number(novelCreatorId) === Number(currentUserId)));
+                if (chapter.publishAt) {
+                    var publishDate = new Date(chapter.publishAt);
+                    if (publishDate > new Date() && !isAuthorized) {
+                        return; // Hide future chapters
+                    }
+                }
+
                 var price = parseInt(chapter.price) || 0;
                 var isUnlocked = (price === 0) || 
                     (currentUserRole === 'OWNER' || 
@@ -383,6 +395,8 @@
                         // Recreate
                         window.handleChapterCreatedRealtime(chapter);
                     });
+                } else {
+                    window.handleChapterCreatedRealtime(chapter);
                 }
             };
 

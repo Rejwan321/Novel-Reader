@@ -94,5 +94,19 @@ public class PublishSchedulerService {
         // Mark chapter as notified
         chapter.setPublishNotificationSent(true);
         chapterRepository.save(chapter);
+
+        // Broadcast SSE event globally so pages update in real-time
+        try {
+            sseService.sendGlobalEvent("chapter_updated", java.util.Map.of(
+                "id", chapter.getId(),
+                "novelId", novel.getId(),
+                "title", chapter.getTitle(),
+                "chapterNumber", chapter.getChapterNumber(),
+                "price", chapter.getPrice(),
+                "publishAt", chapter.getPublishAt() != null ? chapter.getPublishAt().toString() : ""
+            ));
+        } catch (Exception e) {
+            // Ignore
+        }
     }
 }
