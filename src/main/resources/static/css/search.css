@@ -315,27 +315,82 @@
     box-shadow: 0 0 10px rgba(104, 85, 224, 0.4);
 }
 
-/* Dropdown styling */
-.search-filter-select {
+/* Custom Select Container */
+.custom-select-container {
+    position: relative;
+    width: 100%;
+}
+
+/* Custom Select Trigger */
+.custom-select-trigger {
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #ffffff;
     border-radius: 6px;
     padding: 6px 12px;
     font-size: 0.8rem;
-    outline: none;
     cursor: pointer;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
     width: 100%;
+    user-select: none;
 }
 
-.search-filter-select:focus {
+.custom-select-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-select-container:focus-within .custom-select-trigger {
     border-color: #6855e0;
 }
 
-.search-filter-select option {
+/* Custom Options Menu Popup */
+.custom-options-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
     background: #181829;
+    border: 1px solid rgba(94, 99, 182, 0.4);
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    z-index: 1060;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.custom-options-menu::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-options-menu::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+}
+
+/* Custom Option Item */
+.custom-option {
+    padding: 8px 12px;
+    font-size: 0.8rem;
     color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    text-align: left;
+    user-select: none;
+}
+
+/* Option Hover State (Uses navbar color: #5e63b6!) */
+.custom-option:hover {
+    background-color: #5e63b6;
+    color: #ffffff;
+}
+
+/* Option Selected/Active State (Uses navbar color: #5e63b6!) */
+.custom-option.active {
+    background-color: #5e63b6;
+    color: #ffffff;
+    font-weight: 600;
 }
 
 /* Adjustments on Mobile devices */

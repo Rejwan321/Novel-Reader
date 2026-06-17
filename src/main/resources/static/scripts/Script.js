@@ -41,13 +41,27 @@ $(document).ready(function() {
     var initCountry = $("#search-filter-country-val").val() || "ALL";
     var initSource = $("#search-filter-source-val").val() || "ALL";
 
-    $("#search-filter-genre-select").val(initGenre);
-    $("#search-filter-year-select").val(initYear);
-    $("#search-filter-sort-select").val(initSort);
-    $("#search-filter-status-select").val(initStatus);
-    $("#search-filter-tags-select").val(initTags);
-    $("#search-filter-country-select").val(initCountry);
-    $("#search-filter-source-select").val(initSource);
+    function selectCustomOption(groupId, value) {
+        var group = $(".custom-select-group[data-id='" + groupId + "']");
+        var option = group.find(".custom-option[data-value='" + value + "']");
+        if (option.length === 0) {
+            option = group.find(".custom-option").first();
+        }
+        if (option.length > 0) {
+            group.find(".custom-option").removeClass("active");
+            option.addClass("active");
+            group.find(".selected-text").text(option.text());
+            $("#" + groupId + "-val").val(value);
+        }
+    }
+
+    selectCustomOption("search-filter-genre", initGenre);
+    selectCustomOption("search-filter-year", initYear);
+    selectCustomOption("search-filter-sort", initSort);
+    selectCustomOption("search-filter-status", initStatus);
+    selectCustomOption("search-filter-tags", initTags);
+    selectCustomOption("search-filter-country", initCountry);
+    selectCustomOption("search-filter-source", initSource);
 
     // Expand search bar on page load if search or any filters are active
     var currentSearchVal = $(".search-bar .input").val();
@@ -88,45 +102,33 @@ $(document).ready(function() {
         e.stopPropagation();
     });
 
-    // Filter Genre selection
-    $("#search-filter-genre-select").change(function() {
-        $("#search-filter-genre-val").val($(this).val());
-        triggerSearchQuery();
+    // Toggle custom select dropdown menu
+    $(document).on("click", ".custom-select-trigger", function(e) {
+        e.stopPropagation();
+        var container = $(this).closest(".custom-select-container");
+        var menu = container.find(".custom-options-menu");
+        
+        // Close other custom options menus
+        $(".custom-options-menu").not(menu).addClass("d-none");
+        menu.toggleClass("d-none");
     });
 
-    // Filter Year selection
-    $("#search-filter-year-select").change(function() {
-        $("#search-filter-year-val").val($(this).val());
-        triggerSearchQuery();
-    });
-
-    // Filter Sort selection
-    $("#search-filter-sort-select").change(function() {
-        $("#search-filter-sort-val").val($(this).val());
-        triggerSearchQuery();
-    });
-
-    // Filter Status selection
-    $("#search-filter-status-select").change(function() {
-        $("#search-filter-status-val").val($(this).val());
-        triggerSearchQuery();
-    });
-
-    // Filter Tags selection
-    $("#search-filter-tags-select").change(function() {
-        $("#search-filter-tags-val").val($(this).val());
-        triggerSearchQuery();
-    });
-
-    // Filter Country selection
-    $("#search-filter-country-select").change(function() {
-        $("#search-filter-country-val").val($(this).val());
-        triggerSearchQuery();
-    });
-
-    // Filter Source selection
-    $("#search-filter-source-select").change(function() {
-        $("#search-filter-source-val").val($(this).val());
+    // Select custom option
+    $(document).on("click", ".custom-option", function(e) {
+        e.stopPropagation();
+        var option = $(this);
+        var val = option.data("value");
+        var group = option.closest(".custom-select-group");
+        var groupId = group.data("id");
+        
+        group.find(".custom-option").removeClass("active");
+        option.addClass("active");
+        group.find(".selected-text").text(option.text());
+        group.find(".custom-options-menu").addClass("d-none");
+        
+        // Update hidden parameter input field
+        $("#" + groupId + "-val").val(val);
+        
         triggerSearchQuery();
     });
 
@@ -139,6 +141,7 @@ $(document).ready(function() {
 
     // Retract search bar, dropdown and filter panel if clicked outside
     $(document).click(function(e) {
+        $(".custom-options-menu").addClass("d-none");
         var searchBar = $(".search-bar");
         var dropdown = $("#search-results-dropdown");
         var filterPanel = $("#search-filter-panel");
