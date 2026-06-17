@@ -20,7 +20,13 @@ public class NovelController {
     private NovelService novelService;
 
     @GetMapping("/")
-    public String home(@org.springframework.web.bind.annotation.RequestParam(required = false) String search, HttpSession session, Model model) {
+    public String home(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String search,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String type,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String genre,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
+            HttpSession session, Model model) {
+        
         if (novelService.isSecuredMode()) {
             User loggedInUser = (User) session.getAttribute("user");
             if (loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type())) {
@@ -28,6 +34,7 @@ public class NovelController {
                 return "home";
             }
         }
+        
         List<Novel> novels;
         if (search != null && !search.trim().isEmpty()) {
             novels = novelService.searchNovels(search.trim());
@@ -48,6 +55,27 @@ public class NovelController {
                 }
             }
         }
+        
+        if (type != null && !type.trim().isEmpty() && !"ALL".equalsIgnoreCase(type)) {
+            novels = novels.stream()
+                .filter(n -> type.equalsIgnoreCase(n.getType()))
+                .toList();
+        }
+        
+        if (genre != null && !genre.trim().isEmpty() && !"ALL".equalsIgnoreCase(genre)) {
+            novels = novels.stream()
+                .filter(n -> n.getGenre() != null && java.util.Arrays.stream(n.getGenre().split(","))
+                    .map(String::trim)
+                    .anyMatch(g -> genre.equalsIgnoreCase(g)))
+                .toList();
+        }
+        
+        if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+            novels = novels.stream()
+                .filter(n -> status.equalsIgnoreCase(n.getStatus()))
+                .toList();
+        }
+        
         model.addAttribute("novels", novels);
         model.addAttribute("upcomingChapters", novelService.getUpcomingChapters());
         return "home";

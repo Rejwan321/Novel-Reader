@@ -32,29 +32,102 @@ $(document).ready(function() {
         showToast("Please sign in or register to access this page.", "info");
     }
 
+    // Initialize search filter UI states from hidden inputs on page load
+    var initType = $("#search-filter-type-val").val() || "ALL";
+    var initGenre = $("#search-filter-genre-val").val() || "ALL";
+    var initStatus = $("#search-filter-status-val").val() || "ALL";
+
+    $(".search-filter-opt[data-filter-type]").removeClass("active");
+    $(".search-filter-opt[data-filter-type='" + initType.toUpperCase() + "']").addClass("active");
+
+    $(".search-filter-opt[data-filter-status]").removeClass("active");
+    $(".search-filter-opt[data-filter-status='" + initStatus.toUpperCase() + "']").addClass("active");
+
+    $("#search-filter-genre-select").val(initGenre);
+
+    // Expand search bar on page load if search is already active
+    var currentSearchVal = $(".search-bar .input").val();
+    if (currentSearchVal && currentSearchVal.trim() !== "") {
+        $(".search-bar, .search-bar .input").addClass("active");
+        $("#search-filter-icon-btn").show();
+    }
+
     // --- Search bar behavior ---
     $(".fa-search").click(function() {
         var input = $(".search-bar .input");
         if (input.hasClass("active") && input.val().trim().length > 0) {
             $("#search-form").submit();
         } else {
-            $(".search-bar, .input").toggleClass("active");
-            $(".input[type='text']").focus();
+            $(".search-bar, .search-bar .input").toggleClass("active");
+            if ($(".search-bar").hasClass("active")) {
+                input.focus();
+                $("#search-filter-icon-btn").show();
+            } else {
+                $("#search-filter-icon-btn").hide();
+                $("#search-filter-panel").addClass("d-none");
+            }
         }
     });
 
-    // Retract search bar and dropdown if clicked outside
+    // Toggle search filter overlay panel
+    $("#search-filter-icon-btn").click(function(e) {
+        e.stopPropagation();
+        $("#search-filter-panel").toggleClass("d-none");
+        if (!$("#search-filter-panel").hasClass("d-none")) {
+            $("#search-results-dropdown").addClass("d-none");
+        }
+    });
+
+    // Stop propagation of clicks inside the filter panel
+    $("#search-filter-panel").click(function(e) {
+        e.stopPropagation();
+    });
+
+    // Filter Type selection
+    $(".search-filter-opt[data-filter-type]").click(function() {
+        $(this).parent().find(".search-filter-opt").removeClass("active");
+        $(this).addClass("active");
+        $("#search-filter-type-val").val($(this).data("filter-type"));
+        triggerSearchQuery();
+    });
+
+    // Filter Status selection
+    $(".search-filter-opt[data-filter-status]").click(function() {
+        $(this).parent().find(".search-filter-opt").removeClass("active");
+        $(this).addClass("active");
+        $("#search-filter-status-val").val($(this).data("filter-status"));
+        triggerSearchQuery();
+    });
+
+    // Filter Genre selection
+    $("#search-filter-genre-select").change(function() {
+        $("#search-filter-genre-val").val($(this).val());
+        triggerSearchQuery();
+    });
+
+    function triggerSearchQuery() {
+        var query = $(".search-bar .input").val().trim();
+        if (query.length >= 1) {
+            $(".search-bar .input").trigger("input");
+        }
+    }
+
+    // Retract search bar, dropdown and filter panel if clicked outside
     $(document).click(function(e) {
         var searchBar = $(".search-bar");
         var dropdown = $("#search-results-dropdown");
+        var filterPanel = $("#search-filter-panel");
         if (!searchBar.is(e.target) && searchBar.has(e.target).length === 0 &&
-            !dropdown.is(e.target) && dropdown.has(e.target).length === 0) {
+            !dropdown.is(e.target) && dropdown.has(e.target).length === 0 &&
+            !filterPanel.is(e.target) && filterPanel.has(e.target).length === 0) {
             
             dropdown.addClass("d-none").empty();
+            filterPanel.addClass("d-none");
             if (searchBar.hasClass("active")) {
                 searchBar.removeClass("active");
                 var input = searchBar.find(".input");
                 input.removeClass("active");
+                $("#search-filter-icon-btn").hide();
                 if (input.val().trim().length > 0) {
                     input.val("");
                 }
@@ -74,7 +147,15 @@ $(document).ready(function() {
         
         if (query.length >= 1) {
             searchTimeout = setTimeout(function() {
-                $.getJSON("/api/novels", { search: query }, function(data) {
+                var searchType = $("#search-filter-type-val").val() || "ALL";
+                var searchGenre = $("#search-filter-genre-val").val() || "ALL";
+                var searchStatus = $("#search-filter-status-val").val() || "ALL";
+                $.getJSON("/api/novels", { 
+                    search: query,
+                    type: searchType,
+                    genre: searchGenre,
+                    status: searchStatus
+                }, function(data) {
                     dropdown.empty();
                     
                     if (!data || data.length === 0) {

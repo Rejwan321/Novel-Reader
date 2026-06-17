@@ -29,21 +29,41 @@ public class NovelRestController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String genre,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             HttpSession session) {
         
         if (isRestricted(session)) {
             return java.util.Collections.emptyList();
         }
         
+        List<Novel> results;
         if (search != null && !search.trim().isEmpty()) {
-            return novelService.searchNovels(search);
-        } else if (genre != null && !genre.trim().isEmpty()) {
-            return novelService.getNovelsByGenre(genre);
-        } else if (type != null && !type.trim().isEmpty()) {
-            return novelService.getNovelsByType(type);
+            results = novelService.searchNovels(search.trim());
         } else {
-            return novelService.getAllNovels();
+            results = novelService.getAllNovels();
         }
+        
+        if (type != null && !type.trim().isEmpty() && !"ALL".equalsIgnoreCase(type)) {
+            results = results.stream()
+                .filter(n -> type.equalsIgnoreCase(n.getType()))
+                .toList();
+        }
+        
+        if (genre != null && !genre.trim().isEmpty() && !"ALL".equalsIgnoreCase(genre)) {
+            results = results.stream()
+                .filter(n -> n.getGenre() != null && java.util.Arrays.stream(n.getGenre().split(","))
+                    .map(String::trim)
+                    .anyMatch(g -> genre.equalsIgnoreCase(g)))
+                .toList();
+        }
+        
+        if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+            results = results.stream()
+                .filter(n -> status.equalsIgnoreCase(n.getStatus()))
+                .toList();
+        }
+        
+        return results;
     }
 
     private boolean isRestricted(HttpSession session) {

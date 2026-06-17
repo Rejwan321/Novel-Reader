@@ -44,11 +44,51 @@
                     <div class="search-bar">
                         <form id="search-form" action="/" method="get">
                             <input type="text" name="search" class="input" placeholder="Search..." th:value="${param.search}">
+                            <input type="hidden" name="type" id="search-filter-type-val" th:value="${param.type != null ? param.type : 'ALL'}">
+                            <input type="hidden" name="genre" id="search-filter-genre-val" th:value="${param.genre != null ? param.genre : 'ALL'}">
+                            <input type="hidden" name="status" id="search-filter-status-val" th:value="${param.status != null ? param.status : 'ALL'}">
                         </form>
+                        <i class="fa-solid fa-sliders" id="search-filter-icon-btn" title="Filter Options" style="display: none;"></i>
                         <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
                     </div>
                     <!-- Real-time Search Dropdown Menu -->
                     <div id="search-results-dropdown" class="d-none search-results-dropdown-menu"></div>
+                    
+                    <!-- Search Filter Popover Panel -->
+                    <div id="search-filter-panel" class="d-none search-filter-panel-menu">
+                        <div class="search-filter-group mb-3">
+                            <span class="search-filter-label">Format / Type</span>
+                            <div class="search-filter-options">
+                                <button type="button" class="search-filter-opt active" data-filter-type="ALL">All</button>
+                                <button type="button" class="search-filter-opt" data-filter-type="NOVEL">Novel</button>
+                                <button type="button" class="search-filter-opt" data-filter-type="COMIC">Comic</button>
+                                <button type="button" class="search-filter-opt" data-filter-type="MANHWA">Manhwa</button>
+                                <button type="button" class="search-filter-opt" data-filter-type="MANGA">Manga</button>
+                            </div>
+                        </div>
+                        <div class="search-filter-group mb-3">
+                            <span class="search-filter-label">Release Status</span>
+                            <div class="search-filter-options">
+                                <button type="button" class="search-filter-opt active" data-filter-status="ALL">All</button>
+                                <button type="button" class="search-filter-opt" data-filter-status="ONGOING">Ongoing</button>
+                                <button type="button" class="search-filter-opt" data-filter-status="COMPLETED">Completed</button>
+                            </div>
+                        </div>
+                        <div class="search-filter-group">
+                            <span class="search-filter-label">Genre Selection</span>
+                            <select id="search-filter-genre-select" class="search-filter-select">
+                                <option value="ALL">All Genres</option>
+                                <option value="Action">Action</option>
+                                <option value="Fantasy">Fantasy</option>
+                                <option value="Romance">Romance</option>
+                                <option value="Sci-Fi">Sci-Fi</option>
+                                <option value="Mystery">Mystery</option>
+                                <option value="Adventure">Adventure</option>
+                                <option value="Comedy">Comedy</option>
+                                <option value="Drama">Drama</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="register" id="nav-auth-section">
