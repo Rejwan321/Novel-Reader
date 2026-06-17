@@ -24,7 +24,7 @@ public class User {
 
     private String loginType = "LOCAL";
     private String updatesEmail;
-    private Boolean subscribedToUpdates = false;
+    private Boolean subscribedToUpdates = true;
     private Boolean subscribedToMentions = true;
 
     public User() {
@@ -86,7 +86,7 @@ public class User {
     }
 
     public Boolean getSubscribedToUpdates() {
-        return subscribedToUpdates != null ? subscribedToUpdates : false;
+        return subscribedToUpdates != null ? subscribedToUpdates : true;
     }
 
     public void setSubscribedToUpdates(Boolean subscribedToUpdates) {
