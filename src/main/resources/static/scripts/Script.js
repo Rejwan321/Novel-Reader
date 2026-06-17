@@ -33,21 +33,26 @@ $(document).ready(function() {
     }
 
     // Initialize search filter UI states from hidden inputs on page load
-    var initType = $("#search-filter-type-val").val() || "ALL";
     var initGenre = $("#search-filter-genre-val").val() || "ALL";
+    var initYear = $("#search-filter-year-val").val() || "ALL";
+    var initSort = $("#search-filter-sort-val").val() || "POPULARITY";
     var initStatus = $("#search-filter-status-val").val() || "ALL";
-
-    $(".search-filter-opt[data-filter-type]").removeClass("active");
-    $(".search-filter-opt[data-filter-type='" + initType.toUpperCase() + "']").addClass("active");
-
-    $(".search-filter-opt[data-filter-status]").removeClass("active");
-    $(".search-filter-opt[data-filter-status='" + initStatus.toUpperCase() + "']").addClass("active");
+    var initTags = $("#search-filter-tags-val").val() || "ALL";
+    var initCountry = $("#search-filter-country-val").val() || "ALL";
+    var initSource = $("#search-filter-source-val").val() || "ALL";
 
     $("#search-filter-genre-select").val(initGenre);
+    $("#search-filter-year-select").val(initYear);
+    $("#search-filter-sort-select").val(initSort);
+    $("#search-filter-status-select").val(initStatus);
+    $("#search-filter-tags-select").val(initTags);
+    $("#search-filter-country-select").val(initCountry);
+    $("#search-filter-source-select").val(initSource);
 
-    // Expand search bar on page load if search is already active
+    // Expand search bar on page load if search or any filters are active
     var currentSearchVal = $(".search-bar .input").val();
-    if (currentSearchVal && currentSearchVal.trim() !== "") {
+    var hasActiveFilters = (initGenre !== "ALL" || initYear !== "ALL" || initSort !== "POPULARITY" || initStatus !== "ALL" || initTags !== "ALL" || initCountry !== "ALL" || initSource !== "ALL");
+    if ((currentSearchVal && currentSearchVal.trim() !== "") || hasActiveFilters) {
         $(".search-bar, .search-bar .input").addClass("active");
         $("#search-filter-icon-btn").show();
     }
@@ -55,7 +60,7 @@ $(document).ready(function() {
     // --- Search bar behavior ---
     $(".fa-search").click(function() {
         var input = $(".search-bar .input");
-        if (input.hasClass("active") && input.val().trim().length > 0) {
+        if (input.hasClass("active")) {
             $("#search-form").submit();
         } else {
             $(".search-bar, .search-bar .input").toggleClass("active");
@@ -83,25 +88,45 @@ $(document).ready(function() {
         e.stopPropagation();
     });
 
-    // Filter Type selection
-    $(".search-filter-opt[data-filter-type]").click(function() {
-        $(this).parent().find(".search-filter-opt").removeClass("active");
-        $(this).addClass("active");
-        $("#search-filter-type-val").val($(this).data("filter-type"));
+    // Filter Genre selection
+    $("#search-filter-genre-select").change(function() {
+        $("#search-filter-genre-val").val($(this).val());
+        triggerSearchQuery();
+    });
+
+    // Filter Year selection
+    $("#search-filter-year-select").change(function() {
+        $("#search-filter-year-val").val($(this).val());
+        triggerSearchQuery();
+    });
+
+    // Filter Sort selection
+    $("#search-filter-sort-select").change(function() {
+        $("#search-filter-sort-val").val($(this).val());
         triggerSearchQuery();
     });
 
     // Filter Status selection
-    $(".search-filter-opt[data-filter-status]").click(function() {
-        $(this).parent().find(".search-filter-opt").removeClass("active");
-        $(this).addClass("active");
-        $("#search-filter-status-val").val($(this).data("filter-status"));
+    $("#search-filter-status-select").change(function() {
+        $("#search-filter-status-val").val($(this).val());
         triggerSearchQuery();
     });
 
-    // Filter Genre selection
-    $("#search-filter-genre-select").change(function() {
-        $("#search-filter-genre-val").val($(this).val());
+    // Filter Tags selection
+    $("#search-filter-tags-select").change(function() {
+        $("#search-filter-tags-val").val($(this).val());
+        triggerSearchQuery();
+    });
+
+    // Filter Country selection
+    $("#search-filter-country-select").change(function() {
+        $("#search-filter-country-val").val($(this).val());
+        triggerSearchQuery();
+    });
+
+    // Filter Source selection
+    $("#search-filter-source-select").change(function() {
+        $("#search-filter-source-val").val($(this).val());
         triggerSearchQuery();
     });
 
@@ -147,14 +172,22 @@ $(document).ready(function() {
         
         if (query.length >= 1) {
             searchTimeout = setTimeout(function() {
-                var searchType = $("#search-filter-type-val").val() || "ALL";
                 var searchGenre = $("#search-filter-genre-val").val() || "ALL";
+                var searchYear = $("#search-filter-year-val").val() || "ALL";
+                var searchSort = $("#search-filter-sort-val").val() || "POPULARITY";
                 var searchStatus = $("#search-filter-status-val").val() || "ALL";
+                var searchTags = $("#search-filter-tags-val").val() || "ALL";
+                var searchCountry = $("#search-filter-country-val").val() || "ALL";
+                var searchSource = $("#search-filter-source-val").val() || "ALL";
                 $.getJSON("/api/novels", { 
                     search: query,
-                    type: searchType,
                     genre: searchGenre,
-                    status: searchStatus
+                    year: searchYear,
+                    sort: searchSort,
+                    status: searchStatus,
+                    tags: searchTags,
+                    country: searchCountry,
+                    source: searchSource
                 }, function(data) {
                     dropdown.empty();
                     

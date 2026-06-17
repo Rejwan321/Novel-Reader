@@ -29,6 +29,13 @@ public class Novel {
     private Double rating;
     private String status; // "ONGOING" or "COMPLETED"
     private Long creatorId;
+    @Column(name = "release_year")
+    private Integer year;
+    @Lob
+    @Column(columnDefinition = "CLOB")
+    private String tags;
+    private String countryOfOrigin;
+    private String source;
 
     @OneToMany(mappedBy = "novel", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("chapterNumber ASC")

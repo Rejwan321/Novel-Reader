@@ -121,6 +121,10 @@ public class DataInitializer implements CommandLineRunner {
                 "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
                 "NOVEL", "Action, Fantasy, System", 4.9, "ONGOING");
             novel1.setCreatorId(editorId);
+            novel1.setYear(2024);
+            novel1.setTags("Reincarnation, Overpowered, System, Male Lead, Magic");
+            novel1.setCountryOfOrigin("Korea");
+            novel1.setSource("Web Novel");
             novel1 = novelRepository.save(novel1);
 
             Chapter n1c1 = new Chapter(null, novel1, "The Son of the Monarch", 1.0,
@@ -146,6 +150,10 @@ public class DataInitializer implements CommandLineRunner {
                 "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
                 "NOVEL", "Mystery, Historical, Drama", 4.8, "COMPLETED");
             novel2.setCreatorId(editorId);
+            novel2.setYear(2023);
+            novel2.setTags("Female Lead, Smart Lead, Historical, Comedy");
+            novel2.setCountryOfOrigin("Japan");
+            novel2.setSource("Light Novel");
             novel2 = novelRepository.save(novel2);
 
             Chapter n2c1 = new Chapter(null, novel2, "The Poison Test", 1.0,
@@ -168,6 +176,10 @@ public class DataInitializer implements CommandLineRunner {
                 "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
                 "COMIC", "Fantasy, Adventure, Action", 4.7, "ONGOING");
             comic1.setCreatorId(adminId);
+            comic1.setYear(2020);
+            comic1.setTags("Tower Climbing, Male Lead, Magic, Overpowered");
+            comic1.setCountryOfOrigin("Korea");
+            comic1.setSource("Original");
             comic1 = novelRepository.save(comic1);
 
             String comicImages1 = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800," +
@@ -190,6 +202,10 @@ public class DataInitializer implements CommandLineRunner {
                 "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80",
                 "COMIC", "Sci-Fi, Cyberpunk, Action", 4.9, "COMPLETED");
             comic2.setCreatorId(adminId);
+            comic2.setYear(2022);
+            comic2.setTags("Cybernetics, Tragedy, Sci-Fi");
+            comic2.setCountryOfOrigin("Japan");
+            comic2.setSource("Original");
             comic2 = novelRepository.save(comic2);
 
             String comicImages3 = "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800," +
@@ -210,6 +226,10 @@ public class DataInitializer implements CommandLineRunner {
                 "https://images.unsplash.com/photo-1601987177651-8edfe6c20009?w=600&auto=format&fit=crop&q=80",
                 "MANGA", "Fantasy, Adventure, Slice of Life", 4.9, "ONGOING");
             manga1.setCreatorId(editorId);
+            manga1.setYear(2023);
+            manga1.setTags("Elves, Magic, Slow Pace, Female Lead");
+            manga1.setCountryOfOrigin("Japan");
+            manga1.setSource("Manga");
             manga1 = novelRepository.save(manga1);
 
             String mangaImages1 = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800," +
@@ -231,6 +251,10 @@ public class DataInitializer implements CommandLineRunner {
                     "Zero Ts\u00fa.jpg",
                     "MANGA", "Slice of Life", 4.8, "ONGOING");
                 manga2.setCreatorId(editorId);
+                manga2.setYear(2021);
+                manga2.setTags("Motorbikes, School Life, Female Lead");
+                manga2.setCountryOfOrigin("Japan");
+                manga2.setSource("Light Novel");
                 manga2 = novelRepository.save(manga2);
 
                 Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
@@ -248,6 +272,10 @@ public class DataInitializer implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
                         "MANGA", "Slice of Life", 4.8, "ONGOING");
                     manga2.setCreatorId(editorId);
+                    manga2.setYear(2021);
+                    manga2.setTags("Motorbikes, School Life, Female Lead");
+                    manga2.setCountryOfOrigin("Japan");
+                    manga2.setSource("Light Novel");
                     manga2 = novelRepository.save(manga2);
 
                     Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");

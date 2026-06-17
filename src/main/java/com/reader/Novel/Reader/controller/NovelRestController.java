@@ -30,6 +30,11 @@ public class NovelRestController {
             @RequestParam(required = false) String genre,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String year,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String tags,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) String source,
             HttpSession session) {
         
         if (isRestricted(session)) {
@@ -60,6 +65,74 @@ public class NovelRestController {
         if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status)) {
             results = results.stream()
                 .filter(n -> status.equalsIgnoreCase(n.getStatus()))
+                .toList();
+        }
+
+        if (year != null && !year.trim().isEmpty() && !"ALL".equalsIgnoreCase(year)) {
+            try {
+                int yVal = Integer.parseInt(year.trim());
+                results = results.stream()
+                    .filter(n -> n.getYear() != null && n.getYear().equals(yVal))
+                    .toList();
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
+        }
+
+        if (tags != null && !tags.trim().isEmpty() && !"ALL".equalsIgnoreCase(tags)) {
+            results = results.stream()
+                .filter(n -> n.getTags() != null && java.util.Arrays.stream(n.getTags().split(","))
+                    .map(String::trim)
+                    .anyMatch(t -> tags.equalsIgnoreCase(t)))
+                .toList();
+        }
+
+        if (country != null && !country.trim().isEmpty() && !"ALL".equalsIgnoreCase(country)) {
+            results = results.stream()
+                .filter(n -> country.equalsIgnoreCase(n.getCountryOfOrigin()))
+                .toList();
+        }
+
+        if (source != null && !source.trim().isEmpty() && !"ALL".equalsIgnoreCase(source)) {
+            results = results.stream()
+                .filter(n -> source.equalsIgnoreCase(n.getSource()))
+                .toList();
+        }
+
+        // Sorting
+        String activeSort = (sort != null && !sort.trim().isEmpty()) ? sort.trim() : "POPULARITY";
+        if ("TITLE".equalsIgnoreCase(activeSort)) {
+            results = results.stream()
+                .sorted((n1, n2) -> {
+                    String t1 = n1.getTitle() != null ? n1.getTitle() : "";
+                    String t2 = n2.getTitle() != null ? n2.getTitle() : "";
+                    return t1.compareToIgnoreCase(t2);
+                })
+                .toList();
+        } else if ("RATING".equalsIgnoreCase(activeSort)) {
+            results = results.stream()
+                .sorted((n1, n2) -> {
+                    double r1 = n1.getRating() != null ? n1.getRating() : 0.0;
+                    double r2 = n2.getRating() != null ? n2.getRating() : 0.0;
+                    return Double.compare(r2, r1);
+                })
+                .toList();
+        } else if ("NEWEST".equalsIgnoreCase(activeSort)) {
+            results = results.stream()
+                .sorted((n1, n2) -> {
+                    Long id1 = n1.getId() != null ? n1.getId() : 0L;
+                    Long id2 = n2.getId() != null ? n2.getId() : 0L;
+                    return Long.compare(id2, id1);
+                })
+                .toList();
+        } else {
+            // Default "POPULARITY" (rating desc)
+            results = results.stream()
+                .sorted((n1, n2) -> {
+                    double r1 = n1.getRating() != null ? n1.getRating() : 0.0;
+                    double r2 = n2.getRating() != null ? n2.getRating() : 0.0;
+                    return Double.compare(r2, r1);
+                })
                 .toList();
         }
         
