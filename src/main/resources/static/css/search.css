@@ -218,3 +218,132 @@
     color: #ffffff;
     transform: translateX(3px);
 }
+
+/* --- Search Bar Filter Option Styles --- */
+
+/* Expand search bar width when active to fit the sliders icon */
+.search-bar.active {
+    width: 310px !important;
+}
+
+/* Adjust search input padding when active to prevent text overlapping sliders */
+.search-bar.active .input {
+    padding-right: 36px;
+    width: 100%;
+}
+
+/* Style for the filter toggle icon on the right */
+#search-filter-icon-btn {
+    position: absolute;
+    right: 12px;
+    top: 11px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+    z-index: 12;
+}
+
+#search-filter-icon-btn:hover {
+    color: #00e5ff;
+    transform: scale(1.1);
+}
+
+/* The Glassmorphism Filter Dropdown Panel */
+.search-filter-panel-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 310px;
+    background: rgba(24, 24, 41, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(94, 99, 182, 0.5);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 1050;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Filter Group styling */
+.search-filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-filter-label {
+    color: #a5b1c2;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.search-filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* Option Pill Buttons */
+.search-filter-opt {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d1d8e0;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.search-filter-opt:hover {
+    background: rgba(104, 85, 224, 0.2);
+    border-color: rgba(104, 85, 224, 0.5);
+    color: #ffffff;
+}
+
+.search-filter-opt.active {
+    background: #6855e0;
+    border-color: #5e63b6;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(104, 85, 224, 0.4);
+}
+
+/* Dropdown styling */
+.search-filter-select {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.search-filter-select:focus {
+    border-color: #6855e0;
+}
+
+.search-filter-select option {
+    background: #181829;
+    color: #ffffff;
+}
+
+/* Adjustments on Mobile devices */
+@media (max-width: 576px) {
+    .search-filter-panel-menu {
+        width: calc(100vw - 30px);
+        right: -15px;
+    }
+    .search-bar.active {
+        width: calc(100% - 10px) !important;
+    }
+}
