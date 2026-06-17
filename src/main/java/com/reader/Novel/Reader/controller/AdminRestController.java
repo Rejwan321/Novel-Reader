@@ -625,13 +625,16 @@ public class AdminRestController {
         syncChapterFiles(saved);
 
         try {
+            Novel n = saved.getNovel();
             sseService.sendGlobalEvent("chapter_created", Map.of(
                 "id", saved.getId(),
                 "novelId", novelId,
-                "title", saved.getTitle(),
+                "title", saved.getTitle() != null ? saved.getTitle() : "",
                 "chapterNumber", saved.getChapterNumber(),
-                "price", saved.getPrice(),
-                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : ""
+                "price", saved.getPrice() != null ? saved.getPrice() : 0,
+                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : "",
+                "novelTitle", n != null && n.getTitle() != null ? n.getTitle() : "",
+                "novelCoverUrl", n != null && n.getCoverUrl() != null ? n.getCoverUrl() : ""
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -816,13 +819,16 @@ public class AdminRestController {
         Chapter saved = novelService.saveChapter(existingChapter);
         syncChapterFiles(saved);
         try {
+            Novel n = saved.getNovel();
             sseService.sendGlobalEvent("chapter_updated", Map.of(
                 "id", saved.getId(),
-                "novelId", saved.getNovel().getId(),
-                "title", saved.getTitle(),
+                "novelId", n.getId(),
+                "title", saved.getTitle() != null ? saved.getTitle() : "",
                 "chapterNumber", saved.getChapterNumber(),
-                "price", saved.getPrice(),
-                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : ""
+                "price", saved.getPrice() != null ? saved.getPrice() : 0,
+                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : "",
+                "novelTitle", n.getTitle() != null ? n.getTitle() : "",
+                "novelCoverUrl", n.getCoverUrl() != null ? n.getCoverUrl() : ""
             ));
         } catch (Exception e) {
             // Log or ignore

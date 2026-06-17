@@ -100,10 +100,12 @@ public class PublishSchedulerService {
             sseService.sendGlobalEvent("chapter_updated", java.util.Map.of(
                 "id", chapter.getId(),
                 "novelId", novel.getId(),
-                "title", chapter.getTitle(),
+                "title", chapter.getTitle() != null ? chapter.getTitle() : "",
                 "chapterNumber", chapter.getChapterNumber(),
-                "price", chapter.getPrice(),
-                "publishAt", chapter.getPublishAt() != null ? chapter.getPublishAt().toString() : ""
+                "price", chapter.getPrice() != null ? chapter.getPrice() : 0,
+                "publishAt", chapter.getPublishAt() != null ? chapter.getPublishAt().toString() : "",
+                "novelTitle", novel.getTitle() != null ? novel.getTitle() : "",
+                "novelCoverUrl", novel.getCoverUrl() != null ? novel.getCoverUrl() : ""
             ));
         } catch (Exception e) {
             // Ignore
