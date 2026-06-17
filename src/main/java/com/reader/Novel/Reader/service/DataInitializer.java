@@ -72,6 +72,14 @@ public class DataInitializer implements CommandLineRunner {
 
             // Delete legacy users
             jdbcTemplate.execute("DELETE FROM reader_internal WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
+
+            // One-time database migration to default existing users to subscribed to updates
+            java.util.List<java.util.Map<String, Object>> migrationSetting = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'email_migration_done'");
+            if (migrationSetting.isEmpty()) {
+                jdbcTemplate.execute("UPDATE reader_internal SET subscribed_to_updates = TRUE");
+                jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('email_migration_done', 'true')");
+                System.out.println("One-time email subscription migration executed successfully.");
+            }
             
             // Ensure owner exists with ID 0
             java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");
