@@ -63,102 +63,144 @@
                         <div class="row g-2">
                             <!-- Genres -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-genre">
                                     <span class="search-filter-label">Genres</span>
-                                    <select id="search-filter-genre-select" class="search-filter-select">
-                                        <option value="ALL">Any</option>
-                                        <option value="Action">Action</option>
-                                        <option value="Fantasy">Fantasy</option>
-                                        <option value="Romance">Romance</option>
-                                        <option value="Sci-Fi">Sci-Fi</option>
-                                        <option value="Mystery">Mystery</option>
-                                        <option value="Adventure">Adventure</option>
-                                        <option value="Comedy">Comedy</option>
-                                        <option value="Drama">Drama</option>
-                                        <option value="Slice of Life">Slice of Life</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Any</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="ALL">Any</div>
+                                            <div class="custom-option" data-value="Action">Action</div>
+                                            <div class="custom-option" data-value="Fantasy">Fantasy</div>
+                                            <div class="custom-option" data-value="Romance">Romance</div>
+                                            <div class="custom-option" data-value="Sci-Fi">Sci-Fi</div>
+                                            <div class="custom-option" data-value="Mystery">Mystery</div>
+                                            <div class="custom-option" data-value="Adventure">Adventure</div>
+                                            <div class="custom-option" data-value="Comedy">Comedy</div>
+                                            <div class="custom-option" data-value="Drama">Drama</div>
+                                            <div class="custom-option" data-value="Slice of Life">Slice of Life</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Year -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-year">
                                     <span class="search-filter-label">Year</span>
-                                    <select id="search-filter-year-select" class="search-filter-select">
-                                        <option value="ALL">Any</option>
-                                        <option value="2026">2026</option>
-                                        <option value="2025">2025</option>
-                                        <option value="2024">2024</option>
-                                        <option value="2023">2023</option>
-                                        <option value="2022">2022</option>
-                                        <option value="2021">2021</option>
-                                        <option value="2020">2020</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Any</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="ALL">Any</div>
+                                            <div class="custom-option" data-value="2026">2026</div>
+                                            <div class="custom-option" data-value="2025">2025</div>
+                                            <div class="custom-option" data-value="2024">2024</div>
+                                            <div class="custom-option" data-value="2023">2023</div>
+                                            <div class="custom-option" data-value="2022">2022</div>
+                                            <div class="custom-option" data-value="2021">2021</div>
+                                            <div class="custom-option" data-value="2020">2020</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Sort -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-sort">
                                     <span class="search-filter-label">Sort</span>
-                                    <select id="search-filter-sort-select" class="search-filter-select">
-                                        <option value="POPULARITY">Popularity</option>
-                                        <option value="TITLE">Title</option>
-                                        <option value="RATING">Rating</option>
-                                        <option value="NEWEST">Newest</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Popularity</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="POPULARITY">Popularity</div>
+                                            <div class="custom-option" data-value="TITLE">Title</div>
+                                            <div class="custom-option" data-value="RATING">Rating</div>
+                                            <div class="custom-option" data-value="NEWEST">Newest</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Airing Status -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-status">
                                     <span class="search-filter-label">Airing Status</span>
-                                    <select id="search-filter-status-select" class="search-filter-select">
-                                        <option value="ALL">Any</option>
-                                        <option value="ONGOING">Ongoing</option>
-                                        <option value="COMPLETED">Completed</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Any</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="ALL">Any</div>
+                                            <div class="custom-option" data-value="ONGOING">Ongoing</div>
+                                            <div class="custom-option" data-value="COMPLETED">Completed</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Tags -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-tags">
                                     <span class="search-filter-label">Tags</span>
-                                    <select id="search-filter-tags-select" class="search-filter-select">
-                                        <option value="ALL">Any</option>
-                                        <option value="Reincarnation">Reincarnation</option>
-                                        <option value="Overpowered">Overpowered</option>
-                                        <option value="System">System</option>
-                                        <option value="Male Lead">Male Lead</option>
-                                        <option value="Female Lead">Female Lead</option>
-                                        <option value="Magic">Magic</option>
-                                        <option value="School Life">School Life</option>
-                                        <option value="Historical">Historical</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Any</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="ALL">Any</div>
+                                            <div class="custom-option" data-value="Reincarnation">Reincarnation</div>
+                                            <div class="custom-option" data-value="Overpowered">Overpowered</div>
+                                            <div class="custom-option" data-value="System">System</div>
+                                            <div class="custom-option" data-value="Male Lead">Male Lead</div>
+                                            <div class="custom-option" data-value="Female Lead">Female Lead</div>
+                                            <div class="custom-option" data-value="Magic">Magic</div>
+                                            <div class="custom-option" data-value="School Life">School Life</div>
+                                            <div class="custom-option" data-value="Historical">Historical</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Country of Origin -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-country">
                                     <span class="search-filter-label">Country of Origin</span>
-                                    <select id="search-filter-country-select" class="search-filter-select">
-                                        <option value="ALL">Any</option>
-                                        <option value="Korea">Korea</option>
-                                        <option value="Japan">Japan</option>
-                                        <option value="China">China</option>
-                                        <option value="USA">USA</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Any</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="ALL">Any</div>
+                                            <div class="custom-option" data-value="Korea">Korea</div>
+                                            <div class="custom-option" data-value="Japan">Japan</div>
+                                            <div class="custom-option" data-value="China">China</div>
+                                            <div class="custom-option" data-value="USA">USA</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Source -->
                             <div class="col-6 col-md-4">
-                                <div class="search-filter-group">
+                                <div class="search-filter-group custom-select-group" data-id="search-filter-source">
                                     <span class="search-filter-label">Source</span>
-                                    <select id="search-filter-source-select" class="search-filter-select">
-                                        <option value="ALL">Any</option>
-                                        <option value="Light Novel">Light Novel</option>
-                                        <option value="Web Novel">Web Novel</option>
-                                        <option value="Manga">Manga</option>
-                                        <option value="Original">Original</option>
-                                    </select>
+                                    <div class="custom-select-container">
+                                        <div class="custom-select-trigger">
+                                            <span class="selected-text">Any</span>
+                                            <i class="fa-solid fa-chevron-down ms-auto" style="font-size: 0.7rem;"></i>
+                                        </div>
+                                        <div class="custom-options-menu d-none">
+                                            <div class="custom-option" data-value="ALL">Any</div>
+                                            <div class="custom-option" data-value="Light Novel">Light Novel</div>
+                                            <div class="custom-option" data-value="Web Novel">Web Novel</div>
+                                            <div class="custom-option" data-value="Manga">Manga</div>
+                                            <div class="custom-option" data-value="Original">Original</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
