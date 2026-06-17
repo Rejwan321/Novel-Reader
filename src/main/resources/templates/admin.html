@@ -1045,55 +1045,26 @@
                         <!-- Google Section -->
                         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
                             <h5 class="text-white mb-0"><i class="fab fa-google text-danger me-2"></i>Google Authentication Settings</h5>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="cred-google-auth-enabled" style="cursor: pointer;">
-                                <label class="form-check-label text-white-50 small" for="cred-google-auth-enabled" style="cursor: pointer;">Enabled</label>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="triggerImportGoogleJson()">
+                                    <i class="fa-solid fa-file-arrow-up me-1"></i>Upload OAuth Config JSON
+                                </button>
+                                <input type="file" id="import-google-json-file" class="d-none" accept=".json" onchange="importGoogleJson(event)">
                             </div>
                         </div>
                         <div class="row g-3 mb-4">
                             <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label for="cred-google-client-id" class="form-label-admin mb-0">Google OAuth Client ID</label>
-                                    <button type="button" class="btn btn-sm btn-outline-info py-0 px-2" onclick="triggerImportGoogleJson()" style="font-size: 0.75rem;">
-                                        <i class="fa-solid fa-file-import me-1"></i>Upload Google JSON Config
-                                    </button>
-                                    <input type="file" id="import-google-json-file" class="d-none" accept=".json" onchange="importGoogleJson(event)">
-                                </div>
+                                <label for="cred-google-client-id" class="form-label-admin">Google OAuth Client ID</label>
                                 <input type="text" class="form-input-admin" id="cred-google-client-id" placeholder="e.g. 883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com">
                             </div>
-                        </div>
-
-                        <!-- Facebook Section -->
-                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
-                            <h5 class="text-white mb-0"><i class="fab fa-facebook text-info me-2"></i>Facebook Authentication Settings</h5>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="cred-facebook-auth-enabled" style="cursor: pointer;">
-                                <label class="form-check-label text-white-50 small" for="cred-facebook-auth-enabled" style="cursor: pointer;">Enabled</label>
-                            </div>
-                        </div>
-                        <div class="row g-3 mb-4">
                             <div class="col-12">
-                                <label for="cred-facebook-app-id" class="form-label-admin">Facebook App ID</label>
-                                <input type="text" class="form-input-admin" id="cred-facebook-app-id" placeholder="e.g. 159283748291038">
-                            </div>
-                        </div>
-
-                        <!-- X (Twitter) Section -->
-                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
-                            <h5 class="text-white mb-0"><i class="fab fa-x-twitter text-light me-2"></i>X (Twitter) Authentication Settings</h5>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="cred-x-auth-enabled" style="cursor: pointer;">
-                                <label class="form-check-label text-white-50 small" for="cred-x-auth-enabled" style="cursor: pointer;">Enabled</label>
-                            </div>
-                        </div>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label for="cred-x-client-id" class="form-label-admin">X Client ID</label>
-                                <input type="text" class="form-input-admin" id="cred-x-client-id" placeholder="e.g. SDBoMDRxZzJWZEQ0eUJleXU2ck86MTpjaQ">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="cred-x-client-secret" class="form-label-admin">X Client Secret</label>
-                                <input type="text" class="form-input-admin" id="cred-x-client-secret" placeholder="e.g. jT_fS49_5h8s627nSnd8-9k120skfn">
+                                <label for="cred-google-client-secret" class="form-label-admin">Google OAuth Client Secret</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-google-client-secret" placeholder="e.g. GOCSPX-...">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-google-client-secret')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-google-client-secret"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1490,12 +1461,7 @@
             $.get("/api/admin/credentials")
             .done(function(data) {
                 $("#cred-google-client-id").val(data.googleClientId || "");
-                $("#cred-google-auth-enabled").prop("checked", data.googleAuthEnabled === "true");
-                $("#cred-facebook-app-id").val(data.facebookAppId || "");
-                $("#cred-facebook-auth-enabled").prop("checked", data.facebookAuthEnabled === "true");
-                $("#cred-x-client-id").val(data.xClientId || "");
-                $("#cred-x-client-secret").val(data.xClientSecret || "");
-                $("#cred-x-auth-enabled").prop("checked", data.xAuthEnabled === "true");
+                $("#cred-google-client-secret").val(data.googleClientSecret || "");
                 $("#cred-mail-host").val(data.mailHost || "");
                 $("#cred-mail-port").val(data.mailPort || "");
                 $("#cred-mail-username").val(data.mailUsername || "");
@@ -1513,12 +1479,7 @@
         window.exportCredentials = function() {
             var creds = {
                 googleClientId: $("#cred-google-client-id").val(),
-                googleAuthEnabled: $("#cred-google-auth-enabled").is(":checked") ? "true" : "false",
-                facebookAppId: $("#cred-facebook-app-id").val(),
-                facebookAuthEnabled: $("#cred-facebook-auth-enabled").is(":checked") ? "true" : "false",
-                xClientId: $("#cred-x-client-id").val(),
-                xClientSecret: $("#cred-x-client-secret").val(),
-                xAuthEnabled: $("#cred-x-auth-enabled").is(":checked") ? "true" : "false",
+                googleClientSecret: $("#cred-google-client-secret").val(),
                 mailHost: $("#cred-mail-host").val(),
                 mailPort: $("#cred-mail-port").val(),
                 mailUsername: $("#cred-mail-username").val(),
@@ -1551,12 +1512,7 @@
                 try {
                     var creds = JSON.parse(e.target.result);
                     $("#cred-google-client-id").val(creds.googleClientId || "");
-                    $("#cred-google-auth-enabled").prop("checked", creds.googleAuthEnabled === "true");
-                    $("#cred-facebook-app-id").val(creds.facebookAppId || "");
-                    $("#cred-facebook-auth-enabled").prop("checked", creds.facebookAuthEnabled === "true");
-                    $("#cred-x-client-id").val(creds.xClientId || "");
-                    $("#cred-x-client-secret").val(creds.xClientSecret || "");
-                    $("#cred-x-auth-enabled").prop("checked", creds.xAuthEnabled === "true");
+                    $("#cred-google-client-secret").val(creds.googleClientSecret || "");
                     $("#cred-mail-host").val(creds.mailHost || "");
                     $("#cred-mail-port").val(creds.mailPort || "");
                     $("#cred-mail-username").val(creds.mailUsername || "");
@@ -1574,6 +1530,18 @@
             reader.readAsText(file);
         };
 
+        window.toggleCredentialsVisibility = function(id) {
+            var input = $("#" + id);
+            var eye = $("#eye-" + id);
+            if (input.attr("type") === "password") {
+                input.attr("type", "text");
+                eye.removeClass("fa-eye").addClass("fa-eye-slash");
+            } else {
+                input.attr("type", "password");
+                eye.removeClass("fa-eye-slash").addClass("fa-eye");
+            }
+        };
+
         window.triggerImportGoogleJson = function() {
             $("#import-google-json-file").click();
         };
@@ -1585,26 +1553,30 @@
             var reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    var data = JSON.parse(e.target.result);
-                    var clientId = null;
+                    var config = JSON.parse(e.target.result);
+                    var clientId = "";
+                    var clientSecret = "";
 
-                    if (data.web && data.web.client_id) {
-                        clientId = data.web.client_id;
-                    } else if (data.installed && data.installed.client_id) {
-                        clientId = data.installed.client_id;
-                    } else if (data.client_id) {
-                        clientId = data.client_id;
+                    var details = config.web || config.installed;
+                    if (details) {
+                        clientId = details.client_id || "";
+                        clientSecret = details.client_secret || "";
+                    } else {
+                        clientId = config.client_id || config.googleClientId || "";
+                        clientSecret = config.client_secret || config.googleClientSecret || "";
                     }
 
                     if (clientId) {
                         $("#cred-google-client-id").val(clientId);
-                        $("#cred-google-auth-enabled").prop("checked", true);
-                        showToast("Google Client ID imported successfully!", "info");
+                        if (clientSecret) {
+                            $("#cred-google-client-secret").val(clientSecret);
+                        }
+                        showToast("Google OAuth Config parsed successfully! Fields populated.", "success");
                     } else {
-                        showToast("Could not find client_id in the uploaded JSON file.", "error");
+                        showToast("Could not find OAuth client_id in the JSON config.", "warning");
                     }
                 } catch (err) {
-                    showToast("Failed to parse JSON file.", "error");
+                    showToast("Failed to parse Google OAuth configuration file.", "error");
                 }
                 $("#import-google-json-file").val(""); // reset
             };
@@ -3628,12 +3600,7 @@
             $("#form-admin-credentials").submit(function(e) {
                 e.preventDefault();
                 var googleClientId = $("#cred-google-client-id").val();
-                var googleAuthEnabled = $("#cred-google-auth-enabled").is(":checked") ? "true" : "false";
-                var facebookAppId = $("#cred-facebook-app-id").val();
-                var facebookAuthEnabled = $("#cred-facebook-auth-enabled").is(":checked") ? "true" : "false";
-                var xClientId = $("#cred-x-client-id").val();
-                var xClientSecret = $("#cred-x-client-secret").val();
-                var xAuthEnabled = $("#cred-x-auth-enabled").is(":checked") ? "true" : "false";
+                var googleClientSecret = $("#cred-google-client-secret").val();
                 var mailHost = $("#cred-mail-host").val();
                 var mailPort = $("#cred-mail-port").val();
                 var mailUsername = $("#cred-mail-username").val();
@@ -3644,12 +3611,7 @@
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
-                    googleAuthEnabled: googleAuthEnabled,
-                    facebookAppId: facebookAppId,
-                    facebookAuthEnabled: facebookAuthEnabled,
-                    xClientId: xClientId,
-                    xClientSecret: xClientSecret,
-                    xAuthEnabled: xAuthEnabled,
+                    googleClientSecret: googleClientSecret,
                     mailHost: mailHost,
                     mailPort: mailPort,
                     mailUsername: mailUsername,
