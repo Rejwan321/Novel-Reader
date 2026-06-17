@@ -1052,7 +1052,13 @@
                         </div>
                         <div class="row g-3 mb-4">
                             <div class="col-12">
-                                <label for="cred-google-client-id" class="form-label-admin">Google OAuth Client ID</label>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="cred-google-client-id" class="form-label-admin mb-0">Google OAuth Client ID</label>
+                                    <button type="button" class="btn btn-sm btn-outline-info py-0 px-2" onclick="triggerImportGoogleJson()" style="font-size: 0.75rem;">
+                                        <i class="fa-solid fa-file-import me-1"></i>Upload Google JSON Config
+                                    </button>
+                                    <input type="file" id="import-google-json-file" class="d-none" accept=".json" onchange="importGoogleJson(event)">
+                                </div>
                                 <input type="text" class="form-input-admin" id="cred-google-client-id" placeholder="e.g. 883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com">
                             </div>
                         </div>
@@ -1564,6 +1570,43 @@
                     showToast("Failed to parse credentials file.", "error");
                 }
                 $("#import-credentials-file").val(""); // reset
+            };
+            reader.readAsText(file);
+        };
+
+        window.triggerImportGoogleJson = function() {
+            $("#import-google-json-file").click();
+        };
+
+        window.importGoogleJson = function(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var data = JSON.parse(e.target.result);
+                    var clientId = null;
+
+                    if (data.web && data.web.client_id) {
+                        clientId = data.web.client_id;
+                    } else if (data.installed && data.installed.client_id) {
+                        clientId = data.installed.client_id;
+                    } else if (data.client_id) {
+                        clientId = data.client_id;
+                    }
+
+                    if (clientId) {
+                        $("#cred-google-client-id").val(clientId);
+                        $("#cred-google-auth-enabled").prop("checked", true);
+                        showToast("Google Client ID imported successfully!", "info");
+                    } else {
+                        showToast("Could not find client_id in the uploaded JSON file.", "error");
+                    }
+                } catch (err) {
+                    showToast("Failed to parse JSON file.", "error");
+                }
+                $("#import-google-json-file").val(""); // reset
             };
             reader.readAsText(file);
         };
