@@ -45,8 +45,17 @@ public class EmailService {
         java.util.Properties props = sender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.debug", "false");
+        if (sender.getPort() == 465) {
+            props.put("mail.smtp.ssl.enable", "true");
+            props.put("mail.smtp.socketFactory.port", "465");
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.put("mail.smtp.socketFactory.fallback", "false");
+        } else {
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "true");
+        }
+        props.put("mail.smtp.ssl.trust", "*");
+        props.put("mail.debug", "true");
 
         return sender;
     }
@@ -94,6 +103,7 @@ public class EmailService {
             System.out.println("Mention notification email sent successfully to " + activeTo);
         } catch (Exception e) {
             System.err.println("Failed to send mention notification email: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -128,6 +138,7 @@ public class EmailService {
             System.out.println("Mention notification email sent successfully to recipient: " + recipientEmail);
         } catch (Exception e) {
             System.err.println("Failed to send mention notification email to recipient: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -165,6 +176,7 @@ public class EmailService {
             System.out.println("Comment report email sent successfully to " + activeTo);
         } catch (Exception e) {
             System.err.println("Failed to send comment report email: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -198,6 +210,7 @@ public class EmailService {
             System.out.println("Review alert email sent successfully to " + activeTo);
         } catch (Exception e) {
             System.err.println("Failed to send review alert email: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -221,6 +234,7 @@ public class EmailService {
             System.out.println("Custom email sent successfully to " + to);
         } catch (Exception e) {
             System.err.println("Failed to send custom email to " + to + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
