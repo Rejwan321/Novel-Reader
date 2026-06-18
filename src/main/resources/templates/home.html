@@ -166,7 +166,9 @@
             function scrollCarousel(id, offset) {
                 const container = document.getElementById('carousel-' + id);
                 if (container) {
-                    container.scrollBy({ left: offset, behavior: 'smooth' });
+                    const direction = offset < 0 ? -1 : 1;
+                    const scrollAmount = container.clientWidth * 0.8 || 240;
+                    container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
                 }
             }
 
@@ -593,6 +595,6 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='1.2')}"></script>
+    <script th:src="@{/scripts/Script.js(v='1.3')}"></script>
 </body>
 </html>
