@@ -17,7 +17,7 @@ public class RealtimeController {
     private SseService sseService;
 
     @GetMapping(value = "/api/realtime/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(
+    public org.springframework.http.ResponseEntity<SseEmitter> stream(
             @RequestParam(required = false) Long chapterId,
             HttpSession session) {
         
@@ -29,6 +29,11 @@ public class RealtimeController {
 
         sseService.register(emitter, userId, chapterId);
         
-        return emitter;
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.add("X-Accel-Buffering", "no");
+        headers.add("Cache-Control", "no-cache, no-transform");
+        headers.add("Connection", "keep-alive");
+        
+        return new org.springframework.http.ResponseEntity<>(emitter, headers, org.springframework.http.HttpStatus.OK);
     }
 }

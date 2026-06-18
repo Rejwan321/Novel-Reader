@@ -398,6 +398,10 @@ public class AdminRestController {
             @RequestParam String genre,
             @RequestParam Double rating,
             @RequestParam String status,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String tags,
+            @RequestParam(required = false) String countryOfOrigin,
+            @RequestParam(required = false) String source,
             HttpSession session) {
 
         if (isRestricted(session)) {
@@ -424,21 +428,29 @@ public class AdminRestController {
         String resolvedCoverUrl = handleLocalCoverUrl(coverUrl.trim());
         Novel novel = new Novel(null, title.trim(), author.trim(), description.trim(), resolvedCoverUrl, type.toUpperCase(), genre.trim(), rating, status);
         novel.setCreatorId(loggedInUser.getId());
+        novel.setYear(year);
+        novel.setTags(tags);
+        novel.setCountryOfOrigin(countryOfOrigin);
+        novel.setSource(source);
         Novel saved = novelService.saveNovel(novel);
         syncNovelFoldersAndFiles(saved);
 
         try {
-            sseService.sendGlobalEvent("story_created", Map.of(
-                "id", saved.getId(),
-                "title", saved.getTitle(),
-                "author", saved.getAuthor(),
-                "description", saved.getDescription(),
-                "coverUrl", saved.getCoverUrl(),
-                "type", saved.getType(),
-                "genre", saved.getGenre(),
-                "rating", saved.getRating(),
-                "status", saved.getStatus(),
-                "creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L
+            sseService.sendGlobalEvent("story_created", Map.ofEntries(
+                Map.entry("id", saved.getId()),
+                Map.entry("title", saved.getTitle()),
+                Map.entry("author", saved.getAuthor()),
+                Map.entry("description", saved.getDescription() != null ? saved.getDescription() : ""),
+                Map.entry("coverUrl", saved.getCoverUrl()),
+                Map.entry("type", saved.getType()),
+                Map.entry("genre", saved.getGenre()),
+                Map.entry("rating", saved.getRating() != null ? saved.getRating() : 0.0),
+                Map.entry("status", saved.getStatus()),
+                Map.entry("creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L),
+                Map.entry("year", saved.getYear() != null ? saved.getYear() : ""),
+                Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
+                Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
+                Map.entry("source", saved.getSource() != null ? saved.getSource() : "")
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -625,13 +637,16 @@ public class AdminRestController {
         syncChapterFiles(saved);
 
         try {
+            Novel n = saved.getNovel();
             sseService.sendGlobalEvent("chapter_created", Map.of(
                 "id", saved.getId(),
                 "novelId", novelId,
-                "title", saved.getTitle(),
+                "title", saved.getTitle() != null ? saved.getTitle() : "",
                 "chapterNumber", saved.getChapterNumber(),
-                "price", saved.getPrice(),
-                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : ""
+                "price", saved.getPrice() != null ? saved.getPrice() : 0,
+                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : "",
+                "novelTitle", n != null && n.getTitle() != null ? n.getTitle() : "",
+                "novelCoverUrl", n != null && n.getCoverUrl() != null ? n.getCoverUrl() : ""
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -681,6 +696,10 @@ public class AdminRestController {
             @RequestParam String genre,
             @RequestParam Double rating,
             @RequestParam String status,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String tags,
+            @RequestParam(required = false) String countryOfOrigin,
+            @RequestParam(required = false) String source,
             HttpSession session) {
 
         if (isRestricted(session)) {
@@ -724,21 +743,29 @@ public class AdminRestController {
         existingNovel.setGenre(genre.trim());
         existingNovel.setRating(rating);
         existingNovel.setStatus(status);
+        existingNovel.setYear(year);
+        existingNovel.setTags(tags);
+        existingNovel.setCountryOfOrigin(countryOfOrigin);
+        existingNovel.setSource(source);
 
         Novel saved = novelService.saveNovel(existingNovel);
         syncNovelFoldersAndFiles(saved);
         try {
-            sseService.sendGlobalEvent("story_updated", Map.of(
-                "id", saved.getId(),
-                "title", saved.getTitle(),
-                "author", saved.getAuthor(),
-                "description", saved.getDescription(),
-                "coverUrl", saved.getCoverUrl(),
-                "type", saved.getType(),
-                "genre", saved.getGenre(),
-                "rating", saved.getRating(),
-                "status", saved.getStatus(),
-                "creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L
+            sseService.sendGlobalEvent("story_updated", Map.ofEntries(
+                Map.entry("id", saved.getId()),
+                Map.entry("title", saved.getTitle()),
+                Map.entry("author", saved.getAuthor()),
+                Map.entry("description", saved.getDescription() != null ? saved.getDescription() : ""),
+                Map.entry("coverUrl", saved.getCoverUrl()),
+                Map.entry("type", saved.getType()),
+                Map.entry("genre", saved.getGenre()),
+                Map.entry("rating", saved.getRating() != null ? saved.getRating() : 0.0),
+                Map.entry("status", saved.getStatus()),
+                Map.entry("creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L),
+                Map.entry("year", saved.getYear() != null ? saved.getYear() : ""),
+                Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
+                Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
+                Map.entry("source", saved.getSource() != null ? saved.getSource() : "")
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -816,13 +843,16 @@ public class AdminRestController {
         Chapter saved = novelService.saveChapter(existingChapter);
         syncChapterFiles(saved);
         try {
+            Novel n = saved.getNovel();
             sseService.sendGlobalEvent("chapter_updated", Map.of(
                 "id", saved.getId(),
-                "novelId", saved.getNovel().getId(),
-                "title", saved.getTitle(),
+                "novelId", n.getId(),
+                "title", saved.getTitle() != null ? saved.getTitle() : "",
                 "chapterNumber", saved.getChapterNumber(),
-                "price", saved.getPrice(),
-                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : ""
+                "price", saved.getPrice() != null ? saved.getPrice() : 0,
+                "publishAt", saved.getPublishAt() != null ? saved.getPublishAt().toString() : "",
+                "novelTitle", n.getTitle() != null ? n.getTitle() : "",
+                "novelCoverUrl", n.getCoverUrl() != null ? n.getCoverUrl() : ""
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -1550,6 +1580,7 @@ public class AdminRestController {
         // Return current credentials from DB
         java.util.Map<String, String> creds = new java.util.HashMap<>();
         creds.put("googleClientId", systemSettingRepository.findById("google.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("googleClientSecret", systemSettingRepository.findById("google.client_secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailHost", systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailPort", systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailUsername", systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
@@ -1565,6 +1596,7 @@ public class AdminRestController {
     @PostMapping("/credentials")
     public ResponseEntity<?> saveCredentials(
             @RequestParam(required = false) String googleClientId,
+            @RequestParam(required = false) String googleClientSecret,
             @RequestParam(required = false) String mailHost,
             @RequestParam(required = false) String mailPort,
             @RequestParam(required = false) String mailUsername,
@@ -1584,6 +1616,7 @@ public class AdminRestController {
         }
 
         if (googleClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_id", googleClientId.trim()));
+        if (googleClientSecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_secret", googleClientSecret.trim()));
         if (mailHost != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.host", mailHost.trim()));
         if (mailPort != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.port", mailPort.trim()));
         if (mailUsername != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.username", mailUsername.trim()));

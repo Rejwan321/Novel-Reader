@@ -6,7 +6,7 @@
     <meta name="description" content="Yuki Tales admin dashboard for managing users and story series.">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='1.2')}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
@@ -569,10 +569,13 @@
                                     <label class="form-label-admin">Author</label>
                                     <input type="text" class="form-input-admin" id="story-author" required placeholder="e.g. Chugong">
                                 </div>
-                                <div class="col-md-6 d-none">
+                                <div class="col-md-6">
                                     <label class="form-label-admin">Type Format</label>
                                     <select class="form-input-admin" id="story-type">
                                         <option value="NOVEL">Novel</option>
+                                        <option value="COMIC">Comic</option>
+                                        <option value="MANGA">Manga</option>
+                                        <option value="MANHWA">Manhwa</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -590,6 +593,32 @@
                                 <div class="col-md-6">
                                     <label class="form-label-admin">Rating (out of 5)</label>
                                     <input type="number" step="0.1" max="5.0" class="form-input-admin" id="story-rating" value="4.8">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Release Year</label>
+                                    <input type="number" class="form-input-admin" id="story-year" placeholder="e.g. 2026">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Country of Origin</label>
+                                    <select class="form-input-admin" id="story-country">
+                                        <option value="Japan">Japan</option>
+                                        <option value="Korea">Korea</option>
+                                        <option value="China">China</option>
+                                        <option value="USA">USA</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Source Material</label>
+                                    <select class="form-input-admin" id="story-source">
+                                        <option value="Light Novel">Light Novel</option>
+                                        <option value="Web Novel">Web Novel</option>
+                                        <option value="Manga">Manga</option>
+                                        <option value="Original">Original</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-admin">Tags (comma-separated)</label>
+                                    <input type="text" class="form-input-admin" id="story-tags" placeholder="e.g. Magic, Male Lead, Overpowered">
                                 </div>
                                 <div class="col-12">
                                     <div class="row g-3">
@@ -732,6 +761,10 @@
                                                         th:data-rating="${n.rating}"
                                                         th:data-cover="${n.coverUrl}"
                                                         th:data-desc="${n.description}"
+                                                        th:data-year="${n.year}"
+                                                        th:data-tags="${n.tags}"
+                                                        th:data-country="${n.countryOfOrigin}"
+                                                        th:data-source="${n.source}"
                                                         title="Edit Story Details">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                                 </button>
@@ -1043,11 +1076,28 @@
 
                     <form id="form-admin-credentials">
                         <!-- Google Section -->
-                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-google text-danger me-2"></i>Google Authentication Settings</h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                            <h5 class="text-white mb-0"><i class="fab fa-google text-danger me-2"></i>Google Authentication Settings</h5>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="triggerImportGoogleJson()">
+                                    <i class="fa-solid fa-file-arrow-up me-1"></i>Upload OAuth Config JSON
+                                </button>
+                                <input type="file" id="import-google-json-file" class="d-none" accept=".json" onchange="importGoogleJson(event)">
+                            </div>
+                        </div>
                         <div class="row g-3 mb-4">
                             <div class="col-12">
                                 <label for="cred-google-client-id" class="form-label-admin">Google OAuth Client ID</label>
                                 <input type="text" class="form-input-admin" id="cred-google-client-id" placeholder="e.g. 883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com">
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-google-client-secret" class="form-label-admin">Google OAuth Client Secret</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-google-client-secret" placeholder="e.g. GOCSPX-...">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-google-client-secret')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-google-client-secret"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1399,7 +1449,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='1.1')}"></script>
+    <script th:src="@{/scripts/Script.js(v='1.2')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -1444,6 +1494,7 @@
             $.get("/api/admin/credentials")
             .done(function(data) {
                 $("#cred-google-client-id").val(data.googleClientId || "");
+                $("#cred-google-client-secret").val(data.googleClientSecret || "");
                 $("#cred-mail-host").val(data.mailHost || "");
                 $("#cred-mail-port").val(data.mailPort || "");
                 $("#cred-mail-username").val(data.mailUsername || "");
@@ -1461,6 +1512,7 @@
         window.exportCredentials = function() {
             var creds = {
                 googleClientId: $("#cred-google-client-id").val(),
+                googleClientSecret: $("#cred-google-client-secret").val(),
                 mailHost: $("#cred-mail-host").val(),
                 mailPort: $("#cred-mail-port").val(),
                 mailUsername: $("#cred-mail-username").val(),
@@ -1493,6 +1545,7 @@
                 try {
                     var creds = JSON.parse(e.target.result);
                     $("#cred-google-client-id").val(creds.googleClientId || "");
+                    $("#cred-google-client-secret").val(creds.googleClientSecret || "");
                     $("#cred-mail-host").val(creds.mailHost || "");
                     $("#cred-mail-port").val(creds.mailPort || "");
                     $("#cred-mail-username").val(creds.mailUsername || "");
@@ -1506,6 +1559,59 @@
                     showToast("Failed to parse credentials file.", "error");
                 }
                 $("#import-credentials-file").val(""); // reset
+            };
+            reader.readAsText(file);
+        };
+
+        window.toggleCredentialsVisibility = function(id) {
+            var input = $("#" + id);
+            var eye = $("#eye-" + id);
+            if (input.attr("type") === "password") {
+                input.attr("type", "text");
+                eye.removeClass("fa-eye").addClass("fa-eye-slash");
+            } else {
+                input.attr("type", "password");
+                eye.removeClass("fa-eye-slash").addClass("fa-eye");
+            }
+        };
+
+        window.triggerImportGoogleJson = function() {
+            $("#import-google-json-file").click();
+        };
+
+        window.importGoogleJson = function(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var config = JSON.parse(e.target.result);
+                    var clientId = "";
+                    var clientSecret = "";
+
+                    var details = config.web || config.installed;
+                    if (details) {
+                        clientId = details.client_id || "";
+                        clientSecret = details.client_secret || "";
+                    } else {
+                        clientId = config.client_id || config.googleClientId || "";
+                        clientSecret = config.client_secret || config.googleClientSecret || "";
+                    }
+
+                    if (clientId) {
+                        $("#cred-google-client-id").val(clientId);
+                        if (clientSecret) {
+                            $("#cred-google-client-secret").val(clientSecret);
+                        }
+                        showToast("Google OAuth Config parsed successfully! Fields populated.", "success");
+                    } else {
+                        showToast("Could not find OAuth client_id in the JSON config.", "warning");
+                    }
+                } catch (err) {
+                    showToast("Failed to parse Google OAuth configuration file.", "error");
+                }
+                $("#import-google-json-file").val(""); // reset
             };
             reader.readAsText(file);
         };
@@ -2041,6 +2147,10 @@
                     'data-rating="' + story.rating + '" ' +
                     'data-cover="' + escapeHtml(story.coverUrl) + '" ' +
                     'data-desc="' + escapeHtml(story.description) + '" ' +
+                    'data-year="' + (story.year || '') + '" ' +
+                    'data-tags="' + escapeHtml(story.tags || '') + '" ' +
+                    'data-country="' + (story.countryOfOrigin || '') + '" ' +
+                    'data-source="' + (story.source || '') + '" ' +
                     'title="Edit Story Details">' +
                     '<i class="fa-solid fa-pen-to-square"></i> Edit' +
                     '</button>' +
@@ -2114,6 +2224,10 @@
                     editBtn.attr("data-rating", story.rating);
                     editBtn.attr("data-cover", story.coverUrl);
                     editBtn.attr("data-desc", story.description);
+                    editBtn.attr("data-year", story.year || "");
+                    editBtn.attr("data-tags", story.tags || "");
+                    editBtn.attr("data-country", story.countryOfOrigin || "");
+                    editBtn.attr("data-source", story.source || "");
                     
                     row.find(".btn-delete-story").attr("data-title", story.title);
                     row.find(".btn-manage-chapters").attr("data-title", story.title);
@@ -2176,6 +2290,9 @@
                         type: "DELETE",
                         success: function(res) {
                             showToast(res.message || "Story deleted successfully.");
+                            if (typeof handleStoryDeletedRealtime === 'function') {
+                                handleStoryDeletedRealtime(storyId);
+                            }
                         },
                         error: function(err) {
                             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete story.";
@@ -2384,6 +2501,10 @@
                 var rating = btn.data("rating");
                 var cover = btn.data("cover");
                 var desc = btn.data("desc");
+                var year = btn.data("year");
+                var tags = btn.data("tags");
+                var country = btn.data("country");
+                var source = btn.data("source");
 
                 // Populate form fields
                 $("#story-title").val(title);
@@ -2394,6 +2515,10 @@
                 $("#story-rating").val(rating);
                 $("#story-cover").val(cover);
                 $("#story-desc").val(desc);
+                $("#story-year").val(year || "");
+                $("#story-tags").val(tags || "");
+                $("#story-country").val(country || "Japan");
+                $("#story-source").val(source || "Light Novel");
 
                 // Show cover image preview
                 if (cover) {
@@ -2453,6 +2578,10 @@
                 var rating = $("#story-rating").val();
                 var coverUrl = $("#story-cover").val();
                 var description = $("#story-desc").val();
+                var year = $("#story-year").val();
+                var countryOfOrigin = $("#story-country").val();
+                var source = $("#story-source").val();
+                var tags = $("#story-tags").val();
 
                 var endpoint = mode === "edit" ? "/api/admin/stories/edit/" + editId : "/api/admin/stories/add";
                 var successMsg = mode === "edit" ? "Story details updated successfully!" : "Story added successfully!";
@@ -2465,7 +2594,11 @@
                     genre: genre,
                     rating: rating,
                     coverUrl: coverUrl,
-                    description: description
+                    description: description,
+                    year: year,
+                    countryOfOrigin: countryOfOrigin,
+                    source: source,
+                    tags: tags
                 })
                 .done(function(res) {
                     showToast(successMsg);
@@ -3527,6 +3660,7 @@
             $("#form-admin-credentials").submit(function(e) {
                 e.preventDefault();
                 var googleClientId = $("#cred-google-client-id").val();
+                var googleClientSecret = $("#cred-google-client-secret").val();
                 var mailHost = $("#cred-mail-host").val();
                 var mailPort = $("#cred-mail-port").val();
                 var mailUsername = $("#cred-mail-username").val();
@@ -3537,6 +3671,7 @@
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
+                    googleClientSecret: googleClientSecret,
                     mailHost: mailHost,
                     mailPort: mailPort,
                     mailUsername: mailUsername,

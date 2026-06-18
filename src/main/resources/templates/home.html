@@ -7,7 +7,7 @@
     <meta name="keywords" content="novels, comics, reading, bookshelf, webtoon, manga, reader">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='1.2')}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/toggler.css}"/>
 
@@ -94,10 +94,10 @@
         </section>
 
         <!-- Upcoming Release Schedule Section -->
-        <section class="release-schedule-section mb-5" th:if="${upcomingChapters != null and !upcomingChapters.isEmpty()}">
+        <section class="release-schedule-section mb-5" th:style="${upcomingChapters == null or upcomingChapters.isEmpty() ? 'display: none;' : ''}">
             <h4 class="mb-4 text-white font-family-outfit"><i class="fa-solid fa-calendar-days text-violet me-2"></i>Upcoming Release Schedule</h4>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                <div class="col" th:each="chap : ${upcomingChapters}">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="upcoming-schedule-grid">
+                <div class="col" th:each="chap : ${upcomingChapters}" th:id="'upcoming-chapter-col-' + ${chap.id}">
                     <div class="card bg-dark border-0 p-3 rounded-3 h-100 d-flex flex-row align-items-center gap-3 release-schedule-card" style="border: 1px solid rgba(255, 255, 255, 0.03) !important; transition: all 0.3s ease;">
                         <img th:src="${chap.novel.coverUrl}" class="rounded" style="width: 60px; height: 80px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                         <div class="flex-grow-1 min-width-0">
@@ -126,7 +126,7 @@
 
             <div id="latest_releases_table">
                 <!-- Free Chapter Releases (Chapter 1) -->
-                <div th:each="novel : ${novels}" th:if="${!novel.chapters.isEmpty()}" class="latest_chapter_release latest_free_release">
+                <div th:each="novel : ${novels}" th:if="${!novel.chapters.isEmpty()}" class="latest_chapter_release latest_free_release" th:id="'recent-release-free-' + ${novel.id}">
                     <div class="latest_chapter_release_left">
                         <img class="latest_chapter_cover" th:src="${novel.coverUrl}">
                     </div>
@@ -143,7 +143,7 @@
                 </div>
 
                 <!-- Emerald Chapter Releases (Chapter 2) -->
-                <div th:each="novel : ${novels}" th:if="${novel.chapters.size() > 1}" class="latest_chapter_release latest_emerald_release" style="display: none;">
+                <div th:each="novel : ${novels}" th:if="${novel.chapters.size() > 1}" class="latest_chapter_release latest_emerald_release" style="display: none;" th:id="'recent-release-emerald-' + ${novel.id}">
                     <div class="latest_chapter_release_left">
                         <img class="latest_chapter_cover" th:src="${novel.coverUrl}">
                     </div>
@@ -380,6 +380,137 @@
                     hero.fadeOut(300);
                 }
             };
+
+            function formatPublishDate(dateStr) {
+                if (!dateStr) return "";
+                const d = new Date(dateStr);
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const month = months[d.getMonth()];
+                const day = String(d.getDate()).padStart(2, '0');
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                const strTime = String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+                return month + ' ' + day + ', ' + strTime;
+            }
+
+            function handleChapterEvent(chapter) {
+                // Check if the chapter is scheduled (publishAt is in the future)
+                let isScheduled = false;
+                if (chapter.publishAt) {
+                    const pubDate = new Date(chapter.publishAt);
+                    if (pubDate > new Date()) {
+                        isScheduled = true;
+                    }
+                }
+
+                if (isScheduled) {
+                    // Add or update in Upcoming Release Schedule
+                    let item = $("#upcoming-chapter-col-" + chapter.id);
+                    const formattedDate = formatPublishDate(chapter.publishAt);
+                    const cardHtml = '<div class="card bg-dark border-0 p-3 rounded-3 h-100 d-flex flex-row align-items-center gap-3 release-schedule-card" style="border: 1px solid rgba(255, 255, 255, 0.03) !important; transition: all 0.3s ease;">' +
+                        '<img src="' + escapeHtml(chapter.novelCoverUrl) + '" class="rounded" style="width: 60px; height: 80px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">' +
+                        '<div class="flex-grow-1 min-width-0">' +
+                        '<h6 class="mb-1 text-white fw-bold line-clamp-1 font-family-outfit">' +
+                        '<a href="/novel/' + chapter.novelId + '" class="text-decoration-none text-white hover-violet">' + escapeHtml(chapter.novelTitle) + '</a>' +
+                        '</h6>' +
+                        '<p class="text-muted small mb-2 text-truncate">Chapter ' + chapter.chapterNumber + ': ' + escapeHtml(chapter.title) + '</p>' +
+                        '<div class="d-flex align-items-center gap-2">' +
+                        '<span class="badge bg-warning text-dark small"><i class="fa-solid fa-clock me-1"></i>Premier</span>' +
+                        '<span class="text-gray-accent small font-weight-500">' + formattedDate + '</span>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>';
+
+                    if (item.length) {
+                        item.html(cardHtml);
+                    } else {
+                        let colHtml = '<div class="col" id="upcoming-chapter-col-' + chapter.id + '">' + cardHtml + '</div>';
+                        let grid = $("#upcoming-schedule-grid");
+                        if (!grid.length) {
+                            const sectionHtml = '<section class="release-schedule-section mb-5">' +
+                                '<h4 class="mb-4 text-white font-family-outfit"><i class="fa-solid fa-calendar-days text-violet me-2"></i>Upcoming Release Schedule</h4>' +
+                                '<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="upcoming-schedule-grid">' +
+                                '</div>' +
+                                '</section>';
+                            $(".carousels-section").after(sectionHtml);
+                            grid = $("#upcoming-schedule-grid");
+                        }
+                        grid.prepend(colHtml);
+                        $(".release-schedule-section").show();
+                    }
+                } else {
+                    // Remove from Upcoming if present
+                    $("#upcoming-chapter-col-" + chapter.id).fadeOut(300, function() {
+                        $(this).remove();
+                        if ($("#upcoming-schedule-grid").children().length === 0) {
+                            $(".release-schedule-section").fadeOut(300);
+                        }
+                    });
+
+                    // Add/update to "Most Recently Updated" list
+                    const isFree = (chapter.chapterNumber === 1 || chapter.price === 0 || !chapter.price);
+                    const isEmerald = (chapter.chapterNumber === 2 || chapter.price > 0);
+
+                    if (isFree) {
+                        updateRecentReleaseElement('free', chapter);
+                    }
+                    if (isEmerald) {
+                        updateRecentReleaseElement('emerald', chapter);
+                    }
+                }
+            }
+
+            function updateRecentReleaseElement(type, chapter) {
+                const idPrefix = 'recent-release-' + type + '-';
+                const classSuffix = 'latest_' + type + '_release';
+                let element = $("#" + idPrefix + chapter.novelId);
+
+                const isFreeTabActive = $("#free-chapters-btn").hasClass("chap_active");
+                const displayStyle = ((type === 'free' && isFreeTabActive) || (type === 'emerald' && !isFreeTabActive)) ? 'flex' : 'none';
+
+                const innerHtml = '<div class="latest_chapter_release_left">' +
+                    '<img class="latest_chapter_cover" src="' + escapeHtml(chapter.novelCoverUrl) + '">' +
+                    '</div>' +
+                    '<div class="latest_chapter_release_right">' +
+                    '<h6 class="latest_release_novel_title">' +
+                    '<a href="/novel/' + chapter.novelId + '">' + escapeHtml(chapter.novelTitle) + '</a>' +
+                    '</h6>' +
+                    '<p class="latest_release_chapter_title">' +
+                    '<a href="/novel/' + chapter.novelId + '/read/' + chapter.chapterNumber + '">Chapter ' + chapter.chapterNumber + ': ' + escapeHtml(chapter.title) + '</a>' +
+                    '</p>' +
+                    '<p class="latest_release_time_ago">Just now</p>' +
+                    '</div>';
+
+                if (element.length) {
+                    element.html(innerHtml);
+                } else {
+                    const newEl = '<div class="latest_chapter_release ' + classSuffix + '" id="' + idPrefix + chapter.novelId + '" style="display: ' + displayStyle + ';">' +
+                        innerHtml +
+                        '</div>';
+                    $("#latest_releases_table").prepend(newEl);
+                }
+            }
+
+            window.handleChapterCreatedRealtime = function(chapter) {
+                handleChapterEvent(chapter);
+            };
+
+            window.handleChapterUpdatedRealtime = function(chapter) {
+                handleChapterEvent(chapter);
+            };
+
+            window.handleChapterDeletedRealtime = function(chapterId, novelId) {
+                $("#upcoming-chapter-col-" + chapterId).fadeOut(300, function() {
+                    $(this).remove();
+                    if ($("#upcoming-schedule-grid").children().length === 0) {
+                        $(".release-schedule-section").fadeOut(300);
+                    }
+                });
+            };
+            };
         </script>
 
         <!-- Discovery Filter Section -->
@@ -462,6 +593,6 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='1.1')}"></script>
+    <script th:src="@{/scripts/Script.js(v='1.2')}"></script>
 </body>
 </html>

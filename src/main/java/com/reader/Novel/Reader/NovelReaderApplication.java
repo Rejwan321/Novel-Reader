@@ -26,6 +26,15 @@ public class NovelReaderApplication implements CommandLineRunner {
     @Autowired
     private UserRepository userRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.timezone:Asia/Kolkata}")
+    private String appTimezone;
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(appTimezone));
+        System.out.println("Application timezone set to: " + java.util.TimeZone.getDefault().getID());
+    }
+
     public static void main(String[] args) {
         System.setProperty("spring.h2.console.enabled", "true");
         SpringApplication.run(NovelReaderApplication.class, args);
