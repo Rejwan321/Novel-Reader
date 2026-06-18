@@ -47,6 +47,12 @@ public class NovelService {
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.CommentRepository commentRepository;
+
+    @Autowired
+    private com.reader.Novel.Reader.repository.NotificationRepository notificationRepository;
+
     public boolean isSecuredMode() {
         return systemSettingRepository.findById("secured_mode")
                 .map(setting -> "true".equalsIgnoreCase(setting.getSettingValue()))
@@ -158,6 +164,8 @@ public class NovelService {
 
     @Transactional
     public void deleteChapter(Long id) {
+        commentRepository.deleteByChapterId(id);
+        notificationRepository.deleteByChapterId(id);
         purchaseRepository.deleteByChapterId(id);
         chapterRepository.deleteById(id);
     }
@@ -166,8 +174,11 @@ public class NovelService {
     public void deleteNovel(Long id) {
         bookmarkRepository.deleteByNovelId(id);
         ratingRepository.deleteByNovelId(id);
+        notificationRepository.deleteByNovelId(id);
         List<Chapter> chapters = chapterRepository.findByNovelIdOrderByChapterNumberAsc(id);
         for (Chapter chapter : chapters) {
+            commentRepository.deleteByChapterId(chapter.getId());
+            notificationRepository.deleteByChapterId(chapter.getId());
             purchaseRepository.deleteByChapterId(chapter.getId());
         }
         novelRepository.deleteById(id);
