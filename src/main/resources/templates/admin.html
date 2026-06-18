@@ -569,15 +569,7 @@
                                     <label class="form-label-admin">Author</label>
                                     <input type="text" class="form-input-admin" id="story-author" required placeholder="e.g. Chugong">
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-admin">Type Format</label>
-                                    <select class="form-input-admin" id="story-type">
-                                        <option value="NOVEL">Novel</option>
-                                        <option value="COMIC">Comic</option>
-                                        <option value="MANGA">Manga</option>
-                                        <option value="MANHWA">Manhwa</option>
-                                    </select>
-                                </div>
+                                <input type="hidden" id="story-type" value="NOVEL">
                                 <div class="col-md-6">
                                     <label class="form-label-admin">Status</label>
                                     <select class="form-input-admin" id="story-status">
@@ -604,7 +596,6 @@
                                         <option value="Japan">Japan</option>
                                         <option value="Korea">Korea</option>
                                         <option value="China">China</option>
-                                        <option value="USA">USA</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -612,7 +603,6 @@
                                     <select class="form-input-admin" id="story-source">
                                         <option value="Light Novel">Light Novel</option>
                                         <option value="Web Novel">Web Novel</option>
-                                        <option value="Manga">Manga</option>
                                         <option value="Original">Original</option>
                                     </select>
                                 </div>
