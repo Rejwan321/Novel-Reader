@@ -2249,6 +2249,9 @@
                         type: "DELETE",
                         success: function(res) {
                             showToast(res.message || "Story deleted successfully.");
+                            if (typeof handleStoryDeletedRealtime === 'function') {
+                                handleStoryDeletedRealtime(storyId);
+                            }
                         },
                         error: function(err) {
                             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete story.";
