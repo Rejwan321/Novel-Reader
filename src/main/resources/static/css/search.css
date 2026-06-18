@@ -342,8 +342,19 @@
 /* Adjustments on Mobile devices */
 @media (max-width: 576px) {
     .search-filter-panel-menu {
-        width: calc(100vw - 30px);
-        right: -15px;
+        width: 310px !important;
+        right: -10px !important;
+        left: auto !important;
+        max-height: 420px !important;
+        overflow-y: auto !important;
+        scrollbar-width: thin;
+    }
+    .search-filter-panel-menu::-webkit-scrollbar {
+        width: 4px;
+    }
+    .search-filter-panel-menu::-webkit-scrollbar-thumb {
+        background-color: rgba(94, 99, 182, 0.4);
+        border-radius: 2px;
     }
     .search-bar.active {
         width: calc(100% - 10px) !important;
