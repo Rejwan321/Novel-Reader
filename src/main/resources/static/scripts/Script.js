@@ -33,6 +33,7 @@ $(document).ready(function() {
     }
 
     // Initialize search filter UI states from hidden inputs on page load
+    var initType = $("#search-filter-type-val").val() || "ALL";
     var initGenre = $("#search-filter-genre-val").val() || "ALL";
     var initYear = $("#search-filter-year-val").val() || "ALL";
     var initSort = $("#search-filter-sort-val").val() || "POPULARITY";
@@ -51,7 +52,7 @@ $(document).ready(function() {
 
     // Expand search bar on page load if search or any filters are active
     var currentSearchVal = $(".search-bar .input").val();
-    var hasActiveFilters = (initGenre !== "ALL" || initYear !== "ALL" || initSort !== "POPULARITY" || initStatus !== "ALL" || initTags !== "ALL" || initCountry !== "ALL" || initSource !== "ALL");
+    var hasActiveFilters = (initType !== "ALL" || initGenre !== "ALL" || initYear !== "ALL" || initSort !== "POPULARITY" || initStatus !== "ALL" || initTags !== "ALL" || initCountry !== "ALL" || initSource !== "ALL");
     if ((currentSearchVal && currentSearchVal.trim() !== "") || hasActiveFilters) {
         $(".search-bar, .search-bar .input").addClass("active");
         $("#search-filter-icon-btn").show();
@@ -169,12 +170,12 @@ $(document).ready(function() {
     });
 
     // Apply filters button handler
-    $(document).on("click", "#btn-apply-filters", function() {
+    $("#btn-apply-filters").click(function() {
         $("#search-form").submit();
     });
 
     // Reset filters button handler
-    $(document).on("click", "#btn-clear-filters", function() {
+    $("#btn-clear-filters").click(function() {
         // Reset selectors
         $("#search-filter-genre-select").val("ALL");
         $("#search-filter-year-select").val("ALL");
@@ -185,6 +186,7 @@ $(document).ready(function() {
         $("#search-filter-source-select").val("ALL");
 
         // Reset hidden inputs
+        $("#search-filter-type-val").val("ALL");
         $("#search-filter-genre-val").val("ALL");
         $("#search-filter-year-val").val("ALL");
         $("#search-filter-sort-val").val("POPULARITY");
@@ -514,8 +516,8 @@ $(document).ready(function() {
 
 
     // --- Client-Side Snappy Filter Engine (Home Page) ---
-    var selectedType = "ALL";
-    var selectedGenre = "ALL";
+    var selectedType = $("#search-filter-type-val").val() || "ALL";
+    var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
 
     function applyFilters() {
         var cards = $(".book-card-col");
@@ -553,6 +555,7 @@ $(document).ready(function() {
         $(".filter-tab").removeClass("active");
         $(this).addClass("active");
         selectedType = $(this).data("type");
+        $("#search-filter-type-val").val(selectedType); // Sync hidden input
         applyFilters();
     });
 
@@ -612,6 +615,8 @@ $(document).ready(function() {
         $(".genre-chip").removeClass("active");
         $(this).addClass("active");
         selectedGenre = $(this).data("genre");
+        $("#search-filter-genre-val").val(selectedGenre); // Sync hidden input
+        $("#search-filter-genre-select").val(selectedGenre); // Sync dropdown
         applyFilters();
     });
 
