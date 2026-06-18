@@ -50,10 +50,9 @@ $(document).ready(function() {
     $("#search-filter-country-select").val(initCountry);
     $("#search-filter-source-select").val(initSource);
 
-    // Expand search bar on page load if search or any filters are active
+    // Expand search bar on page load if search is active
     var currentSearchVal = $(".search-bar .input").val();
-    var hasActiveFilters = (initType !== "ALL" || initGenre !== "ALL" || initYear !== "ALL" || initSort !== "POPULARITY" || initStatus !== "ALL" || initTags !== "ALL" || initCountry !== "ALL" || initSource !== "ALL");
-    if ((currentSearchVal && currentSearchVal.trim() !== "") || hasActiveFilters) {
+    if (currentSearchVal && currentSearchVal.trim() !== "") {
         $(".search-bar, .search-bar .input").addClass("active");
         $("#search-filter-icon-btn").show();
     }
