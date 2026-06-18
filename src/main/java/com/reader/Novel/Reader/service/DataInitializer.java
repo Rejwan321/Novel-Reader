@@ -72,6 +72,14 @@ public class DataInitializer implements CommandLineRunner {
 
             // Delete legacy users
             jdbcTemplate.execute("DELETE FROM reader_internal WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
+
+            // One-time database migration to default existing users to subscribed to updates
+            java.util.List<java.util.Map<String, Object>> migrationSetting = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'email_migration_done'");
+            if (migrationSetting.isEmpty()) {
+                jdbcTemplate.execute("UPDATE reader_internal SET subscribed_to_updates = TRUE");
+                jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('email_migration_done', 'true')");
+                System.out.println("One-time email subscription migration executed successfully.");
+            }
             
             // Ensure owner exists with ID 0
             java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");
@@ -114,13 +122,17 @@ public class DataInitializer implements CommandLineRunner {
         Long adminId = 1L;
         Long editorId = 1L;
 
-        if (novelRepository.count() == 0) {
-            // 1. Seed Novel 1: Solo Leveling: Ragnarok
+        // 1. Seed Novel 1: Solo Leveling: Ragnarok
+        if (!novelRepository.findAll().stream().anyMatch(n -> "Solo Leveling: Ragnarok".equalsIgnoreCase(n.getTitle()))) {
             Novel novel1 = new Novel(null, "Solo Leveling: Ragnarok", "Chugong",
                 "In the shadows of the dimensional rift, a new crisis emerges. Sung Suho, the son of the Shadow Monarch Sung Jinwoo, has lived a normal life until the seals separating the dimensions began to crack. Now, the gates reopen, and the shadows call upon their new lord.",
                 "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
                 "NOVEL", "Action, Fantasy, System", 4.9, "ONGOING");
             novel1.setCreatorId(editorId);
+            novel1.setYear(2024);
+            novel1.setTags("Reincarnation, Overpowered, System, Male Lead, Magic");
+            novel1.setCountryOfOrigin("Korea");
+            novel1.setSource("Web Novel");
             novel1 = novelRepository.save(novel1);
 
             Chapter n1c1 = new Chapter(null, novel1, "The Son of the Monarch", 1.0,
@@ -139,13 +151,19 @@ public class DataInitializer implements CommandLineRunner {
                 "<p>\"Beru-junior, I need to go to class. Can we do this shadow business later?\" Suho asked. But before the little ant could answer, a loud explosion rocked the entire building. The windows shattered, and a terrifying roar echoed from the streets below. A gate had opened right in the middle of Seoul.</p>",
                 20);
             chapterRepository.save(n1c2);
+        }
 
-            // 2. Seed Novel 2: The Apothecary Diaries
+        // 2. Seed Novel 2: The Apothecary Diaries
+        if (!novelRepository.findAll().stream().anyMatch(n -> "The Apothecary Diaries".equalsIgnoreCase(n.getTitle()))) {
             Novel novel2 = new Novel(null, "The Apothecary Diaries", "Natsu Hyūga",
                 "Maomao, a young woman trained in the art of herbal medicine, is kidnapped and forced to work as a lowly maid in the Emperor's inner palace. Using her sharp wit and extensive knowledge of poisons, she solves mysteries in the court while trying to keep a low profile.",
                 "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
                 "NOVEL", "Mystery, Historical, Drama", 4.8, "COMPLETED");
             novel2.setCreatorId(editorId);
+            novel2.setYear(2023);
+            novel2.setTags("Female Lead, Smart Lead, Historical, Comedy");
+            novel2.setCountryOfOrigin("Japan");
+            novel2.setSource("Light Novel");
             novel2 = novelRepository.save(novel2);
 
             Chapter n2c1 = new Chapter(null, novel2, "The Poison Test", 1.0,
@@ -161,13 +179,19 @@ public class DataInitializer implements CommandLineRunner {
                 "<p>Jinshi stared at her, half-impressed and half-horrified. \"You really are a strange girl. From today on, you are the Consort's official food taster.\"</p>",
                 20);
             chapterRepository.save(n2c2);
+        }
 
-            // 3. Seed Comic 1: Tower of God
+        // 3. Seed Comic 1: Tower of God
+        if (!novelRepository.findAll().stream().anyMatch(n -> "Tower of God".equalsIgnoreCase(n.getTitle()))) {
             Novel comic1 = new Novel(null, "Tower of God", "SIU",
                 "What do you desire? Money and wealth? Honor and pride? Authority and power? Revenge? Or something that transcends them all? Whatever you desire is here, at the top of the Tower. Join Bam on his climb to find his friend Rachel.",
                 "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
                 "COMIC", "Fantasy, Adventure, Action", 4.7, "ONGOING");
             comic1.setCreatorId(adminId);
+            comic1.setYear(2020);
+            comic1.setTags("Tower Climbing, Male Lead, Magic, Overpowered");
+            comic1.setCountryOfOrigin("Korea");
+            comic1.setSource("Original");
             comic1 = novelRepository.save(comic1);
 
             String comicImages1 = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800," +
@@ -183,13 +207,19 @@ public class DataInitializer implements CommandLineRunner {
                                   "https://images.unsplash.com/photo-1563089145-599997674d42?w=800";
             Chapter c1c2 = new Chapter(null, comic1, "The Black March Awakens", 2.0, comicImages2);
             chapterRepository.save(c1c2);
+        }
 
-            // 4. Seed Comic 2: Cyberpunk: Edgerunners
+        // 4. Seed Comic 2: Cyberpunk: Edgerunners
+        if (!novelRepository.findAll().stream().anyMatch(n -> "Cyberpunk: Edgerunners".equalsIgnoreCase(n.getTitle()))) {
             Novel comic2 = new Novel(null, "Cyberpunk: Edgerunners", "Studio Trigger",
                 "In a dystopia riddled with corruption and cybernetic implants, a talented but street-smart kid named David Martinez loses everything in a drive-by shooting. With nothing left to lose, he chooses to stay alive by becoming an edgerunner—a mercenary outlaw.",
                 "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80",
                 "COMIC", "Sci-Fi, Cyberpunk, Action", 4.9, "COMPLETED");
             comic2.setCreatorId(adminId);
+            comic2.setYear(2022);
+            comic2.setTags("Cybernetics, Tragedy, Sci-Fi");
+            comic2.setCountryOfOrigin("Japan");
+            comic2.setSource("Original");
             comic2 = novelRepository.save(comic2);
 
             String comicImages3 = "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800," +
@@ -203,13 +233,19 @@ public class DataInitializer implements CommandLineRunner {
                                   "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800";
             Chapter c2c2 = new Chapter(null, comic2, "Over the Edge", 2.0, comicImages4);
             chapterRepository.save(c2c2);
+        }
 
-            // 5. Seed Manga 1: Frieren: Beyond Journey's End
+        // 5. Seed Manga 1: Frieren: Beyond Journey's End
+        if (!novelRepository.findAll().stream().anyMatch(n -> "Frieren: Beyond Journey's End".equalsIgnoreCase(n.getTitle()))) {
             Novel manga1 = new Novel(null, "Frieren: Beyond Journey's End", "Kanehito Yamada",
                 "Elf mage Frieren and her fellow adventurers have defeated the Demon King and brought peace to the land. But Frieren, who lives much longer than humans, must watch her former companions age and pass away. Hoping to better understand humans, she embarks on a new journey.",
                 "https://images.unsplash.com/photo-1601987177651-8edfe6c20009?w=600&auto=format&fit=crop&q=80",
                 "MANGA", "Fantasy, Adventure, Slice of Life", 4.9, "ONGOING");
             manga1.setCreatorId(editorId);
+            manga1.setYear(2023);
+            manga1.setTags("Elves, Magic, Slow Pace, Female Lead");
+            manga1.setCountryOfOrigin("Japan");
+            manga1.setSource("Manga");
             manga1 = novelRepository.save(manga1);
 
             String mangaImages1 = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800," +
@@ -223,14 +259,20 @@ public class DataInitializer implements CommandLineRunner {
                                   "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=800";
             Chapter m1c2 = new Chapter(null, manga1, "Priest Heiter's Request", 2.0, mangaImages2);
             chapterRepository.save(m1c2);
+        }
 
+        // 6. Seed Manga 2: Super Cub (with local cover URL path with accent characters)
+        if (!novelRepository.findAll().stream().anyMatch(n -> "Super Cub".equalsIgnoreCase(n.getTitle()))) {
             if (isLocalDesktop) {
-                // 6. Seed Manga 2: Super Cub (with local cover URL path with accent characters)
                 Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
                     "it's about cub.",
                     "Zero Ts\u00fa.jpg",
                     "MANGA", "Slice of Life", 4.8, "ONGOING");
                 manga2.setCreatorId(editorId);
+                manga2.setYear(2021);
+                manga2.setTags("Motorbikes, School Life, Female Lead");
+                manga2.setCountryOfOrigin("Japan");
+                manga2.setSource("Light Novel");
                 manga2 = novelRepository.save(manga2);
 
                 Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
@@ -240,27 +282,19 @@ public class DataInitializer implements CommandLineRunner {
                 chapterRepository.save(m2c2);
             }
         } else {
-            if (isLocalDesktop) {
-                // Check if Super Cub exists in existing database, if not seed it
-                if (!novelRepository.findAll().stream().anyMatch(n -> "Super Cub".equalsIgnoreCase(n.getTitle()))) {
-                    Novel manga2 = new Novel(null, "Super Cub", "Tone Koken",
-                        "it's about cub.",
-                        "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
-                        "MANGA", "Slice of Life", 4.8, "ONGOING");
-                    manga2.setCreatorId(editorId);
-                    manga2 = novelRepository.save(manga2);
-
-                    Chapter m2c1 = new Chapter(null, manga2, "xyz", 1.0, "xyz");
-                    chapterRepository.save(m2c1);
-
-                    Chapter m2c2 = new Chapter(null, manga2, "paid", 2.0, "it's paid content.", 10);
-                    chapterRepository.save(m2c2);
-                }
+            // Ensure type is MANGA for existing Super Cub
+            Novel superCub = novelRepository.findAll().stream()
+                .filter(n -> "Super Cub".equalsIgnoreCase(n.getTitle()))
+                .findFirst().orElse(null);
+            if (superCub != null && !"MANGA".equals(superCub.getType())) {
+                superCub.setType("MANGA");
+                novelRepository.save(superCub);
             }
         }
 
         // Migrate any existing novels that have null creatorId
         for (Novel n : novelRepository.findAll()) {
+            boolean updated = false;
             if (n.getCreatorId() == null) {
                 String title = n.getTitle();
                 if (title != null && (title.contains("Solo Leveling") || title.contains("Apothecary") || title.contains("Frieren") || title.contains("Super Cub"))) {
@@ -268,6 +302,31 @@ public class DataInitializer implements CommandLineRunner {
                 } else {
                     n.setCreatorId(adminId);
                 }
+                updated = true;
+            }
+
+            // Populate filter fields if null
+            String title = n.getTitle();
+            if (title != null) {
+                if (title.contains("Solo Leveling")) {
+                    if (n.getYear() == null) { n.setYear(2024); updated = true; }
+                    if (n.getTags() == null) { n.setTags("Reincarnation, Overpowered, System, Magic, Male Lead"); updated = true; }
+                    if (n.getCountryOfOrigin() == null) { n.setCountryOfOrigin("Korea"); updated = true; }
+                    if (n.getSource() == null) { n.setSource("Web Novel"); updated = true; }
+                } else if (title.contains("Apothecary")) {
+                    if (n.getYear() == null) { n.setYear(2023); updated = true; }
+                    if (n.getTags() == null) { n.setTags("Female Lead, Smart Lead, Historical, Comedy"); updated = true; }
+                    if (n.getCountryOfOrigin() == null) { n.setCountryOfOrigin("Japan"); updated = true; }
+                    if (n.getSource() == null) { n.setSource("Light Novel"); updated = true; }
+                } else if (title.contains("Super Cub")) {
+                    if (n.getYear() == null) { n.setYear(2021); updated = true; }
+                    if (n.getTags() == null) { n.setTags("Motorbikes, School Life, Female Lead"); updated = true; }
+                    if (n.getCountryOfOrigin() == null) { n.setCountryOfOrigin("Japan"); updated = true; }
+                    if (n.getSource() == null) { n.setSource("Light Novel"); updated = true; }
+                }
+            }
+
+            if (updated) {
                 novelRepository.save(n);
             }
         }
