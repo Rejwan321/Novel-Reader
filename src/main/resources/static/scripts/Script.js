@@ -151,13 +151,13 @@ $(document).ready(function() {
             filterPanel.addClass("d-none");
             if (searchBar.hasClass("active")) {
                 var input = searchBar.find(".input");
-                var hasActiveFilters = ($("#search-filter-genre-val").val() !== "ALL" || 
-                                        $("#search-filter-year-val").val() !== "ALL" || 
-                                        $("#search-filter-sort-val").val() !== "POPULARITY" || 
-                                        $("#search-filter-status-val").val() !== "ALL" || 
-                                        $("#search-filter-tags-val").val() !== "ALL" || 
-                                        $("#search-filter-country-val").val() !== "ALL" || 
-                                        $("#search-filter-source-val").val() !== "ALL");
+                var hasActiveFilters = (($("#search-filter-genre-val").val() || "ALL") !== "ALL" || 
+                                        ($("#search-filter-year-val").val() || "ALL") !== "ALL" || 
+                                        ($("#search-filter-sort-val").val() || "POPULARITY") !== "POPULARITY" || 
+                                        ($("#search-filter-status-val").val() || "ALL") !== "ALL" || 
+                                        ($("#search-filter-tags-val").val() || "ALL") !== "ALL" || 
+                                        ($("#search-filter-country-val").val() || "ALL") !== "ALL" || 
+                                        ($("#search-filter-source-val").val() || "ALL") !== "ALL");
                 var hasSearchVal = input.val() && input.val().trim().length > 0;
                 
                 if (!hasActiveFilters && !hasSearchVal) {
