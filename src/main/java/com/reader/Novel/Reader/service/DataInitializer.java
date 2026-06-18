@@ -297,6 +297,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // Migrate any existing novels that have null creatorId
         for (Novel n : novelRepository.findAll()) {
+            boolean updated = false;
             if (n.getCreatorId() == null) {
                 String title = n.getTitle();
                 if (title != null && (title.contains("Solo Leveling") || title.contains("Apothecary") || title.contains("Frieren") || title.contains("Super Cub"))) {
@@ -304,6 +305,31 @@ public class DataInitializer implements CommandLineRunner {
                 } else {
                     n.setCreatorId(adminId);
                 }
+                updated = true;
+            }
+
+            // Populate filter fields if null
+            String title = n.getTitle();
+            if (title != null) {
+                if (title.contains("Solo Leveling")) {
+                    if (n.getYear() == null) { n.setYear(2024); updated = true; }
+                    if (n.getTags() == null) { n.setTags("Reincarnation, Overpowered, System, Magic, Male Lead"); updated = true; }
+                    if (n.getCountryOfOrigin() == null) { n.setCountryOfOrigin("Korea"); updated = true; }
+                    if (n.getSource() == null) { n.setSource("Web Novel"); updated = true; }
+                } else if (title.contains("Apothecary")) {
+                    if (n.getYear() == null) { n.setYear(2023); updated = true; }
+                    if (n.getTags() == null) { n.setTags("Female Lead, Smart Lead, Historical, Comedy"); updated = true; }
+                    if (n.getCountryOfOrigin() == null) { n.setCountryOfOrigin("Japan"); updated = true; }
+                    if (n.getSource() == null) { n.setSource("Light Novel"); updated = true; }
+                } else if (title.contains("Super Cub")) {
+                    if (n.getYear() == null) { n.setYear(2021); updated = true; }
+                    if (n.getTags() == null) { n.setTags("Motorbikes, School Life, Female Lead"); updated = true; }
+                    if (n.getCountryOfOrigin() == null) { n.setCountryOfOrigin("Japan"); updated = true; }
+                    if (n.getSource() == null) { n.setSource("Light Novel"); updated = true; }
+                }
+            }
+
+            if (updated) {
                 novelRepository.save(n);
             }
         }
