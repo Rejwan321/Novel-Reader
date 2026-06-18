@@ -331,6 +331,25 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
+        // Seed 50 dummy novels for testing
+        long currentCount = novelRepository.count();
+        if (currentCount < 20) {
+            System.out.println("Seeding 50 dummy novels...");
+            for (int i = 1; i <= 50; i++) {
+                Novel dummy = new Novel(null, "Test Novel " + i, "Author " + i,
+                    "This is a dummy description for test novel " + i + " used for UI testing and verifying vertical scrolling layouts.",
+                    "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
+                    "NOVEL", "Action, Adventure, Fantasy", 4.0 + (i % 10) * 0.1, "ONGOING");
+                dummy.setCreatorId(editorId);
+                dummy.setYear(2020 + (i % 7));
+                dummy.setTags("Magic, Male Lead, Reincarnation");
+                dummy.setCountryOfOrigin(i % 2 == 0 ? "Japan" : "Korea");
+                dummy.setSource(i % 2 == 0 ? "Light Novel" : "Web Novel");
+                novelRepository.save(dummy);
+            }
+            System.out.println("50 dummy novels seeded successfully!");
+        }
+
         sanitizeLocalCoverUrls();
     }
 
