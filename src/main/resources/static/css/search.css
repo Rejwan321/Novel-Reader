@@ -360,7 +360,10 @@
 /* Filter Panel Action Buttons */
 .btn-apply-filters {
     background: linear-gradient(135deg, #6855e0 0%, #4834d4 100%);
-    border: none;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    line-height: 1.5;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(104, 85, 224, 0.3);
     transition: all 0.3s ease;
@@ -378,6 +381,9 @@
 .btn-clear-filters {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    line-height: 1.5;
     border-radius: 6px;
     transition: all 0.3s ease;
 }
