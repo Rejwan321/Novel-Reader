@@ -44,6 +44,7 @@
                     <div class="search-bar">
                         <form id="search-form" action="/" method="get">
                             <input type="text" name="search" class="input" placeholder="Search..." th:value="${param.search}">
+                            <input type="hidden" name="type" id="search-filter-type-val" th:value="${param.type != null ? param.type : 'ALL'}">
                             <input type="hidden" name="genre" id="search-filter-genre-val" th:value="${param.genre != null ? param.genre : 'ALL'}">
                             <input type="hidden" name="year" id="search-filter-year-val" th:value="${param.year != null ? param.year : 'ALL'}">
                             <input type="hidden" name="sort" id="search-filter-sort-val" th:value="${param.sort != null ? param.sort : 'POPULARITY'}">
@@ -144,7 +145,6 @@
                                         <option value="Korea">Korea</option>
                                         <option value="Japan">Japan</option>
                                         <option value="China">China</option>
-                                        <option value="USA">USA</option>
                                     </select>
                                 </div>
                             </div>
@@ -156,10 +156,22 @@
                                         <option value="ALL">Any</option>
                                         <option value="Light Novel">Light Novel</option>
                                         <option value="Web Novel">Web Novel</option>
-                                        <option value="Manga">Manga</option>
                                         <option value="Original">Original</option>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+                        <!-- Action Buttons Row -->
+                        <div class="row g-2 mt-2">
+                            <div class="col-6 col-md-4">
+                                <button type="button" id="btn-apply-filters" class="btn btn-apply-filters w-100 text-white fw-bold d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-filter"></i> Apply
+                                </button>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <button type="button" id="btn-clear-filters" class="btn btn-clear-filters w-100 text-white fw-semibold d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
                             </div>
                         </div>
                     </div>
