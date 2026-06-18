@@ -340,22 +340,18 @@
 }
 
 /* Adjustments on Mobile devices */
-@media (max-width: 576px) {
+@media (max-width: 991.98px) {
+    .search-wrapper {
+        position: static !important;
+    }
     .search-filter-panel-menu {
-        width: 310px !important;
-        right: -10px !important;
-        left: auto !important;
-        max-height: 420px !important;
-        overflow-y: auto !important;
-        scrollbar-width: thin;
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+        top: 100% !important;
     }
-    .search-filter-panel-menu::-webkit-scrollbar {
-        width: 4px;
-    }
-    .search-filter-panel-menu::-webkit-scrollbar-thumb {
-        background-color: rgba(94, 99, 182, 0.4);
-        border-radius: 2px;
-    }
+}
+@media (max-width: 576px) {
     .search-bar.active {
         width: calc(100% - 10px) !important;
     }
