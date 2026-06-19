@@ -154,60 +154,6 @@ public class AuthRestController {
         }
     }
 
-    @PostMapping("/facebook")
-    public ResponseEntity<?> facebookLogin(@RequestParam("token") String token, HttpSession session) {
-        if (token == null || token.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Token is required."));
-        }
-
-        try {
-            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-            String url = "https://graph.facebook.com/me?fields=id,name,email&access_token=" + token;
-            
-            @SuppressWarnings("unchecked")
-            Map<String, Object> payload = restTemplate.getForObject(url, Map.class);
-            
-            if (payload == null || payload.containsKey("error")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Facebook token."));
-            }
-
-            String email = (String) payload.get("email");
-            String name = (String) payload.get("name");
-            String id = (String) payload.get("id");
-
-            // If Facebook doesn't return email (e.g. user registered with phone), fallback to id-based email
-            if (email == null || email.trim().isEmpty()) {
-                email = id + "@facebook.com";
-            }
-
-            // Check if user already exists
-            Optional<User> userOpt = userService.getUserByEmail(email);
-            User user;
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
-            } else {
-                // First time sign-in, register automatically!
-                String randomPassword = java.util.UUID.randomUUID().toString();
-                String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(randomPassword);
-                
-                user = new User(null, name != null ? name : "Facebook User", email, hashedPassword, "READER");
-            }
-
-            user.setLoginType("FACEBOOK");
-            user.setSubscribedToUpdates(true);
-            user.setUpdatesEmail(email);
-            userService.addUser(user);
-
-            // Log user in
-            session.setAttribute("user", user);
-            return ResponseEntity.ok(Map.of("success", true, "user", user));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Facebook authentication error: " + e.getMessage()));
-        }
-    }
-
     @PostMapping("/subscribe-updates")
     public ResponseEntity<?> subscribeUpdates(@RequestParam String email, HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
