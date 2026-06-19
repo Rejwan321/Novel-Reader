@@ -58,36 +58,50 @@
             <form class="form-con" id="signup-form-modal" action="#">
                 <h1>Create Account</h1>
                 
-                <!-- Google Sign-in standard button (signup view) -->
-                <div class="g_id_signin"
-                     data-type="standard"
-                     data-shape="pill"
-                     data-theme="outline"
-                     data-text="signup_with"
-                     data-size="large"
-                     data-logo_alignment="left"
-                     style="margin: 15px auto;">
+                <!-- Initial Signup Fields Container -->
+                <div id="signup-initial-fields" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                    <!-- Google Sign-in standard button (signup view) -->
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="pill"
+                         data-theme="outline"
+                         data-text="signup_with"
+                         data-size="large"
+                         data-logo_alignment="left"
+                         style="margin: 15px auto;">
+                    </div>
+                    
+                    <span>or use your email for registration</span>
+                    <input class="insert" id="signup-name" type="text" placeholder="Name">
+                    <input class="insert" id="signup-email" type="email" placeholder="Email">
+                    <div class="password-wrapper" style="width: 100%;">
+                        <input class="insert" id="signup-password" type="password" placeholder="Password" style="margin: 0; padding-right: 40px;">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-password', this)" tabindex="-1">
+                            <!-- Eye icon -->
+                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <!-- Eye-slash icon -->
+                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="log-button" type="submit" id="btn-request-signup-code" style="margin-top: 15px;">Sign Up</button>
                 </div>
-                
-                <span>or use your email for registration</span>
-                <input class="insert" id="signup-name" type="text" placeholder="Name" required>
-                <input class="insert" id="signup-email" type="email" placeholder="Email" required>
-                <div class="password-wrapper">
-                    <input class="insert" id="signup-password" type="password" placeholder="Password" required style="margin: 0; padding-right: 40px;">
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-password', this)" tabindex="-1">
-                        <!-- Eye icon -->
-                        <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <!-- Eye-slash icon -->
-                        <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                        </svg>
-                    </button>
+
+                <!-- Verification Fields Container -->
+                <div id="signup-verification-fields" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                    <span style="font-size: 14px; color: #a9a9b9; margin-bottom: 15px; text-align: center;">
+                        A 6-digit verification code has been sent to your email. Please enter it below.
+                    </span>
+                    <input class="insert" id="signup-verification-code" type="text" placeholder="Verification Code" maxlength="6" style="text-align: center; font-size: 18px; letter-spacing: 2px;">
+                    <button class="log-button" type="submit" id="btn-submit-signup" style="margin-top: 15px;">Verify &amp; Create Account</button>
+                    <button class="btn btn-link text-violet mt-2" type="button" id="btn-resend-signup-code" style="font-size: 13px; text-decoration: none; background: none; border: none; padding: 0;">Resend Code</button>
                 </div>
-                <button class="log-button" type="submit">Sign Up</button>
+
                 <div class="mobile-auth-toggle">
                     <span>Already have an account? <a href="#" id="to-login-btn">Login</a></span>
                 </div>

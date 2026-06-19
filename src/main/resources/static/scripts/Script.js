@@ -380,15 +380,18 @@ $(document).ready(function() {
     // --- Sign In / Sign Up Modal Controls ---
     $(".log").click(function() {
         document.body.classList.toggle("show-popup");
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     $(".blur-bg-overlay").click(function() {
         document.body.classList.remove("show-popup");
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             document.body.classList.remove("show-popup");
+            if (typeof resetSignupForm === 'function') resetSignupForm();
         }
     });
 
@@ -396,11 +399,13 @@ $(document).ready(function() {
     $('#signup, #to-signup-btn').click(function(e) {
         e.preventDefault();
         $('#container').addClass('right-panel-active');
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     $('#login, #to-login-btn').click(function(e) {
         e.preventDefault();
         $('#container').removeClass('right-panel-active');
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     // --- AJAX Authentication Operations ---
@@ -428,30 +433,73 @@ $(document).ready(function() {
     });
 
     // Signup Form Submit
-    $("#signup-form-modal").submit(function(e) {
-        e.preventDefault();
+    function requestVerificationCode() {
         var name = $("#signup-name").val();
         var email = $("#signup-email").val();
         var password = $("#signup-password").val();
         var user_type = $("#signup-role").val() || "READER";
 
-        $.post("/api/auth/signup", {
+        if (!name || !name.trim() || !email || !email.trim() || !password) {
+            showToast("All fields are required.", "warning");
+            return;
+        }
+
+        showToast("Sending verification code...", "info");
+
+        $.post("/api/auth/signup/send-code", {
             name: name,
             email: email,
             password: password,
             user_type: user_type
         })
         .done(function(res) {
-            showToast("Account created successfully! Logged in as " + res.user.name);
-            setTimeout(function() {
-                location.reload();
-            }, 1200);
+            showToast(res.message, "success");
+            $("#signup-initial-fields").fadeOut(200, function() {
+                $("#signup-verification-fields").fadeIn(200);
+            });
         })
         .fail(function(err) {
-            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Signup failed. Try again.";
+            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to send code.";
             showToast(msg, "error");
         });
+    }
+
+    $("#signup-form-modal").submit(function(e) {
+        e.preventDefault();
+        
+        if ($("#signup-verification-fields").is(":visible")) {
+            var code = $("#signup-verification-code").val();
+            if (!code || !code.trim()) {
+                showToast("Please enter the verification code.", "warning");
+                return;
+            }
+            
+            $.post("/api/auth/signup/verify", { code: code.trim() })
+            .done(function(res) {
+                showToast("Account created successfully! Logged in as " + res.user.name, "success");
+                setTimeout(function() {
+                    location.reload();
+                }, 1200);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Verification failed.";
+                showToast(msg, "error");
+            });
+        } else {
+            requestVerificationCode();
+        }
     });
+
+    $("#btn-resend-signup-code").click(function(e) {
+        e.preventDefault();
+        requestVerificationCode();
+    });
+
+    function resetSignupForm() {
+        $("#signup-verification-fields").hide();
+        $("#signup-initial-fields").show();
+        $("#signup-verification-code").val("");
+    }
     // Logout Click
     $(document).on("click", "#btn-logout", function(e) {
         e.preventDefault();
