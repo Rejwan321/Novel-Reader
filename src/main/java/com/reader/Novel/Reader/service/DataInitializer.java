@@ -111,13 +111,13 @@ public class DataInitializer implements CommandLineRunner {
             java.util.List<java.util.Map<String, Object>> editorsList = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'editor'");
             String editorHashed = PasswordUtils.hashPassword("editor");
             if (editorsList.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (3, 'System Editor', 'editor', ?, 'EDITOR', 100)", editorHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (3, 'System Translator', 'editor', ?, 'EDITOR', 100)", editorHashed);
             } else {
                 Long currentEditorId = ((Number) editorsList.get(0).get("id")).longValue();
                 if (currentEditorId != 3L) {
                     jdbcTemplate.update("UPDATE reader_internal SET id = 3 WHERE id = ?", currentEditorId);
                 }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Editor', password = ? WHERE email = 'editor'", editorHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', password = ? WHERE email = 'editor'", editorHashed);
             }
 
             // Create the view named READER for H2 console users

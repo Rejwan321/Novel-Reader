@@ -54,7 +54,13 @@
                     <span class="badge" th:classappend="${novel.type == 'NOVEL' ? 'bg-violet' : 'bg-coral'}" th:text="${novel.type}">NOVEL</span>
                 </div>
                 <h1 class="display-6 fw-bold text-white mb-2" th:text="${novel.title}">Solo Leveling: Ragnarok</h1>
-                <p class="fs-5 text-gray mb-3">By <span class="fw-bold text-white-50" th:text="${novel.author}">Chugong</span></p>
+                <p class="fs-5 text-gray mb-3">
+                    By <span class="fw-bold text-white-50" th:text="${novel.author}">Chugong</span>
+                    <th:block th:if="${creator != null and creator.name != null}">
+                        <span class="text-muted mx-2">|</span>
+                        Translated by <span class="fw-bold text-white-50" th:text="${creator.name}">System Translator</span>
+                    </th:block>
+                </p>
                 
                 <!-- Novel Stats Block -->
                 <div class="novel_stats">
