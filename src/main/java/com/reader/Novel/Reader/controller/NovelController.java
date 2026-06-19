@@ -5,6 +5,7 @@ import com.reader.Novel.Reader.model.Chapter;
 import com.reader.Novel.Reader.model.User;
 import com.reader.Novel.Reader.model.Rating;
 import com.reader.Novel.Reader.service.NovelService;
+import com.reader.Novel.Reader.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,6 +20,9 @@ public class NovelController {
     @Autowired
     private NovelService novelService;
 
+    @Autowired
+    private UserService userService;
+
     @GetMapping("/")
     public String home(
             @org.springframework.web.bind.annotation.RequestParam(required = false) String search,
@@ -30,6 +34,7 @@ public class NovelController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String tags,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String country,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String source,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String editor,
             HttpSession session, Model model) {
         
         if (novelService.isSecuredMode()) {
@@ -98,6 +103,17 @@ public class NovelController {
                 .toList();
         }
 
+        if (editor != null && !editor.trim().isEmpty() && !"ALL".equalsIgnoreCase(editor)) {
+            try {
+                Long editorId = Long.parseLong(editor.trim());
+                novels = novels.stream()
+                    .filter(n -> n.getCreatorId() != null && n.getCreatorId().equals(editorId))
+                    .toList();
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
+        }
+
         // Sorting
         String activeSort = (sort != null && !sort.trim().isEmpty()) ? sort.trim() : "POPULARITY";
         if ("TITLE".equalsIgnoreCase(activeSort)) {
@@ -153,6 +169,10 @@ public class NovelController {
             }
         }
         
+        List<User> editors = userService.getUsers().stream()
+            .filter(u -> "EDITOR".equals(u.getUser_type()))
+            .toList();
+        model.addAttribute("editors", editors);
         model.addAttribute("novels", novels);
         model.addAttribute("upcomingChapters", novelService.getUpcomingChapters());
         return "home";
@@ -171,6 +191,12 @@ public class NovelController {
             return "redirect:/";
         }
         model.addAttribute("novel", novel);
+        
+        User creator = null;
+        if (novel.getCreatorId() != null) {
+            creator = userService.getUserById(novel.getCreatorId());
+        }
+        model.addAttribute("creator", creator);
         model.addAttribute("chapters", novelService.getVisibleChapters(novel, loggedInUser));
 
         boolean isBookmarked = false;

@@ -52,6 +52,7 @@
                             <input type="hidden" name="tags" id="search-filter-tags-val" th:value="${param.tags != null ? param.tags : 'ALL'}">
                             <input type="hidden" name="country" id="search-filter-country-val" th:value="${param.country != null ? param.country : 'ALL'}">
                             <input type="hidden" name="source" id="search-filter-source-val" th:value="${param.source != null ? param.source : 'ALL'}">
+                            <input type="hidden" name="editor" id="search-filter-editor-val" th:value="${param.editor != null ? param.editor : 'ALL'}">
                         </form>
                         <i class="fa-solid fa-sliders" id="search-filter-icon-btn" title="Filter Options" style="display: none;"></i>
                         <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
@@ -116,6 +117,8 @@
                                         <option value="ALL">Any</option>
                                         <option value="ONGOING">Ongoing</option>
                                         <option value="COMPLETED">Completed</option>
+                                        <option value="HIATUS">Hiatus</option>
+                                        <option value="CANCELLED">Cancelled</option>
                                     </select>
                                 </div>
                             </div>
@@ -160,6 +163,16 @@
                                     </select>
                                 </div>
                             </div>
+                            <!-- Editor -->
+                            <div class="col-6 col-md-4">
+                                <div class="search-filter-group">
+                                    <span class="search-filter-label">Translator</span>
+                                    <select id="search-filter-editor-select" class="search-filter-select">
+                                        <option value="ALL">Any</option>
+                                        <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.name}"></option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <!-- Action Buttons Row -->
                         <div class="row g-2 mt-2">
@@ -193,7 +206,7 @@
                             <i class="fa fa-user-circle me-1"></i>
                             <span th:if="${session.user.user_type == 'OWNER'}">Owner Panel</span>
                             <span th:if="${session.user.user_type == 'ADMIN'}">Admin Panel</span>
-                            <span th:if="${session.user.user_type == 'EDITOR'}">Editor Panel</span>
+                            <span th:if="${session.user.user_type == 'EDITOR'}">Translator Panel</span>
                             <span th:if="${session.user.user_type == 'PROOFREADER'}">Proofreader Panel</span>
                             <span th:if="${session.user.user_type != 'OWNER' and session.user.user_type != 'ADMIN' and session.user.user_type != 'EDITOR' and session.user.user_type != 'PROOFREADER'}" th:text="${session.user.name}">Reader</span>
                             <!-- Unread badge dot -->
@@ -207,7 +220,7 @@
                                 <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Admin Panel</a>
                             </li>
                             <li th:if="${session.user.user_type == 'EDITOR'}">
-                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Editor Panel</a>
+                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Translator Panel</a>
                             </li>
                             <li th:if="${session.user.user_type == 'PROOFREADER'}">
                                 <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Proofreader Panel</a>

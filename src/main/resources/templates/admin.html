@@ -6,7 +6,7 @@
     <meta name="description" content="Yuki Tales admin dashboard for managing users and story series.">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='1.3')}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='1.4')}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
@@ -18,7 +18,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <title th:text="${userRole == 'OWNER' ? 'Owner Panel - Yuki Tales' : (userRole == 'ADMIN' ? 'Admin Panel - Yuki Tales' : 'Editor Panel - Yuki Tales')}">Dashboard - Yuki Tales</title>
+    <title th:text="${userRole == 'OWNER' ? 'Owner Panel - Yuki Tales' : (userRole == 'ADMIN' ? 'Admin Panel - Yuki Tales' : 'Translator Panel - Yuki Tales')}">Dashboard - Yuki Tales</title>
 
     <style>
         .admin-sidebar {
@@ -279,6 +279,14 @@
             background-color: #9b59b6;
             box-shadow: 0 0 8px #9b59b6;
         }
+        .status-dot-hiatus {
+            background-color: #f39c12;
+            box-shadow: 0 0 8px #f39c12;
+        }
+        .status-dot-cancelled {
+            background-color: #e74c3c;
+            box-shadow: 0 0 8px #e74c3c;
+        }
         @keyframes pulse-dot {
             0% { transform: scale(0.95); opacity: 0.8; }
             50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 12px #2ecc71; }
@@ -471,7 +479,7 @@
                 <div class="admin-sidebar">
                     <h2 class="h5 fw-bold text-white mb-4">
                         <i class="fa-solid fa-crown text-warning me-2"></i>
-                        <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : (userRole == 'EDITOR' ? 'Editor Panel' : 'Proofreader Panel'))}">Dashboard</span>
+                        <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : (userRole == 'EDITOR' ? 'Translator Panel' : 'Proofreader Panel'))}">Dashboard</span>
                     </h2>
                     
                     <button class="admin-tab-btn active" id="tab-stories-btn" onclick="switchTab('stories')">
@@ -575,6 +583,8 @@
                                     <select class="form-input-admin" id="story-status">
                                         <option value="ONGOING">Ongoing</option>
                                         <option value="COMPLETED">Completed</option>
+                                        <option value="HIATUS">Hiatus</option>
+                                        <option value="CANCELLED">Cancelled</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 position-relative">
@@ -607,9 +617,15 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label-admin">Tags (comma-separated)</label>
-                                    <input type="text" class="form-input-admin" id="story-tags" placeholder="e.g. Magic, Male Lead, Overpowered">
-                                </div>
+                                     <label class="form-label-admin">Tags (comma-separated)</label>
+                                     <input type="text" class="form-input-admin" id="story-tags" placeholder="e.g. Magic, Male Lead, Overpowered">
+                                 </div>
+                                 <div class="col-md-6">
+                                     <label class="form-label-admin">Translator / Creator</label>
+                                     <select class="form-input-admin" id="story-creator-id">
+                                         <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.name}"></option>
+                                     </select>
+                                 </div>
                                 <div class="col-12">
                                     <div class="row g-3">
                                         <div class="col-md-8">
@@ -727,10 +743,10 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="status-indicator">
-                                                <span th:class="'status-dot ' + ${n.status == 'ONGOING' ? 'status-dot-ongoing' : 'status-dot-completed'}"></span>
-                                                <span th:text="${n.status == 'ONGOING' ? 'Ongoing' : 'Completed'}">Ongoing</span>
-                                            </span>
+                                             <span class="status-indicator">
+                                                 <span th:class="'status-dot ' + ${n.status == 'ONGOING' ? 'status-dot-ongoing' : (n.status == 'COMPLETED' ? 'status-dot-completed' : (n.status == 'HIATUS' ? 'status-dot-hiatus' : 'status-dot-cancelled'))}"></span>
+                                                 <span th:text="${n.status == 'ONGOING' ? 'Ongoing' : (n.status == 'COMPLETED' ? 'Completed' : (n.status == 'HIATUS' ? 'Hiatus' : 'Cancelled'))}">Ongoing</span>
+                                             </span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
@@ -755,6 +771,7 @@
                                                         th:data-tags="${n.tags}"
                                                         th:data-country="${n.countryOfOrigin}"
                                                         th:data-source="${n.source}"
+                                                        th:data-creator-id="${n.creatorId}"
                                                         title="Edit Story Details">
                                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                                 </button>
@@ -833,7 +850,7 @@
                                     <label class="form-label-admin">Role Assignment</label>
                                     <select class="form-input-admin" id="user-role-assign">
                                         <option value="READER">Standard Reader</option>
-                                        <option value="EDITOR">Story Editor</option>
+                                        <option value="EDITOR">Translator</option>
                                         <option value="ADMIN">Administrator</option>
                                         <option value="PROOFREADER">Proof reader</option>
                                     </select>
@@ -870,7 +887,7 @@
                                                 th:data-id="${u.id}"
                                                 th:data-original="${u.user_type}">
                                             <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
-                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Editor</option>
+                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Translator</option>
                                             <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
                                             <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
                                         </select>
@@ -1209,7 +1226,7 @@
                         <div>
                             <h2 class="h4 fw-bold text-white mb-1">
                                 <i class="fa-solid fa-chart-line text-success me-2"></i>
-                                <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : 'Editor Panel')}">Analytics Dashboard</span>
+                                <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : 'Translator Panel')}">Analytics Dashboard</span>
                             </h2>
                             <p class="text-muted small mb-0">Platform-wide sales performance and user economic insights.</p>
                         </div>
@@ -1289,7 +1306,7 @@
                             <!-- Editor Revenue Share (Circle Chart / Doughnut) -->
                             <div class="col-lg-4 col-12 pe-0">
                                 <div class="card bg-dark border-0 p-4 rounded-3 h-100" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
-                                    <h4 class="h6 fw-bold text-white mb-3">Editor Revenue Share (Circle Chart)</h4>
+                                    <h4 class="h6 fw-bold text-white mb-3">Translator Revenue Share (Circle Chart)</h4>
                                     <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
                                         <canvas id="chart-editor-share"></canvas>
                                     </div>
@@ -1361,7 +1378,7 @@
                                 <select id="excel-role-filter" class="form-select-admin" style="padding: 4px 8px; font-size: 0.8rem;">
                                     <option value="">All Roles</option>
                                     <option value="READER">Reader</option>
-                                    <option value="EDITOR">Editor</option>
+                                    <option value="EDITOR">Translator</option>
                                     <option value="ADMIN">Admin</option>
                                     <option value="PROOFREADER">Proof reader</option>
                                 </select>
@@ -1439,7 +1456,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='1.2')}"></script>
+    <script th:src="@{/scripts/Script.js(v='1.6')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -1918,7 +1935,7 @@
                 } else {
                     selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
                         '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
-                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Editor</option>' +
+                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Translator</option>' +
                         '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
                         '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
                         '</select>';
@@ -2095,8 +2112,18 @@
                 else if (story.type === 'MANGA') typeClass = 'badge-format-manga';
                 else if (story.type === 'MANHWA') typeClass = 'badge-format-manhwa';
 
-                var statusDotClass = (story.status === 'ONGOING' ? 'status-dot-ongoing' : 'status-dot-completed');
-                var statusText = (story.status === 'ONGOING' ? 'Ongoing' : 'Completed');
+                 var statusDotClass = 'status-dot-cancelled';
+                 var statusText = 'Cancelled';
+                 if (story.status === 'ONGOING') {
+                     statusDotClass = 'status-dot-ongoing';
+                     statusText = 'Ongoing';
+                 } else if (story.status === 'COMPLETED') {
+                     statusDotClass = 'status-dot-completed';
+                     statusText = 'Completed';
+                 } else if (story.status === 'HIATUS') {
+                     statusDotClass = 'status-dot-hiatus';
+                     statusText = 'Hiatus';
+                 }
 
                 var trHtml = '<tr id="admin-story-row-' + story.id + '" style="display: none;">' +
                     '<td><img src="' + (story.coverUrl || '') + '" alt="Cover" class="cover-img-premium"></td>' +
@@ -2141,6 +2168,7 @@
                     'data-tags="' + escapeHtml(story.tags || '') + '" ' +
                     'data-country="' + (story.countryOfOrigin || '') + '" ' +
                     'data-source="' + (story.source || '') + '" ' +
+                    'data-creator-id="' + (story.creatorId || 0) + '" ' +
                     'title="Edit Story Details">' +
                     '<i class="fa-solid fa-pen-to-square"></i> Edit' +
                     '</button>' +
@@ -2199,11 +2227,22 @@
                             genresContainer.append($('<span class="genre-pill">').text(g.trim()));
                         }
                     });
-                    
-                    var dot = row.find(".status-dot");
-                    dot.removeClass("status-dot-ongoing status-dot-completed")
-                       .addClass(story.status === 'ONGOING' ? 'status-dot-ongoing' : 'status-dot-completed');
-                    row.find(".story-row-status-text").text(story.status === 'ONGOING' ? 'Ongoing' : 'Completed');
+                     var dot = row.find(".status-dot");
+                     dot.removeClass("status-dot-ongoing status-dot-completed status-dot-hiatus status-dot-cancelled");
+                     var statusDotClass = 'status-dot-cancelled';
+                     var statusText = 'Cancelled';
+                     if (story.status === 'ONGOING') {
+                         statusDotClass = 'status-dot-ongoing';
+                         statusText = 'Ongoing';
+                     } else if (story.status === 'COMPLETED') {
+                         statusDotClass = 'status-dot-completed';
+                         statusText = 'Completed';
+                     } else if (story.status === 'HIATUS') {
+                         statusDotClass = 'status-dot-hiatus';
+                         statusText = 'Hiatus';
+                     }
+                     dot.addClass(statusDotClass);
+                     row.find(".story-row-status-text").text(statusText);
                     
                     var editBtn = row.find(".btn-edit-story-meta");
                     editBtn.attr("data-title", story.title);
@@ -2218,6 +2257,7 @@
                     editBtn.attr("data-tags", story.tags || "");
                     editBtn.attr("data-country", story.countryOfOrigin || "");
                     editBtn.attr("data-source", story.source || "");
+                    editBtn.attr("data-creator-id", story.creatorId || 0);
                     
                     row.find(".btn-delete-story").attr("data-title", story.title);
                     row.find(".btn-manage-chapters").attr("data-title", story.title);
@@ -2495,6 +2535,7 @@
                 var tags = btn.data("tags");
                 var country = btn.data("country");
                 var source = btn.data("source");
+                var creatorId = btn.data("creator-id") || "";
 
                 // Populate form fields
                 $("#story-title").val(title);
@@ -2509,6 +2550,7 @@
                 $("#story-tags").val(tags || "");
                 $("#story-country").val(country || "Japan");
                 $("#story-source").val(source || "Light Novel");
+                $("#story-creator-id").val(creatorId);
 
                 // Show cover image preview
                 if (cover) {
@@ -2547,6 +2589,7 @@
 
                 $("#cover-preview-container").addClass("d-none");
                 $("#cover-preview-img").attr("src", "");
+                $("#story-creator-id").prop("selectedIndex", 0);
 
                 $("#title-add-story").html('<i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Story Series');
                 $("#btn-submit-story").html('<i class="fa fa-plus me-2"></i>Add Story').addClass("btn-premium").removeClass("btn-warning text-dark");
@@ -2572,6 +2615,7 @@
                 var countryOfOrigin = $("#story-country").val();
                 var source = $("#story-source").val();
                 var tags = $("#story-tags").val();
+                var creatorId = $("#story-creator-id").val();
 
                 var endpoint = mode === "edit" ? "/api/admin/stories/edit/" + editId : "/api/admin/stories/add";
                 var successMsg = mode === "edit" ? "Story details updated successfully!" : "Story added successfully!";
@@ -2588,7 +2632,8 @@
                     year: year,
                     countryOfOrigin: countryOfOrigin,
                     source: source,
-                    tags: tags
+                    tags: tags,
+                    creatorId: creatorId
                 })
                 .done(function(res) {
                     showToast(successMsg);
@@ -3339,7 +3384,9 @@
                     tr.append($("<td>").text(u.userId));
                     tr.append($("<td class='text-white fw-bold'>").text(u.name));
                     tr.append($("<td>").text(u.email));
-                    tr.append($("<td>").html(`<span class="badge ${badgeClass}">${u.role}</span>`));
+                    let displayRole = u.role;
+                    if (displayRole === "EDITOR") displayRole = "TRANSLATOR";
+                    tr.append($("<td>").html(`<span class="badge ${badgeClass}">${displayRole}</span>`));
                     tr.append($("<td class='text-white'>").text(u.balance));
                     tr.append($("<td class='excel-text-success'>").text(u.totalSpent + " ❄️"));
                     tr.append($("<td class='text-info'>").text(u.chaptersUnlocked));
@@ -3753,3 +3800,6 @@
     </script>
 </body>
 </html>
+
+
+

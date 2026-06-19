@@ -59,6 +59,11 @@ public class AdminController {
         model.addAttribute("featuredNovelId", novelService.getFeaturedNovelId());
         model.addAttribute("userRole", role);
 
+        java.util.List<User> editors = userService.getUsers().stream()
+            .filter(u -> "EDITOR".equals(u.getUser_type()))
+            .toList();
+        model.addAttribute("editors", editors);
+
         return "admin";
     }
 }
