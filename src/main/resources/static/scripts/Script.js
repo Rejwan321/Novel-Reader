@@ -41,6 +41,7 @@ $(document).ready(function() {
     var initTags = $("#search-filter-tags-val").val() || "ALL";
     var initCountry = $("#search-filter-country-val").val() || "ALL";
     var initSource = $("#search-filter-source-val").val() || "ALL";
+    var initEditorSelection = $("#search-filter-editor-val").val() || "ALL";
 
     $("#search-filter-genre-select").val(initGenre);
     $("#search-filter-year-select").val(initYear);
@@ -49,11 +50,11 @@ $(document).ready(function() {
     $("#search-filter-tags-select").val(initTags);
     $("#search-filter-country-select").val(initCountry);
     $("#search-filter-source-select").val(initSource);
+    $("#search-filter-editor-select").val(initEditorSelection);
 
-    // Expand search bar on page load if search or any filters are active
+    // Expand search bar on page load if search is active
     var currentSearchVal = $(".search-bar .input").val();
-    var hasActiveFilters = (initType !== "ALL" || initGenre !== "ALL" || initYear !== "ALL" || initSort !== "POPULARITY" || initStatus !== "ALL" || initTags !== "ALL" || initCountry !== "ALL" || initSource !== "ALL");
-    if ((currentSearchVal && currentSearchVal.trim() !== "") || hasActiveFilters) {
+    if (currentSearchVal && currentSearchVal.trim() !== "") {
         $(".search-bar, .search-bar .input").addClass("active");
         $("#search-filter-icon-btn").show();
     }
@@ -131,6 +132,12 @@ $(document).ready(function() {
         triggerSearchQuery();
     });
 
+    // Filter Editor Selection
+    $("#search-filter-editor-select").change(function() {
+        $("#search-filter-editor-val").val($(this).val());
+        triggerSearchQuery();
+    });
+
     function triggerSearchQuery() {
         var query = $(".search-bar .input").val().trim();
         if (query.length >= 1) {
@@ -151,16 +158,9 @@ $(document).ready(function() {
             filterPanel.addClass("d-none");
             if (searchBar.hasClass("active")) {
                 var input = searchBar.find(".input");
-                var hasActiveFilters = ($("#search-filter-genre-val").val() !== "ALL" || 
-                                        $("#search-filter-year-val").val() !== "ALL" || 
-                                        $("#search-filter-sort-val").val() !== "POPULARITY" || 
-                                        $("#search-filter-status-val").val() !== "ALL" || 
-                                        $("#search-filter-tags-val").val() !== "ALL" || 
-                                        $("#search-filter-country-val").val() !== "ALL" || 
-                                        $("#search-filter-source-val").val() !== "ALL");
                 var hasSearchVal = input.val() && input.val().trim().length > 0;
                 
-                if (!hasActiveFilters && !hasSearchVal) {
+                if (!hasSearchVal) {
                     searchBar.removeClass("active");
                     input.removeClass("active");
                     $("#search-filter-icon-btn").hide();
@@ -184,6 +184,7 @@ $(document).ready(function() {
         $("#search-filter-tags-select").val("ALL");
         $("#search-filter-country-select").val("ALL");
         $("#search-filter-source-select").val("ALL");
+        $("#search-filter-editor-select").val("ALL");
 
         // Reset hidden inputs
         $("#search-filter-type-val").val("ALL");
@@ -194,6 +195,7 @@ $(document).ready(function() {
         $("#search-filter-tags-val").val("ALL");
         $("#search-filter-country-val").val("ALL");
         $("#search-filter-source-val").val("ALL");
+        $("#search-filter-editor-val").val("ALL");
 
         // Submit form
         $("#search-form").submit();
@@ -218,6 +220,7 @@ $(document).ready(function() {
                 var searchTags = $("#search-filter-tags-val").val() || "ALL";
                 var searchCountry = $("#search-filter-country-val").val() || "ALL";
                 var searchSource = $("#search-filter-source-val").val() || "ALL";
+                var searchEditor = $("#search-filter-editor-val").val() || "ALL";
                 $.getJSON("/api/novels", { 
                     search: query,
                     genre: searchGenre,
@@ -226,7 +229,8 @@ $(document).ready(function() {
                     status: searchStatus,
                     tags: searchTags,
                     country: searchCountry,
-                    source: searchSource
+                    source: searchSource,
+                    editor: searchEditor
                 }, function(data) {
                     dropdown.empty();
                     

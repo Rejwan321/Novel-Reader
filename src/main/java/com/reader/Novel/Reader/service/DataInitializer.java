@@ -91,7 +91,7 @@ public class DataInitializer implements CommandLineRunner {
                 if (currentOwnerId != 0L) {
                     jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = ?", currentOwnerId);
                 }
-                jdbcTemplate.update("UPDATE reader_internal SET password = ? WHERE email = 'sakura'", sakuraHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', password = ? WHERE email = 'sakura'", sakuraHashed);
             }
 
             // Ensure admin exists with ID 1
@@ -104,7 +104,20 @@ public class DataInitializer implements CommandLineRunner {
                 if (currentAdminId != 1L) {
                     jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = ?", currentAdminId);
                 }
-                jdbcTemplate.update("UPDATE reader_internal SET password = ? WHERE email = 'admin'", adminHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'ADMIN', name = 'System Admin', password = ? WHERE email = 'admin'", adminHashed);
+            }
+
+            // Ensure editor exists with ID 3
+            java.util.List<java.util.Map<String, Object>> editorsList = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'editor'");
+            String editorHashed = PasswordUtils.hashPassword("editor");
+            if (editorsList.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (3, 'System Editor', 'editor', ?, 'EDITOR', 100)", editorHashed);
+            } else {
+                Long currentEditorId = ((Number) editorsList.get(0).get("id")).longValue();
+                if (currentEditorId != 3L) {
+                    jdbcTemplate.update("UPDATE reader_internal SET id = 3 WHERE id = ?", currentEditorId);
+                }
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Editor', password = ? WHERE email = 'editor'", editorHashed);
             }
 
             // Create the view named READER for H2 console users
@@ -120,7 +133,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         Long adminId = 1L;
-        Long editorId = 1L;
+        Long editorId = 3L;
 
         // 1. Seed Novel 1: Solo Leveling: Ragnarok
         if (!novelRepository.findAll().stream().anyMatch(n -> "Solo Leveling: Ragnarok".equalsIgnoreCase(n.getTitle()))) {
@@ -133,6 +146,7 @@ public class DataInitializer implements CommandLineRunner {
             novel1.setTags("Reincarnation, Overpowered, System, Male Lead, Magic");
             novel1.setCountryOfOrigin("Korea");
             novel1.setSource("Web Novel");
+            novel1.setEditorSelection(true);
             novel1 = novelRepository.save(novel1);
 
             Chapter n1c1 = new Chapter(null, novel1, "The Son of the Monarch", 1.0,
@@ -164,6 +178,7 @@ public class DataInitializer implements CommandLineRunner {
             novel2.setTags("Female Lead, Smart Lead, Historical, Comedy");
             novel2.setCountryOfOrigin("Japan");
             novel2.setSource("Light Novel");
+            novel2.setEditorSelection(true);
             novel2 = novelRepository.save(novel2);
 
             Chapter n2c1 = new Chapter(null, novel2, "The Poison Test", 1.0,
@@ -187,7 +202,7 @@ public class DataInitializer implements CommandLineRunner {
                 "What do you desire? Money and wealth? Honor and pride? Authority and power? Revenge? Or something that transcends them all? Whatever you desire is here, at the top of the Tower. Join Bam on his climb to find his friend Rachel.",
                 "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
                 "COMIC", "Fantasy, Adventure, Action", 4.7, "ONGOING");
-            comic1.setCreatorId(adminId);
+            comic1.setCreatorId(editorId);
             comic1.setYear(2020);
             comic1.setTags("Tower Climbing, Male Lead, Magic, Overpowered");
             comic1.setCountryOfOrigin("Korea");
@@ -215,7 +230,7 @@ public class DataInitializer implements CommandLineRunner {
                 "In a dystopia riddled with corruption and cybernetic implants, a talented but street-smart kid named David Martinez loses everything in a drive-by shooting. With nothing left to lose, he chooses to stay alive by becoming an edgerunner—a mercenary outlaw.",
                 "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80",
                 "COMIC", "Sci-Fi, Cyberpunk, Action", 4.9, "COMPLETED");
-            comic2.setCreatorId(adminId);
+            comic2.setCreatorId(editorId);
             comic2.setYear(2022);
             comic2.setTags("Cybernetics, Tragedy, Sci-Fi");
             comic2.setCountryOfOrigin("Japan");
@@ -292,21 +307,18 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // Migrate any existing novels that have null creatorId
+        // Migrate/update creatorId for all existing novels to match the new roles
         for (Novel n : novelRepository.findAll()) {
             boolean updated = false;
-            if (n.getCreatorId() == null) {
-                String title = n.getTitle();
-                if (title != null && (title.contains("Solo Leveling") || title.contains("Apothecary") || title.contains("Frieren") || title.contains("Super Cub"))) {
-                    n.setCreatorId(editorId);
-                } else {
-                    n.setCreatorId(adminId);
-                }
+            String title = n.getTitle();
+            Long targetCreatorId = editorId;
+            if (n.getCreatorId() == null || !n.getCreatorId().equals(targetCreatorId)) {
+                n.setCreatorId(targetCreatorId);
                 updated = true;
             }
 
             // Populate filter fields if null
-            String title = n.getTitle();
+            title = n.getTitle();
             if (title != null) {
                 if (title.contains("Solo Leveling")) {
                     if (n.getYear() == null) { n.setYear(2024); updated = true; }
@@ -329,6 +341,25 @@ public class DataInitializer implements CommandLineRunner {
             if (updated) {
                 novelRepository.save(n);
             }
+        }
+
+        // Seed 50 dummy novels for testing
+        long currentCount = novelRepository.count();
+        if (currentCount < 20) {
+            System.out.println("Seeding 50 dummy novels...");
+            for (int i = 1; i <= 50; i++) {
+                Novel dummy = new Novel(null, "Test Novel " + i, "Author " + i,
+                    "This is a dummy description for test novel " + i + " used for UI testing and verifying vertical scrolling layouts.",
+                    "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
+                    "NOVEL", "Action, Adventure, Fantasy", 4.0 + (i % 10) * 0.1, "ONGOING");
+                dummy.setCreatorId(editorId);
+                dummy.setYear(2020 + (i % 7));
+                dummy.setTags("Magic, Male Lead, Reincarnation");
+                dummy.setCountryOfOrigin(i % 2 == 0 ? "Japan" : "Korea");
+                dummy.setSource(i % 2 == 0 ? "Light Novel" : "Web Novel");
+                novelRepository.save(dummy);
+            }
+            System.out.println("50 dummy novels seeded successfully!");
         }
 
         sanitizeLocalCoverUrls();
