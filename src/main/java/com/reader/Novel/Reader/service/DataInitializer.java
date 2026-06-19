@@ -120,6 +120,18 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', password = ? WHERE email = 'editor'", editorHashed);
             }
 
+            // Ensure 20 dummy translator accounts exist
+            String dummyPasswordHashed = PasswordUtils.hashPassword("translator123");
+            for (int i = 1; i <= 20; i++) {
+                String dummyEmail = "translator" + i + "@yukitales.com";
+                String dummyName = "Translator " + i;
+                java.util.List<java.util.Map<String, Object>> existingDummy = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = ?", dummyEmail);
+                if (existingDummy.isEmpty()) {
+                    jdbcTemplate.update("INSERT INTO reader_internal (name, email, password, user_type, balance) VALUES (?, ?, ?, 'EDITOR', 100)", dummyName, dummyEmail, dummyPasswordHashed);
+                }
+            }
+
+
             // Create the view named READER for H2 console users
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
             jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
