@@ -80,6 +80,16 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('email_migration_done', 'true')");
                 System.out.println("One-time email subscription migration executed successfully.");
             }
+
+            // Seed default Facebook settings if missing
+            java.util.List<java.util.Map<String, Object>> fbAppIdSetting = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'facebook.app_id'");
+            if (fbAppIdSetting.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('facebook.app_id', 'your-facebook-app-id')");
+            }
+            java.util.List<java.util.Map<String, Object>> fbApiVerSetting = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'facebook.api_version'");
+            if (fbApiVerSetting.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('facebook.api_version', 'v20.0')");
+            }
             
             // Ensure owner exists with ID 0
             java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");

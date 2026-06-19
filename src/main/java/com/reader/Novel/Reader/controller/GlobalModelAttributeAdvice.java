@@ -28,4 +28,18 @@ public class GlobalModelAttributeAdvice {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("your-google-client-id");
     }
+
+    @ModelAttribute("facebookAppId")
+    public String addFacebookAppId() {
+        return systemSettingRepository.findById("facebook.app_id")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("your-facebook-app-id");
+    }
+
+    @ModelAttribute("facebookApiVersion")
+    public String addFacebookApiVersion() {
+        return systemSettingRepository.findById("facebook.api_version")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("v20.0");
+    }
 }
