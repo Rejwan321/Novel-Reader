@@ -20,6 +20,112 @@ public class AuthRestController {
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.service.EmailService emailService;
+
+    @PostMapping("/signup/send-code")
+    public ResponseEntity<?> sendCode(
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam String password,
+            @RequestParam(required = false, defaultValue = "READER") String user_type,
+            HttpSession session) {
+
+        if (name == null || name.trim().isEmpty() ||
+            email == null || email.trim().isEmpty() ||
+            password == null || password.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
+        }
+
+        Optional<User> existing = userService.getUserByEmail(email.trim());
+        if (existing.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
+        }
+
+        // Validate role
+        String role = "READER";
+        if ("EDITOR".equals(user_type)) {
+            role = "EDITOR";
+        } else if ("PROOFREADER".equals(user_type)) {
+            role = "PROOFREADER";
+        }
+
+        // Generate 6-digit random code
+        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+
+        // Save signup info temporarily in session
+        session.setAttribute("temp_signup_name", name.trim());
+        session.setAttribute("temp_signup_email", email.trim());
+        session.setAttribute("temp_signup_password", password);
+        session.setAttribute("temp_signup_role", role);
+        session.setAttribute("temp_signup_code", code);
+
+        // Send email asynchronously
+        String subject = "[Yuki Tales] Verification Code";
+        String body = String.format(
+            "Hello %s,\n\n" +
+            "Thank you for registering at Yuki Tales!\n\n" +
+            "Your 6-digit verification code is: %s\n\n" +
+            "Please enter this code on the website to complete your registration.\n\n" +
+            "Best regards,\n" +
+            "Yuki Tales Support",
+            name.trim(), code
+        );
+        emailService.sendCustomEmailAsync(email.trim(), subject, body);
+
+        // Also print to console for local logs/fallback
+        System.out.println("====== YUKI TALES SIGNUP VERIFICATION CODE ======");
+        System.out.println("Email: " + email.trim());
+        System.out.println("Code: " + code);
+        System.out.println("=================================================");
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Verification code sent to your email."));
+    }
+
+    @PostMapping("/signup/verify")
+    public ResponseEntity<?> verifyCode(@RequestParam String code, HttpSession session) {
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Verification code is required."));
+        }
+
+        String tempCode = (String) session.getAttribute("temp_signup_code");
+        String tempEmail = (String) session.getAttribute("temp_signup_email");
+        String tempName = (String) session.getAttribute("temp_signup_name");
+        String tempPassword = (String) session.getAttribute("temp_signup_password");
+        String tempRole = (String) session.getAttribute("temp_signup_role");
+
+        if (tempCode == null || tempEmail == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Session expired or invalid registration. Please request a new code."));
+        }
+
+        if (!tempCode.equals(code.trim())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid verification code."));
+        }
+
+        // Verify that the email is still not registered
+        Optional<User> existing = userService.getUserByEmail(tempEmail);
+        if (existing.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
+        }
+
+        // Create user
+        String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(tempPassword);
+        User user = new User(null, tempName, tempEmail, hashedPassword, tempRole);
+        userService.addUser(user);
+
+        // Auto-login
+        session.setAttribute("user", user);
+
+        // Clear session variables
+        session.removeAttribute("temp_signup_name");
+        session.removeAttribute("temp_signup_email");
+        session.removeAttribute("temp_signup_password");
+        session.removeAttribute("temp_signup_role");
+        session.removeAttribute("temp_signup_code");
+
+        return ResponseEntity.ok(Map.of("success", true, "user", user));
+    }
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(
             @RequestParam String name,
