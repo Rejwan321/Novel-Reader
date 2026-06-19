@@ -1108,19 +1108,6 @@
                             </div>
                         </div>
 
-                        <!-- Facebook Section -->
-                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-facebook text-info me-2"></i>Facebook Authentication Settings</h5>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-8">
-                                <label for="cred-facebook-app-id" class="form-label-admin">Facebook App ID</label>
-                                <input type="text" class="form-input-admin" id="cred-facebook-app-id" placeholder="e.g. 1092837465620938">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="cred-facebook-api-version" class="form-label-admin">Facebook API Version</label>
-                                <input type="text" class="form-input-admin" id="cred-facebook-api-version" placeholder="e.g. v20.0">
-                            </div>
-                        </div>
-
                         <!-- Mail Section -->
                         <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
                         <div class="row g-3 mb-4">
@@ -1515,8 +1502,6 @@
             .done(function(data) {
                 $("#cred-google-client-id").val(data.googleClientId || "");
                 $("#cred-google-client-secret").val(data.googleClientSecret || "");
-                $("#cred-facebook-app-id").val(data.facebookAppId || "");
-                $("#cred-facebook-api-version").val(data.facebookApiVersion || "");
                 $("#cred-mail-host").val(data.mailHost || "");
                 $("#cred-mail-port").val(data.mailPort || "");
                 $("#cred-mail-username").val(data.mailUsername || "");
@@ -1535,8 +1520,6 @@
             var creds = {
                 googleClientId: $("#cred-google-client-id").val(),
                 googleClientSecret: $("#cred-google-client-secret").val(),
-                facebookAppId: $("#cred-facebook-app-id").val(),
-                facebookApiVersion: $("#cred-facebook-api-version").val(),
                 mailHost: $("#cred-mail-host").val(),
                 mailPort: $("#cred-mail-port").val(),
                 mailUsername: $("#cred-mail-username").val(),
@@ -1570,8 +1553,6 @@
                     var creds = JSON.parse(e.target.result);
                     $("#cred-google-client-id").val(creds.googleClientId || "");
                     $("#cred-google-client-secret").val(creds.googleClientSecret || "");
-                    $("#cred-facebook-app-id").val(creds.facebookAppId || "");
-                    $("#cred-facebook-api-version").val(creds.facebookApiVersion || "");
                     $("#cred-mail-host").val(creds.mailHost || "");
                     $("#cred-mail-port").val(creds.mailPort || "");
                     $("#cred-mail-username").val(creds.mailUsername || "");
@@ -3717,8 +3698,6 @@
                 e.preventDefault();
                 var googleClientId = $("#cred-google-client-id").val();
                 var googleClientSecret = $("#cred-google-client-secret").val();
-                var facebookAppId = $("#cred-facebook-app-id").val();
-                var facebookApiVersion = $("#cred-facebook-api-version").val();
                 var mailHost = $("#cred-mail-host").val();
                 var mailPort = $("#cred-mail-port").val();
                 var mailUsername = $("#cred-mail-username").val();
@@ -3730,8 +3709,6 @@
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
                     googleClientSecret: googleClientSecret,
-                    facebookAppId: facebookAppId,
-                    facebookApiVersion: facebookApiVersion,
                     mailHost: mailHost,
                     mailPort: mailPort,
                     mailUsername: mailUsername,

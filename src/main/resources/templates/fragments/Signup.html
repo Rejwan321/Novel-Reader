@@ -18,7 +18,7 @@
          data-auto_select="false">
     </div>
     
-    <script th:inline="javascript">
+    <script>
         function handleCredentialResponse(response) {
             if (!response.credential) return;
             $.ajax({
@@ -33,47 +33,6 @@
                     alert(errMsg);
                 }
             });
-        }
-
-        window.fbAsyncInit = function() {
-            FB.init({
-                appId      : /*[[${facebookAppId}]]*/ 'your-facebook-app-id',
-                cookie     : true,
-                xfbml      : true,
-                version    : /*[[${facebookApiVersion}]]*/ 'v20.0'
-            });
-            
-            FB.AppEvents.logPageView();   
-        };
-
-        (function(d, s, id){
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) {return;}
-            js = d.createElement(s); js.id = id;
-            js.src = "https://connect.facebook.net/en_US/sdk.js";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'facebook-jssdk'));
-
-        function loginWithFacebook() {
-            FB.login(function(response) {
-                if (response.authResponse) {
-                    var accessToken = response.authResponse.accessToken;
-                    $.ajax({
-                        url: '/api/auth/facebook',
-                        type: 'POST',
-                        data: { token: accessToken },
-                        success: function(res) {
-                            window.location.reload();
-                        },
-                        error: function(err) {
-                            var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Facebook Login failed.";
-                            alert(errMsg);
-                        }
-                    });
-                } else {
-                    console.log('User cancelled login or did not fully authorize.');
-                }
-            }, {scope: 'email'});
         }
 
         function togglePasswordVisibility(inputId, button) {
@@ -107,13 +66,8 @@
                      data-text="signup_with"
                      data-size="large"
                      data-logo_alignment="left"
-                     style="margin: 15px auto 5px auto;">
+                     style="margin: 15px auto;">
                 </div>
-                
-                <!-- Facebook Login button (signup view) -->
-                <button type="button" class="btn-facebook-login" onclick="loginWithFacebook()" style="margin: 0 auto 15px auto;">
-                    <i class="fab fa-facebook me-2"></i>Continue with Facebook
-                </button>
                 
                 <span>or use your email for registration</span>
                 <input class="insert" id="signup-name" type="text" placeholder="Name" required>
@@ -152,13 +106,8 @@
                      data-text="signin_with"
                      data-size="large"
                      data-logo_alignment="left"
-                     style="margin: 15px auto 5px auto;">
+                     style="margin: 15px auto;">
                 </div>
-                
-                <!-- Facebook Login button (login view) -->
-                <button type="button" class="btn-facebook-login" onclick="loginWithFacebook()" style="margin: 0 auto 15px auto;">
-                    <i class="fab fa-facebook me-2"></i>Continue with Facebook
-                </button>
                 
                 <span>or use your account</span>
                 <input class="insert" id="login-email" type="text" placeholder="Username / Email" required>

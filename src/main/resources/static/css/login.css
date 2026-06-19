@@ -499,30 +499,3 @@
         color: #ffffff !important;
     }
 }
-
-/* Facebook Login Button Styling */
-.btn-facebook-login {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #1877F2;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 24px;
-    font-family: 'Outfit', 'Poppins', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    margin: 10px auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.btn-facebook-login:hover {
-    background-color: #166FE5;
-}
-
-.btn-facebook-login:active {
-    transform: scale(0.98);
-}
