@@ -36,6 +36,7 @@ public class Novel {
     private String tags;
     private String countryOfOrigin;
     private String source;
+    private Boolean editorSelection = false;
 
     @OneToMany(mappedBy = "novel", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("chapterNumber ASC")
