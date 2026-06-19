@@ -43,6 +43,81 @@ $(document).ready(function() {
     var initSource = $("#search-filter-source-val").val() || "ALL";
     var initEditorSelection = $("#search-filter-editor-val").val() || "ALL";
 
+    function initCustomEditorDropdown() {
+        var $realSelect = $("#search-filter-editor-select");
+        var $customWrapper = $(".custom-search-select-wrapper");
+        var $trigger = $(".custom-search-select-trigger");
+        var $triggerText = $trigger.find(".selected-value");
+        var $dropdown = $(".custom-search-select-dropdown");
+        var $searchInput = $(".custom-search-select-search-input");
+        var $optionsContainer = $(".custom-search-select-options");
+
+        // Close dropdown when clicking outside
+        $(document).on("click", function(e) {
+            if (!$(e.target).closest(".custom-search-select-wrapper").length) {
+                $dropdown.removeClass("active");
+                $trigger.removeClass("active");
+            }
+        });
+
+        // Toggle dropdown
+        $trigger.on("click", function(e) {
+            e.stopPropagation();
+            $dropdown.toggleClass("active");
+            $(this).toggleClass("active");
+            if ($dropdown.hasClass("active")) {
+                $searchInput.val("").trigger("input").focus();
+            }
+        });
+
+        // Search filter input behavior
+        $searchInput.on("click", function(e) {
+            e.stopPropagation();
+        });
+
+        $searchInput.on("input", function() {
+            var query = $(this).val().toLowerCase().trim();
+            $optionsContainer.find(".custom-search-select-option").each(function() {
+                var text = $(this).text().toLowerCase();
+                if (text.indexOf(query) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Option selection
+        $optionsContainer.on("click", ".custom-search-select-option", function(e) {
+            e.stopPropagation();
+            var val = $(this).data("value");
+            var text = $(this).text();
+
+            $optionsContainer.find(".custom-search-select-option").removeClass("active");
+            $(this).addClass("active");
+
+            $triggerText.text(text);
+            $dropdown.removeClass("active");
+            $trigger.removeClass("active");
+
+            $realSelect.val(val).trigger("change");
+        });
+
+        window.syncCustomEditorDropdown = function() {
+            var val = $realSelect.val() || "ALL";
+            var $activeOpt = $optionsContainer.find('.custom-search-select-option[data-value="' + val + '"]');
+            if ($activeOpt.length) {
+                $optionsContainer.find(".custom-search-select-option").removeClass("active");
+                $activeOpt.addClass("active");
+                $triggerText.text($activeOpt.text());
+            }
+        };
+
+        window.syncCustomEditorDropdown();
+    }
+
+    initCustomEditorDropdown();
+
     $("#search-filter-genre-select").val(initGenre);
     $("#search-filter-year-select").val(initYear);
     $("#search-filter-sort-select").val(initSort);
@@ -51,6 +126,7 @@ $(document).ready(function() {
     $("#search-filter-country-select").val(initCountry);
     $("#search-filter-source-select").val(initSource);
     $("#search-filter-editor-select").val(initEditorSelection);
+    if (typeof window.syncCustomEditorDropdown === 'function') window.syncCustomEditorDropdown();
 
     // Expand search bar on page load if search is active
     var currentSearchVal = $(".search-bar .input").val();
@@ -185,6 +261,7 @@ $(document).ready(function() {
         $("#search-filter-country-select").val("ALL");
         $("#search-filter-source-select").val("ALL");
         $("#search-filter-editor-select").val("ALL");
+        if (typeof window.syncCustomEditorDropdown === 'function') window.syncCustomEditorDropdown();
 
         // Reset hidden inputs
         $("#search-filter-type-val").val("ALL");
