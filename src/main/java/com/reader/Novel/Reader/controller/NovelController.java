@@ -191,6 +191,12 @@ public class NovelController {
             return "redirect:/";
         }
         model.addAttribute("novel", novel);
+        
+        User creator = null;
+        if (novel.getCreatorId() != null) {
+            creator = userService.getUserById(novel.getCreatorId());
+        }
+        model.addAttribute("creator", creator);
         model.addAttribute("chapters", novelService.getVisibleChapters(novel, loggedInUser));
 
         boolean isBookmarked = false;

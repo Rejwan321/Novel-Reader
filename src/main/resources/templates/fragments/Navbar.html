@@ -166,7 +166,7 @@
                             <!-- Editor -->
                             <div class="col-6 col-md-4">
                                 <div class="search-filter-group">
-                                    <span class="search-filter-label">Editor</span>
+                                    <span class="search-filter-label">Translator</span>
                                     <select id="search-filter-editor-select" class="search-filter-select">
                                         <option value="ALL">Any</option>
                                         <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.name}"></option>
@@ -206,7 +206,7 @@
                             <i class="fa fa-user-circle me-1"></i>
                             <span th:if="${session.user.user_type == 'OWNER'}">Owner Panel</span>
                             <span th:if="${session.user.user_type == 'ADMIN'}">Admin Panel</span>
-                            <span th:if="${session.user.user_type == 'EDITOR'}">Editor Panel</span>
+                            <span th:if="${session.user.user_type == 'EDITOR'}">Translator Panel</span>
                             <span th:if="${session.user.user_type == 'PROOFREADER'}">Proofreader Panel</span>
                             <span th:if="${session.user.user_type != 'OWNER' and session.user.user_type != 'ADMIN' and session.user.user_type != 'EDITOR' and session.user.user_type != 'PROOFREADER'}" th:text="${session.user.name}">Reader</span>
                             <!-- Unread badge dot -->
@@ -220,7 +220,7 @@
                                 <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Admin Panel</a>
                             </li>
                             <li th:if="${session.user.user_type == 'EDITOR'}">
-                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Editor Panel</a>
+                                <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Translator Panel</a>
                             </li>
                             <li th:if="${session.user.user_type == 'PROOFREADER'}">
                                 <a class="dropdown-item text-warning" href="/admin"><i class="fa-solid fa-crown me-2"></i> Proofreader Panel</a>

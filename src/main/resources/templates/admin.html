@@ -18,7 +18,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <title th:text="${userRole == 'OWNER' ? 'Owner Panel - Yuki Tales' : (userRole == 'ADMIN' ? 'Admin Panel - Yuki Tales' : 'Editor Panel - Yuki Tales')}">Dashboard - Yuki Tales</title>
+    <title th:text="${userRole == 'OWNER' ? 'Owner Panel - Yuki Tales' : (userRole == 'ADMIN' ? 'Admin Panel - Yuki Tales' : 'Translator Panel - Yuki Tales')}">Dashboard - Yuki Tales</title>
 
     <style>
         .admin-sidebar {
@@ -479,7 +479,7 @@
                 <div class="admin-sidebar">
                     <h2 class="h5 fw-bold text-white mb-4">
                         <i class="fa-solid fa-crown text-warning me-2"></i>
-                        <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : (userRole == 'EDITOR' ? 'Editor Panel' : 'Proofreader Panel'))}">Dashboard</span>
+                        <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : (userRole == 'EDITOR' ? 'Translator Panel' : 'Proofreader Panel'))}">Dashboard</span>
                     </h2>
                     
                     <button class="admin-tab-btn active" id="tab-stories-btn" onclick="switchTab('stories')">
@@ -621,7 +621,7 @@
                                      <input type="text" class="form-input-admin" id="story-tags" placeholder="e.g. Magic, Male Lead, Overpowered">
                                  </div>
                                  <div class="col-md-6">
-                                     <label class="form-label-admin">Editor / Creator</label>
+                                     <label class="form-label-admin">Translator / Creator</label>
                                      <select class="form-input-admin" id="story-creator-id">
                                          <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.name}"></option>
                                      </select>
@@ -850,7 +850,7 @@
                                     <label class="form-label-admin">Role Assignment</label>
                                     <select class="form-input-admin" id="user-role-assign">
                                         <option value="READER">Standard Reader</option>
-                                        <option value="EDITOR">Story Editor</option>
+                                        <option value="EDITOR">Translator</option>
                                         <option value="ADMIN">Administrator</option>
                                         <option value="PROOFREADER">Proof reader</option>
                                     </select>
@@ -887,7 +887,7 @@
                                                 th:data-id="${u.id}"
                                                 th:data-original="${u.user_type}">
                                             <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
-                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Editor</option>
+                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Translator</option>
                                             <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
                                             <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
                                         </select>
@@ -1226,7 +1226,7 @@
                         <div>
                             <h2 class="h4 fw-bold text-white mb-1">
                                 <i class="fa-solid fa-chart-line text-success me-2"></i>
-                                <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : 'Editor Panel')}">Analytics Dashboard</span>
+                                <span th:text="${userRole == 'OWNER' ? 'Owner Panel' : (userRole == 'ADMIN' ? 'Admin Panel' : 'Translator Panel')}">Analytics Dashboard</span>
                             </h2>
                             <p class="text-muted small mb-0">Platform-wide sales performance and user economic insights.</p>
                         </div>
@@ -1306,7 +1306,7 @@
                             <!-- Editor Revenue Share (Circle Chart / Doughnut) -->
                             <div class="col-lg-4 col-12 pe-0">
                                 <div class="card bg-dark border-0 p-4 rounded-3 h-100" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
-                                    <h4 class="h6 fw-bold text-white mb-3">Editor Revenue Share (Circle Chart)</h4>
+                                    <h4 class="h6 fw-bold text-white mb-3">Translator Revenue Share (Circle Chart)</h4>
                                     <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
                                         <canvas id="chart-editor-share"></canvas>
                                     </div>
@@ -1378,7 +1378,7 @@
                                 <select id="excel-role-filter" class="form-select-admin" style="padding: 4px 8px; font-size: 0.8rem;">
                                     <option value="">All Roles</option>
                                     <option value="READER">Reader</option>
-                                    <option value="EDITOR">Editor</option>
+                                    <option value="EDITOR">Translator</option>
                                     <option value="ADMIN">Admin</option>
                                     <option value="PROOFREADER">Proof reader</option>
                                 </select>
@@ -1935,7 +1935,7 @@
                 } else {
                     selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
                         '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
-                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Editor</option>' +
+                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Translator</option>' +
                         '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
                         '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
                         '</select>';
@@ -3384,7 +3384,9 @@
                     tr.append($("<td>").text(u.userId));
                     tr.append($("<td class='text-white fw-bold'>").text(u.name));
                     tr.append($("<td>").text(u.email));
-                    tr.append($("<td>").html(`<span class="badge ${badgeClass}">${u.role}</span>`));
+                    let displayRole = u.role;
+                    if (displayRole === "EDITOR") displayRole = "TRANSLATOR";
+                    tr.append($("<td>").html(`<span class="badge ${badgeClass}">${displayRole}</span>`));
                     tr.append($("<td class='text-white'>").text(u.balance));
                     tr.append($("<td class='excel-text-success'>").text(u.totalSpent + " ❄️"));
                     tr.append($("<td class='text-info'>").text(u.chaptersUnlocked));
