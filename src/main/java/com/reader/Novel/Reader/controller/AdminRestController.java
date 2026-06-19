@@ -402,6 +402,7 @@ public class AdminRestController {
             @RequestParam(required = false) String tags,
             @RequestParam(required = false) String countryOfOrigin,
             @RequestParam(required = false) String source,
+            @RequestParam(required = false) Long creatorId,
             HttpSession session) {
 
         if (isRestricted(session)) {
@@ -427,7 +428,7 @@ public class AdminRestController {
 
         String resolvedCoverUrl = handleLocalCoverUrl(coverUrl.trim());
         Novel novel = new Novel(null, title.trim(), author.trim(), description.trim(), resolvedCoverUrl, type.toUpperCase(), genre.trim(), rating, status);
-        novel.setCreatorId(loggedInUser.getId());
+        novel.setCreatorId(creatorId != null ? creatorId : loggedInUser.getId());
         novel.setYear(year);
         novel.setTags(tags);
         novel.setCountryOfOrigin(countryOfOrigin);
@@ -450,7 +451,8 @@ public class AdminRestController {
                 Map.entry("year", saved.getYear() != null ? saved.getYear() : ""),
                 Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
                 Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
-                Map.entry("source", saved.getSource() != null ? saved.getSource() : "")
+                Map.entry("source", saved.getSource() != null ? saved.getSource() : ""),
+                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false)
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -700,6 +702,7 @@ public class AdminRestController {
             @RequestParam(required = false) String tags,
             @RequestParam(required = false) String countryOfOrigin,
             @RequestParam(required = false) String source,
+            @RequestParam(required = false) Long creatorId,
             HttpSession session) {
 
         if (isRestricted(session)) {
@@ -747,6 +750,9 @@ public class AdminRestController {
         existingNovel.setTags(tags);
         existingNovel.setCountryOfOrigin(countryOfOrigin);
         existingNovel.setSource(source);
+        if (creatorId != null && ("ADMIN".equals(role) || "OWNER".equals(role))) {
+            existingNovel.setCreatorId(creatorId);
+        }
 
         Novel saved = novelService.saveNovel(existingNovel);
         syncNovelFoldersAndFiles(saved);
@@ -765,7 +771,8 @@ public class AdminRestController {
                 Map.entry("year", saved.getYear() != null ? saved.getYear() : ""),
                 Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
                 Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
-                Map.entry("source", saved.getSource() != null ? saved.getSource() : "")
+                Map.entry("source", saved.getSource() != null ? saved.getSource() : ""),
+                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false)
             ));
         } catch (Exception e) {
             // Log or ignore
