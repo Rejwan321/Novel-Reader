@@ -1109,7 +1109,18 @@
                         </div>
 
                         <!-- Mail Section -->
-                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                            <h5 class="text-white mb-0"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="exportMailSettings()">
+                                    <i class="fa-solid fa-file-export me-1"></i>Export
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="triggerImportMailSettings()">
+                                    <i class="fa-solid fa-file-import me-1"></i>Import
+                                </button>
+                                <input type="file" id="import-mail-settings-file" class="d-none" accept=".json" onchange="importMailSettings(event)">
+                            </div>
+                        </div>
                         <div class="row g-3 mb-4">
                             <div class="col-md-9">
                                 <label for="cred-mail-host" class="form-label-admin">SMTP Host</label>
@@ -1619,6 +1630,64 @@
                     showToast("Failed to parse Google OAuth configuration file.", "error");
                 }
                 $("#import-google-json-file").val(""); // reset
+            };
+            reader.readAsText(file);
+        };
+
+        window.exportMailSettings = function() {
+            var mailSettings = {
+                mailHost: $("#cred-mail-host").val(),
+                mailPort: $("#cred-mail-port").val(),
+                mailUsername: $("#cred-mail-username").val(),
+                mailPassword: $("#cred-mail-password").val(),
+                mailSender: $("#cred-mail-sender").val(),
+                mailRecipient: $("#cred-mail-recipient").val()
+            };
+            
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mailSettings, null, 4));
+            var downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "yuki_tales_mail_settings.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Mail settings exported successfully!");
+        };
+
+        window.triggerImportMailSettings = function() {
+            $("#import-mail-settings-file").click();
+        };
+
+        window.importMailSettings = function(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var config = JSON.parse(e.target.result);
+                    var host = config.mailHost || config.host || "";
+                    var port = config.mailPort || config.port || "";
+                    var username = config.mailUsername || config.username || "";
+                    var password = config.mailPassword || config.password || "";
+                    var sender = config.mailSender || config.sender || "";
+                    var recipient = config.mailRecipient || config.recipient || "";
+
+                    if (host || port || username || password || sender || recipient) {
+                        if (host) $("#cred-mail-host").val(host);
+                        if (port) $("#cred-mail-port").val(port);
+                        if (username) $("#cred-mail-username").val(username);
+                        if (password) $("#cred-mail-password").val(password);
+                        if (sender) $("#cred-mail-sender").val(sender);
+                        if (recipient) $("#cred-mail-recipient").val(recipient);
+                        showToast("Mail settings imported to form. Click 'Save Credentials' to save.", "success");
+                    } else {
+                        showToast("Could not find any SMTP/Mail settings in the JSON config.", "warning");
+                    }
+                } catch (err) {
+                    showToast("Failed to parse Mail settings configuration file.", "error");
+                }
+                $("#import-mail-settings-file").val(""); // reset
             };
             reader.readAsText(file);
         };
