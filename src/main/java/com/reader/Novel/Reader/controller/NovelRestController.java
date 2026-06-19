@@ -35,6 +35,7 @@ public class NovelRestController {
             @RequestParam(required = false) String tags,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String source,
+            @RequestParam(required = false) String editor,
             HttpSession session) {
         
         if (isRestricted(session)) {
@@ -97,6 +98,17 @@ public class NovelRestController {
             results = results.stream()
                 .filter(n -> source.equalsIgnoreCase(n.getSource()))
                 .toList();
+        }
+
+        if (editor != null && !editor.trim().isEmpty() && !"ALL".equalsIgnoreCase(editor)) {
+            try {
+                Long editorId = Long.parseLong(editor.trim());
+                results = results.stream()
+                    .filter(n -> n.getCreatorId() != null && n.getCreatorId().equals(editorId))
+                    .toList();
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
         }
 
         // Sorting
