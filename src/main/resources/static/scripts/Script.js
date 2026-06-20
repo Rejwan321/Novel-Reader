@@ -649,6 +649,7 @@ $(document).ready(function() {
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
     var itemsPerPage = 12;
     var currentPage = 1;
+    var totalPages = 1;
 
     function applyFilters() {
         var cards = $(".book-card-col");
@@ -672,7 +673,7 @@ $(document).ready(function() {
         });
 
         var visibleCount = matchedCards.length;
-        var totalPages = Math.ceil(visibleCount / itemsPerPage) || 1;
+        totalPages = Math.ceil(visibleCount / itemsPerPage) || 1;
 
         // Keep currentPage within bounds
         if (currentPage > totalPages) {
@@ -704,7 +705,7 @@ $(document).ready(function() {
         }
     }
 
-    function renderPagination(currentPage, totalPages) {
+    function renderPagination(activePage, totalPages) {
         var container = $("#discovery-pagination");
         container.empty();
 
@@ -715,28 +716,16 @@ $(document).ready(function() {
         container.removeClass("d-none");
 
         // 1. Double Left chevron button "<<"
-        var btnFirst = $('<div class="yuki-pagination-btn">«</div>');
-        if (currentPage === 1) {
+        var btnFirst = $('<div class="yuki-pagination-btn" data-page="first">«</div>');
+        if (activePage === 1) {
             btnFirst.addClass("disabled");
-        } else {
-            btnFirst.click(function() {
-                currentPage = 1;
-                applyFilters();
-                scrollToFilterSection();
-            });
         }
         container.append(btnFirst);
 
         // 2. Single Left chevron button "<"
-        var btnPrev = $('<div class="yuki-pagination-btn">‹</div>');
-        if (currentPage === 1) {
+        var btnPrev = $('<div class="yuki-pagination-btn" data-page="prev">‹</div>');
+        if (activePage === 1) {
             btnPrev.addClass("disabled");
-        } else {
-            btnPrev.click(function() {
-                currentPage--;
-                applyFilters();
-                scrollToFilterSection();
-            });
         }
         container.append(btnPrev);
 
@@ -747,12 +736,12 @@ $(document).ready(function() {
                 pagesToShow.push(i);
             }
         } else {
-            if (currentPage <= 4) {
+            if (activePage <= 4) {
                 pagesToShow = [1, 2, 3, 4, 5, "ellipsis", totalPages];
-            } else if (currentPage >= totalPages - 3) {
+            } else if (activePage >= totalPages - 3) {
                 pagesToShow = [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
             } else {
-                pagesToShow = [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
+                pagesToShow = [1, "ellipsis", activePage - 1, activePage, activePage + 1, "ellipsis", totalPages];
             }
         }
 
@@ -760,48 +749,30 @@ $(document).ready(function() {
             if (p === "ellipsis") {
                 container.append('<div class="yuki-pagination-ellipsis">...</div>');
             } else {
-                var btnPage = $('<div class="yuki-pagination-btn">' + p + '</div>');
-                if (p === currentPage) {
+                var btnPage = $('<div class="yuki-pagination-btn" data-page="' + p + '">' + p + '</div>');
+                if (p === activePage) {
                     btnPage.addClass("active");
-                } else {
-                    btnPage.click(function() {
-                        currentPage = p;
-                        applyFilters();
-                        scrollToFilterSection();
-                    });
                 }
                 container.append(btnPage);
             }
         });
 
         // 4. Single Right chevron button ">"
-        var btnNext = $('<div class="yuki-pagination-btn">›</div>');
-        if (currentPage === totalPages) {
+        var btnNext = $('<div class="yuki-pagination-btn" data-page="next">›</div>');
+        if (activePage === totalPages) {
             btnNext.addClass("disabled");
-        } else {
-            btnNext.click(function() {
-                currentPage++;
-                applyFilters();
-                scrollToFilterSection();
-            });
         }
         container.append(btnNext);
 
         // 5. Double Right chevron button ">>"
-        var btnLast = $('<div class="yuki-pagination-btn">»</div>');
-        if (currentPage === totalPages) {
+        var btnLast = $('<div class="yuki-pagination-btn" data-page="last">»</div>');
+        if (activePage === totalPages) {
             btnLast.addClass("disabled");
-        } else {
-            btnLast.click(function() {
-                currentPage = totalPages;
-                applyFilters();
-                scrollToFilterSection();
-            });
         }
         container.append(btnLast);
 
         // 6. Text info: Page X of Y
-        var textInfo = $('<div class="yuki-pagination-info">Page <strong>' + currentPage + '</strong> of <strong>' + totalPages + '</strong></div>');
+        var textInfo = $('<div class="yuki-pagination-info">Page <strong>' + activePage + '</strong> of <strong>' + totalPages + '</strong></div>');
         container.append(textInfo);
     }
 
@@ -813,6 +784,24 @@ $(document).ready(function() {
             }, 300);
         }
     }
+
+    // Delegated click handler for Snappy Filter Engine pagination buttons
+    $(document).on("click", "#discovery-pagination .yuki-pagination-btn:not(.disabled):not(.active)", function() {
+        var pageAttr = $(this).attr("data-page");
+        if (pageAttr === "first") {
+            currentPage = 1;
+        } else if (pageAttr === "prev") {
+            currentPage--;
+        } else if (pageAttr === "next") {
+            currentPage++;
+        } else if (pageAttr === "last") {
+            currentPage = totalPages;
+        } else {
+            currentPage = parseInt(pageAttr);
+        }
+        applyFilters();
+        scrollToFilterSection();
+    });
 
     // Tab Type Selection
     $(".filter-tab").click(function() {
