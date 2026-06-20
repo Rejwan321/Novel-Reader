@@ -1637,6 +1637,10 @@ public class AdminRestController {
         java.util.Map<String, String> creds = new java.util.HashMap<>();
         creds.put("googleClientId", systemSettingRepository.findById("google.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("googleClientSecret", systemSettingRepository.findById("google.client_secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("googleEnabled", systemSettingRepository.findById("google.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("true"));
+        creds.put("discordClientId", systemSettingRepository.findById("discord.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("discordClientSecret", systemSettingRepository.findById("discord.client_secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("discordEnabled", systemSettingRepository.findById("discord.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("true"));
         creds.put("mailHost", systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailPort", systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailUsername", systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
@@ -1653,6 +1657,10 @@ public class AdminRestController {
     public ResponseEntity<?> saveCredentials(
             @RequestParam(required = false) String googleClientId,
             @RequestParam(required = false) String googleClientSecret,
+            @RequestParam(required = false) String googleEnabled,
+            @RequestParam(required = false) String discordClientId,
+            @RequestParam(required = false) String discordClientSecret,
+            @RequestParam(required = false) String discordEnabled,
             @RequestParam(required = false) String mailHost,
             @RequestParam(required = false) String mailPort,
             @RequestParam(required = false) String mailUsername,
@@ -1673,6 +1681,10 @@ public class AdminRestController {
 
         if (googleClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_id", googleClientId.trim()));
         if (googleClientSecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_secret", googleClientSecret.trim()));
+        if (googleEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.enabled", googleEnabled.trim()));
+        if (discordClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("discord.client_id", discordClientId.trim()));
+        if (discordClientSecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("discord.client_secret", discordClientSecret.trim()));
+        if (discordEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("discord.enabled", discordEnabled.trim()));
         if (mailHost != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.host", mailHost.trim()));
         if (mailPort != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.port", mailPort.trim()));
         if (mailUsername != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.username", mailUsername.trim()));
