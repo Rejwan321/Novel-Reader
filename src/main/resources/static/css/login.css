@@ -499,3 +499,38 @@
         color: #ffffff !important;
     }
 }
+
+/* Discord Button Styling */
+.discord-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #5865F2;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 24px;
+    font-size: .85rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin: 10px auto;
+    width: 240px;
+    max-width: 100%;
+}
+.discord-btn:hover {
+    background-color: #4752C4;
+    box-shadow: 0 6px 12px rgba(88, 101, 242, 0.2);
+    transform: translateY(-1px);
+}
+.discord-btn:active {
+    transform: translateY(1px) scale(0.98);
+}
+.discord-btn svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    fill: currentColor;
+}

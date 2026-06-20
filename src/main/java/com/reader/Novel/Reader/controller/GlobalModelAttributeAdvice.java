@@ -28,4 +28,27 @@ public class GlobalModelAttributeAdvice {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("your-google-client-id");
     }
+
+    @ModelAttribute("discordClientId")
+    public String addDiscordClientId() {
+        return systemSettingRepository.findById("discord.client_id")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("");
+    }
+
+    @ModelAttribute("googleEnabled")
+    public boolean addGoogleEnabled() {
+        return systemSettingRepository.findById("google.enabled")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+    }
+
+    @ModelAttribute("discordEnabled")
+    public boolean addDiscordEnabled() {
+        return systemSettingRepository.findById("discord.enabled")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+    }
 }

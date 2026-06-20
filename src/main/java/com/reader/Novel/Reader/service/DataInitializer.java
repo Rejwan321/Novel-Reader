@@ -48,7 +48,7 @@ public class DataInitializer implements CommandLineRunner {
             flakePackageRepository.save(new FlakePackage(null, 2000, 11.99));
         }
 
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY = FALSE");
         try {
             jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS DECRYPT_PASSWORD FOR 'com.reader.Novel.Reader.util.PasswordUtils.decryptForH2'");
             
@@ -120,6 +120,21 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', password = ? WHERE email = 'editor'", editorHashed);
             }
 
+            // Ensure 20 dummy translator accounts exist
+            String dummyPasswordHashed = PasswordUtils.hashPassword("translator123");
+            for (int i = 1; i <= 20; i++) {
+                String dummyEmail = "translator" + i + "@yukitales.com";
+                String dummyName = "Translator " + i;
+                long dummyId = 10000L + i;
+                java.util.List<java.util.Map<String, Object>> existingDummy = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = ?", dummyEmail);
+                if (existingDummy.isEmpty()) {
+                    jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (?, ?, ?, ?, 'EDITOR', 100)", dummyId, dummyName, dummyEmail, dummyPasswordHashed);
+                }
+            }
+
+
+
+
             // Create the view named READER for H2 console users
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
             jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
@@ -129,7 +144,7 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("CREATE USER IF NOT EXISTS admin PASSWORD 'admin'");
             jdbcTemplate.execute("ALTER USER admin ADMIN TRUE");
         } finally {
-            jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+            jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY = TRUE");
         }
 
         Long adminId = 1L;
