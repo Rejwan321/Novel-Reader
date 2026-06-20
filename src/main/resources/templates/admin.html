@@ -725,7 +725,15 @@
 
                     <!-- Existing Content Management Section -->
                     <div id="section-manage-existing" class="card bg-dark border-0 p-4 mt-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
-                        <h3 class="h5 fw-bold text-white mb-4"><i class="fa-solid fa-folder-open text-violet me-2"></i>Manage Stories</h3>
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                            <h3 class="h5 fw-bold text-white mb-0"><i class="fa-solid fa-folder-open text-violet me-2"></i>Manage Stories</h3>
+                            <div class="col-12 col-md-5 col-lg-4">
+                                <div class="position-relative">
+                                    <input type="text" id="admin-story-search" class="form-input-admin ps-5" placeholder="Search stories by title or author...">
+                                    <i class="fa-solid fa-magnifying-glass position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-dark table-admin table-premium align-middle">
                                 <thead>
@@ -1947,6 +1955,17 @@
 
             // Initialize default state
             updateStoryManagementSection();
+
+            // Search stories inside the Manage Stories section
+            $("#admin-story-search").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#admin-stories-tbody tr").filter(function() {
+                    var title = $(this).find(".btn-edit-story-meta").data("title") || "";
+                    var author = $(this).find(".btn-edit-story-meta").data("author") || "";
+                    var titleAndAuthorText = (title + " " + author).toLowerCase();
+                    $(this).toggle(titleAndAuthorText.indexOf(value) > -1);
+                });
+            });
 
             // Initialize Flatpickr for publish date & time (calendar and clock)
             window.publishAtPicker = null;
