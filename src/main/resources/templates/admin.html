@@ -564,8 +564,20 @@
                     <h2 class="h4 fw-bold text-white mb-3"><i class="fa-solid fa-book-open text-violet me-2"></i>Story Management</h2>
                     <p class="text-muted small mb-4">Add new stories and chapters. Support Web Novel format.</p>
 
+                    <!-- Section Selector Dropdown -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label-admin">Select Section</label>
+                            <select class="form-input-admin" id="story-action-selector">
+                                <option value="manage-existing">Manage Existing Stories & Chapters</option>
+                                <option value="create-story">Create New Story Series</option>
+                                <option value="add-chapter">Add New Chapter</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Add Story Form -->
-                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                    <div id="section-create-story" class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
                         <h3 class="h5 fw-bold text-white mb-4" id="title-add-story"><i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Story Series</h3>
                         <form id="form-add-story" data-mode="create" data-edit-id="">
                             <div class="row g-3">
@@ -665,7 +677,7 @@
                     </div>
 
                     <!-- Add Chapter Form -->
-                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                    <div id="section-add-chapter" class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
                         <h3 class="h5 fw-bold text-white mb-4" id="title-add-chapter"><i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter</h3>
                         <form id="form-add-chapter" data-mode="create" data-edit-id="">
                             <div class="row g-3">
@@ -712,7 +724,7 @@
                     </div>
 
                     <!-- Existing Content Management Section -->
-                    <div class="card bg-dark border-0 p-4 mt-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                    <div id="section-manage-existing" class="card bg-dark border-0 p-4 mt-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
                         <h3 class="h5 fw-bold text-white mb-4"><i class="fa-solid fa-folder-open text-violet me-2"></i>Manage Existing Stories & Chapters</h3>
                         <div class="table-responsive">
                             <table class="table table-dark table-admin table-premium align-middle">
@@ -1910,6 +1922,32 @@
         }
 
         $(document).ready(function() {
+            // --- STORY MANAGEMENT ACTION SELECTOR LOGIC ---
+            function updateStoryManagementSection() {
+                var selected = $("#story-action-selector").val();
+                
+                // Hide all sections first
+                $("#section-create-story").addClass("d-none");
+                $("#section-add-chapter").addClass("d-none");
+                $("#section-manage-existing").addClass("d-none");
+                
+                // Show the selected one
+                if (selected === "create-story") {
+                    $("#section-create-story").removeClass("d-none");
+                } else if (selected === "add-chapter") {
+                    $("#section-add-chapter").removeClass("d-none");
+                } else if (selected === "manage-existing") {
+                    $("#section-manage-existing").removeClass("d-none");
+                }
+            }
+
+            $("#story-action-selector").change(function() {
+                updateStoryManagementSection();
+            });
+
+            // Initialize default state
+            updateStoryManagementSection();
+
             // Initialize Flatpickr for publish date & time (calendar and clock)
             window.publishAtPicker = null;
             if ($("#chapter-publish-at").length > 0) {
@@ -2678,6 +2716,9 @@
                 $("#btn-submit-story").html('<i class="fa fa-save me-2"></i>Save Changes').removeClass("btn-premium").addClass("btn-warning text-dark");
                 $("#btn-cancel-edit-story").removeClass("d-none");
 
+                // Switch dropdown section to create-story
+                $("#story-action-selector").val("create-story").trigger("change");
+
                 // Smooth scroll to form
                 $('html, body').animate({
                     scrollTop: $("#title-add-story").offset().top - 80
@@ -2702,6 +2743,11 @@
                 $("#title-add-story").html('<i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Story Series');
                 $("#btn-submit-story").html('<i class="fa fa-plus me-2"></i>Add Story').addClass("btn-premium").removeClass("btn-warning text-dark");
                 $("#btn-cancel-edit-story").addClass("d-none");
+
+                // Switch dropdown back to manage existing if currently set to create
+                if ($("#story-action-selector").val() === "create-story") {
+                    $("#story-action-selector").val("manage-existing").trigger("change");
+                }
             }
 
             // AJAX: Add / Edit Story form submit
@@ -2846,6 +2892,9 @@
                 $("#btn-submit-chapter").html('<i class="fa fa-save me-2"></i>Save Changes').removeClass("btn-premium").addClass("btn-warning text-dark");
                 $("#btn-cancel-edit-chapter").removeClass("d-none");
 
+                // Switch dropdown section to add-chapter
+                $("#story-action-selector").val("add-chapter").trigger("change");
+
                 // Smooth scroll to chapter form
                 $('html, body').animate({
                     scrollTop: $("#title-add-chapter").offset().top - 80
@@ -2872,6 +2921,11 @@
                 $("#title-add-chapter").html('<i class="fa-solid fa-file-circle-plus text-success me-2"></i>Add New Chapter');
                 $("#btn-submit-chapter").html('<i class="fa fa-plus me-2"></i>Add Chapter').addClass("btn-premium").removeClass("btn-warning text-dark");
                 $("#btn-cancel-edit-chapter").addClass("d-none");
+
+                // Switch dropdown back to manage existing if currently set to add
+                if ($("#story-action-selector").val() === "add-chapter") {
+                    $("#story-action-selector").val("manage-existing").trigger("change");
+                }
             }
 
             // AJAX: Add / Edit Chapter button click helper
