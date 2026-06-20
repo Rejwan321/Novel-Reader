@@ -331,6 +331,305 @@ public class AuthRestController {
         }
     }
 
+    @GetMapping("/discord/login")
+    public void discordLogin(
+            jakarta.servlet.http.HttpServletRequest request, 
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        String clientId = systemSettingRepository.findById("discord.client_id")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("");
+        if (clientId.isEmpty()) {
+            response.sendError(400, "Discord Client ID is not configured.");
+            return;
+        }
+        String baseUrl = systemSettingRepository.findById("app.base_url")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("");
+        if (baseUrl.isEmpty()) {
+            String scheme = request.getScheme();
+            String serverName = request.getServerName();
+            int serverPort = request.getServerPort();
+            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
+        }
+        String redirectUri = baseUrl + "/api/auth/discord/callback";
+        String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
+        String authUrl = "https://discord.com/oauth2/authorize?client_id=" + clientId +
+                "&redirect_uri=" + encodedRedirectUri +
+                "&response_type=code&scope=identify+email";
+        response.sendRedirect(authUrl);
+    }
+
+    @GetMapping("/discord/callback")
+    public void discordCallback(
+            @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "error", required = false) String error,
+            HttpSession session,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        
+        if (error != null) {
+            response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Discord auth cancelled: " + error, java.nio.charset.StandardCharsets.UTF_8));
+            return;
+        }
+        if (code == null || code.trim().isEmpty()) {
+            response.sendRedirect("/?error=" + java.net.URLEncoder.encode("No authorization code received.", java.nio.charset.StandardCharsets.UTF_8));
+            return;
+        }
+
+        try {
+            String clientId = systemSettingRepository.findById("discord.client_id")
+                    .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                    .orElse("");
+            String clientSecret = systemSettingRepository.findById("discord.client_secret")
+                    .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                    .orElse("");
+            String baseUrl = systemSettingRepository.findById("app.base_url")
+                    .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                    .orElse("");
+            if (baseUrl.isEmpty()) {
+                String scheme = request.getScheme();
+                String serverName = request.getServerName();
+                int serverPort = request.getServerPort();
+                baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
+            }
+            String redirectUri = baseUrl + "/api/auth/discord/callback";
+
+            // Exchange code for token
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
+            headers.add("User-Agent", "Yuki-Tales-App");
+
+            org.springframework.util.LinkedMultiValueMap<String, String> body = new org.springframework.util.LinkedMultiValueMap<>();
+            body.add("client_id", clientId);
+            body.add("client_secret", clientSecret);
+            body.add("grant_type", "authorization_code");
+            body.add("code", code);
+            body.add("redirect_uri", redirectUri);
+
+            org.springframework.http.HttpEntity<org.springframework.util.LinkedMultiValueMap<String, String>> requestEntity = 
+                    new org.springframework.http.HttpEntity<>(body, headers);
+
+            String tokenUrl = "https://discord.com/api/oauth2/token";
+            @SuppressWarnings("unchecked")
+            Map<String, Object> tokenResponse = restTemplate.postForObject(tokenUrl, requestEntity, Map.class);
+
+            if (tokenResponse == null || !tokenResponse.containsKey("access_token")) {
+                response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Failed to exchange Discord authorization code.", java.nio.charset.StandardCharsets.UTF_8));
+                return;
+            }
+
+            String accessToken = (String) tokenResponse.get("access_token");
+
+            // Fetch user info from Discord
+            org.springframework.http.HttpHeaders userHeaders = new org.springframework.http.HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
+            userHeaders.add("User-Agent", "Yuki-Tales-App");
+            org.springframework.http.HttpEntity<Void> userRequestEntity = new org.springframework.http.HttpEntity<>(userHeaders);
+
+            String userUrl = "https://discord.com/api/users/@me";
+            @SuppressWarnings("unchecked")
+            Map<String, Object> userProfile = restTemplate.exchange(userUrl, org.springframework.http.HttpMethod.GET, userRequestEntity, Map.class).getBody();
+
+            if (userProfile == null || !userProfile.containsKey("email")) {
+                response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Could not retrieve email from Discord profile. Ensure email scope is authorized.", java.nio.charset.StandardCharsets.UTF_8));
+                return;
+            }
+
+            String email = (String) userProfile.get("email");
+            String username = (String) userProfile.get("username");
+
+            if (email == null || email.trim().isEmpty()) {
+                response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Discord account has no email address associated.", java.nio.charset.StandardCharsets.UTF_8));
+                return;
+            }
+
+            // Check if logged-in first (linking/merging flow)
+            User loggedInUser = (User) session.getAttribute("user");
+            if (loggedInUser != null) {
+                Optional<User> existingOpt = userService.getUserByEmail(email);
+                if (existingOpt.isPresent()) {
+                    User existingUser = existingOpt.get();
+                    if (existingUser.getId().equals(loggedInUser.getId())) {
+                        User user = userRepository.findById(loggedInUser.getId()).orElse(loggedInUser);
+                        if (!user.getLoginType().contains("DISCORD")) {
+                            user.setLoginType(user.getLoginType() + ",DISCORD");
+                            userRepository.save(user);
+                            session.setAttribute("user", user);
+                        }
+                        response.sendRedirect("/user/panel?tab=settings");
+                    } else {
+                        // MERGING REQUIRED
+                        session.setAttribute("temp_merge_discord_email", email);
+                        response.sendRedirect("/user/panel?tab=settings&mergeRequired=true&provider=discord&sourceUserEmail=" + 
+                                java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                } else {
+                    // Discord email does not exist, link it to the current user (update email and loginType)
+                    User user = userRepository.findById(loggedInUser.getId()).orElse(loggedInUser);
+                    user.setEmail(email);
+                    if (!user.getLoginType().contains("DISCORD")) {
+                        user.setLoginType(user.getLoginType() + ",DISCORD");
+                    }
+                    userRepository.save(user);
+                    session.setAttribute("user", user);
+                    response.sendRedirect("/user/panel?tab=settings");
+                }
+                return;
+            }
+
+            // Regular login/signup flow
+            Optional<User> userOpt = userService.getUserByEmail(email);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+                if (!user.getLoginType().contains("DISCORD")) {
+                    user.setLoginType(user.getLoginType() + ",DISCORD");
+                    userService.updateUser(user);
+                }
+            } else {
+                String randomPassword = java.util.UUID.randomUUID().toString();
+                String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(randomPassword);
+                
+                user = new User(null, username, email, hashedPassword, "READER");
+                user.setLoginType("DISCORD");
+                user.setSubscribedToUpdates(true);
+                user.setUpdatesEmail(email);
+                userService.addUser(user);
+            }
+
+            // Secure Session Management: Prevent session fixation
+            HttpSession oldSession = request.getSession(false);
+            if (oldSession != null) {
+                oldSession.invalidate();
+            }
+            HttpSession newSession = request.getSession(true);
+            newSession.setAttribute("user", user);
+
+            response.sendRedirect("/");
+        } catch (Exception e) {
+            response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Discord authentication error: " + e.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    @PostMapping("/merge/discord")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> mergeDiscord(@RequestParam("email") String email, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+
+        String tempMergeEmail = (String) session.getAttribute("temp_merge_discord_email");
+        if (tempMergeEmail == null || !tempMergeEmail.equals(email)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid or expired merge request."));
+        }
+
+        try {
+            Optional<User> sourceUserOpt = userService.getUserByEmail(email);
+            if (sourceUserOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Source user to merge not found."));
+            }
+
+            User sourceUser = sourceUserOpt.get();
+            if (sourceUser.getId().equals(loggedInUser.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cannot merge account into itself."));
+            }
+
+            User targetUser = userRepository.findById(loggedInUser.getId()).orElseThrow();
+
+            // 1. Merge Balance
+            targetUser.setBalance(targetUser.getBalance() + sourceUser.getBalance());
+
+            // 2. Merge Bookmarks
+            java.util.List<com.reader.Novel.Reader.model.Bookmark> sourceBookmarks = bookmarkRepository.findByUserIdOrderByUpdatedAtDesc(sourceUser.getId());
+            for (com.reader.Novel.Reader.model.Bookmark b : sourceBookmarks) {
+                Optional<com.reader.Novel.Reader.model.Bookmark> targetB = bookmarkRepository.findByUserIdAndNovelId(targetUser.getId(), b.getNovelId());
+                if (targetB.isPresent()) {
+                    bookmarkRepository.delete(b);
+                } else {
+                    b.setUserId(targetUser.getId());
+                    bookmarkRepository.save(b);
+                }
+            }
+
+            // 3. Merge Comments
+            java.util.List<com.reader.Novel.Reader.model.Comment> sourceComments = commentRepository.findByUserId(sourceUser.getId());
+            for (com.reader.Novel.Reader.model.Comment c : sourceComments) {
+                c.setUser(targetUser);
+                commentRepository.save(c);
+            }
+
+            // Update likes/dislikes in comments
+            java.util.List<com.reader.Novel.Reader.model.Comment> allComments = commentRepository.findAll();
+            for (com.reader.Novel.Reader.model.Comment c : allComments) {
+                boolean changed = false;
+                if (c.getLikedUserIds().contains(sourceUser.getId())) {
+                    c.getLikedUserIds().remove(sourceUser.getId());
+                    c.getLikedUserIds().add(targetUser.getId());
+                    changed = true;
+                }
+                if (c.getDislikedUserIds().contains(sourceUser.getId())) {
+                    c.getDislikedUserIds().remove(sourceUser.getId());
+                    c.getDislikedUserIds().add(targetUser.getId());
+                    changed = true;
+                }
+                if (changed) {
+                    commentRepository.save(c);
+                }
+            }
+
+            // 4. Merge Notifications
+            java.util.List<com.reader.Novel.Reader.model.Notification> sourceNotifs = notificationRepository.findByUserIdOrderByCreatedAtDesc(sourceUser.getId());
+            for (com.reader.Novel.Reader.model.Notification n : sourceNotifs) {
+                n.setUserId(targetUser.getId());
+                notificationRepository.save(n);
+            }
+
+            // 5. Merge Purchases
+            java.util.List<com.reader.Novel.Reader.model.Purchase> sourcePurchases = purchaseRepository.findByUserId(sourceUser.getId());
+            for (com.reader.Novel.Reader.model.Purchase p : sourcePurchases) {
+                Optional<com.reader.Novel.Reader.model.Purchase> targetP = purchaseRepository.findByUserIdAndChapterId(targetUser.getId(), p.getChapterId());
+                if (targetP.isPresent()) {
+                    purchaseRepository.delete(p);
+                } else {
+                    p.setUserId(targetUser.getId());
+                    purchaseRepository.save(p);
+                }
+            }
+
+            // 6. Merge Ratings
+            java.util.List<com.reader.Novel.Reader.model.Rating> sourceRatings = ratingRepository.findByUserId(sourceUser.getId());
+            for (com.reader.Novel.Reader.model.Rating r : sourceRatings) {
+                Optional<com.reader.Novel.Reader.model.Rating> targetR = ratingRepository.findByUserIdAndNovelId(targetUser.getId(), r.getNovelId());
+                if (targetR.isPresent()) {
+                    ratingRepository.delete(r);
+                } else {
+                    r.setUserId(targetUser.getId());
+                    ratingRepository.save(r);
+                }
+            }
+
+            // Delete source user
+            userRepository.delete(sourceUser);
+
+            // Update target user
+            targetUser.setEmail(email);
+            if (!targetUser.getLoginType().contains("DISCORD")) {
+                targetUser.setLoginType(targetUser.getLoginType() + ",DISCORD");
+            }
+            userRepository.save(targetUser);
+
+            session.removeAttribute("temp_merge_discord_email");
+            session.setAttribute("user", targetUser);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Accounts merged successfully.", "user", targetUser));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Merging failed: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/subscribe-updates")
     public ResponseEntity<?> subscribeUpdates(@RequestParam String email, HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");

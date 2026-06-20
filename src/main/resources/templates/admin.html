@@ -1121,6 +1121,12 @@
                         </div>
                         <div class="row g-3 mb-4">
                             <div class="col-12">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cred-google-enabled" checked>
+                                    <label class="form-check-label text-white-50" for="cred-google-enabled">Enable Google Authentication</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
                                 <label for="cred-google-client-id" class="form-label-admin">Google OAuth Client ID</label>
                                 <input type="text" class="form-input-admin" id="cred-google-client-id" placeholder="e.g. 883962137588-uhj9o4iqcj0js227621pcj0i88n652i4.apps.googleusercontent.com">
                             </div>
@@ -1130,6 +1136,30 @@
                                     <input type="password" class="form-input-admin pe-5" id="cred-google-client-secret" placeholder="e.g. GOCSPX-...">
                                     <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-google-client-secret')" style="z-index: 10;">
                                         <i class="fa-solid fa-eye text-white-50" id="eye-cred-google-client-secret"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Discord Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fab fa-discord text-primary me-2"></i>Discord Authentication Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cred-discord-enabled" checked>
+                                    <label class="form-check-label text-white-50" for="cred-discord-enabled">Enable Discord Authentication</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-discord-client-id" class="form-label-admin">Discord Client ID</label>
+                                <input type="text" class="form-input-admin" id="cred-discord-client-id" placeholder="e.g. 1048576239485726485">
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-discord-client-secret" class="form-label-admin">Discord Client Secret</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-discord-client-secret" placeholder="e.g. your-client-secret">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-discord-client-secret')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-discord-client-secret"></i>
                                     </button>
                                 </div>
                             </div>
@@ -1556,6 +1586,10 @@
             .done(function(data) {
                 $("#cred-google-client-id").val(data.googleClientId || "");
                 $("#cred-google-client-secret").val(data.googleClientSecret || "");
+                $("#cred-google-enabled").prop("checked", data.googleEnabled !== "false");
+                $("#cred-discord-client-id").val(data.discordClientId || "");
+                $("#cred-discord-client-secret").val(data.discordClientSecret || "");
+                $("#cred-discord-enabled").prop("checked", data.discordEnabled !== "false");
                 $("#cred-mail-host").val(data.mailHost || "");
                 $("#cred-mail-port").val(data.mailPort || "");
                 $("#cred-mail-username").val(data.mailUsername || "");
@@ -1574,6 +1608,10 @@
             var creds = {
                 googleClientId: $("#cred-google-client-id").val(),
                 googleClientSecret: $("#cred-google-client-secret").val(),
+                googleEnabled: $("#cred-google-enabled").is(":checked") ? "true" : "false",
+                discordClientId: $("#cred-discord-client-id").val(),
+                discordClientSecret: $("#cred-discord-client-secret").val(),
+                discordEnabled: $("#cred-discord-enabled").is(":checked") ? "true" : "false",
                 mailHost: $("#cred-mail-host").val(),
                 mailPort: $("#cred-mail-port").val(),
                 mailUsername: $("#cred-mail-username").val(),
@@ -1607,6 +1645,10 @@
                     var creds = JSON.parse(e.target.result);
                     $("#cred-google-client-id").val(creds.googleClientId || "");
                     $("#cred-google-client-secret").val(creds.googleClientSecret || "");
+                    $("#cred-google-enabled").prop("checked", creds.googleEnabled !== "false");
+                    $("#cred-discord-client-id").val(creds.discordClientId || "");
+                    $("#cred-discord-client-secret").val(creds.discordClientSecret || "");
+                    $("#cred-discord-enabled").prop("checked", creds.discordEnabled !== "false");
                     $("#cred-mail-host").val(creds.mailHost || "");
                     $("#cred-mail-port").val(creds.mailPort || "");
                     $("#cred-mail-username").val(creds.mailUsername || "");
@@ -3891,6 +3933,10 @@
                 e.preventDefault();
                 var googleClientId = $("#cred-google-client-id").val();
                 var googleClientSecret = $("#cred-google-client-secret").val();
+                var googleEnabled = $("#cred-google-enabled").is(":checked") ? "true" : "false";
+                var discordClientId = $("#cred-discord-client-id").val();
+                var discordClientSecret = $("#cred-discord-client-secret").val();
+                var discordEnabled = $("#cred-discord-enabled").is(":checked") ? "true" : "false";
                 var mailHost = $("#cred-mail-host").val();
                 var mailPort = $("#cred-mail-port").val();
                 var mailUsername = $("#cred-mail-username").val();
@@ -3902,6 +3948,10 @@
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
                     googleClientSecret: googleClientSecret,
+                    googleEnabled: googleEnabled,
+                    discordClientId: discordClientId,
+                    discordClientSecret: discordClientSecret,
+                    discordEnabled: discordEnabled,
                     mailHost: mailHost,
                     mailPort: mailPort,
                     mailUsername: mailUsername,

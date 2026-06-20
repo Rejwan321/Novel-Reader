@@ -439,4 +439,90 @@ public class AuthRestControllerTest {
         assertEquals("LOCAL,GOOGLE", updatedUser.getLoginType());
         assertTrue(com.reader.Novel.Reader.util.PasswordUtils.checkPassword("newpassword123", updatedUser.getPassword()));
     }
+
+    @Test
+    public void testDiscordLoginRedirects() throws Exception {
+        systemSettingRepository.save(new SystemSetting("discord.client_id", "test-discord-id"));
+        systemSettingRepository.save(new SystemSetting("app.base_url", "http://localhost:8080"));
+
+        mockMvc.perform(get("/api/auth/discord/login"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("https://discord.com/oauth2/authorize")));
+    }
+
+    @Test
+    public void testDiscordCallbackNewUser() throws Exception {
+        systemSettingRepository.save(new SystemSetting("discord.client_id", "test-discord-id"));
+        systemSettingRepository.save(new SystemSetting("discord.client_secret", "test-discord-secret"));
+
+        Map<String, Object> tokenResponse = new HashMap<>();
+        tokenResponse.put("access_token", "dummy-access-token");
+
+        Map<String, Object> userProfile = new HashMap<>();
+        userProfile.put("email", "discord_new@example.com");
+        userProfile.put("username", "discord_user");
+
+        try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, context) -> {
+            when(mock.postForObject(anyString(), any(), eq(Map.class))).thenReturn(tokenResponse);
+            
+            org.springframework.http.ResponseEntity<Map> responseEntity = 
+                    new org.springframework.http.ResponseEntity<>(userProfile, org.springframework.http.HttpStatus.OK);
+            when(mock.exchange(anyString(), any(org.springframework.http.HttpMethod.class), any(org.springframework.http.HttpEntity.class), eq(Map.class)))
+                    .thenReturn(responseEntity);
+        })) {
+            MockHttpSession session = new MockHttpSession();
+            mockMvc.perform(get("/api/auth/discord/callback")
+                    .session(session)
+                    .param("code", "dummy-auth-code"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/"));
+
+            User createdUser = userRepository.findByEmail("discord_new@example.com").orElse(null);
+            assertNotNull(createdUser);
+            assertEquals("discord_user", createdUser.getName());
+            assertEquals("DISCORD", createdUser.getLoginType());
+        }
+    }
+
+    @Test
+    public void testDiscordCallbackLinkUser() throws Exception {
+        systemSettingRepository.save(new SystemSetting("discord.client_id", "test-discord-id"));
+        systemSettingRepository.save(new SystemSetting("discord.client_secret", "test-discord-secret"));
+
+        User existingUser = new User();
+        existingUser.setName("Existing User");
+        existingUser.setEmail("link@example.com");
+        existingUser.setPassword("pass");
+        existingUser.setUser_type("READER");
+        existingUser.setLoginType("LOCAL");
+        existingUser = userRepository.save(existingUser);
+
+        Map<String, Object> tokenResponse = new HashMap<>();
+        tokenResponse.put("access_token", "dummy-access-token");
+
+        Map<String, Object> userProfile = new HashMap<>();
+        userProfile.put("email", "link@example.com");
+        userProfile.put("username", "discord_user");
+
+        try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, context) -> {
+            when(mock.postForObject(anyString(), any(), eq(Map.class))).thenReturn(tokenResponse);
+            
+            org.springframework.http.ResponseEntity<Map> responseEntity = 
+                    new org.springframework.http.ResponseEntity<>(userProfile, org.springframework.http.HttpStatus.OK);
+            when(mock.exchange(anyString(), any(org.springframework.http.HttpMethod.class), any(org.springframework.http.HttpEntity.class), eq(Map.class)))
+                    .thenReturn(responseEntity);
+        })) {
+            MockHttpSession session = new MockHttpSession();
+            session.setAttribute("user", existingUser);
+
+            mockMvc.perform(get("/api/auth/discord/callback")
+                    .session(session)
+                    .param("code", "dummy-auth-code"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/user/panel?tab=settings"));
+
+            User updatedUser = userRepository.findById(existingUser.getId()).orElseThrow();
+            assertEquals("LOCAL,DISCORD", updatedUser.getLoginType());
+        }
+    }
 }

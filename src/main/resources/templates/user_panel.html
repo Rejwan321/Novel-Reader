@@ -278,37 +278,67 @@
                             <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-link text-violet me-2"></i>Account Linking & Login Methods</h3>
                             <p class="text-muted small mb-4">Link additional login providers to access your account via multiple methods.</p>
                             
-                            <div class="row g-3 align-items-center">
-                                <div class="col-md-6">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="btn-action-premium d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background: rgba(189, 83, 237, 0.1); border: 0 !important; cursor: default !important;">
-                                            <i class="fa-brands fa-google text-violet fs-5"></i>
+                            <!-- Google Authentication -->
+                            <div th:if="${googleEnabled or #strings.contains(currentUser.loginType, 'GOOGLE')}">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="btn-action-premium d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background: rgba(189, 83, 237, 0.1); border: 0 !important; cursor: default !important;">
+                                                <i class="fa-brands fa-google text-violet fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="h6 fw-bold text-white mb-1">Google Authentication</h4>
+                                                <div class="small text-muted" id="google-link-status" th:text="${#strings.contains(currentUser.loginType, 'GOOGLE') ? 'Linked (' + currentUser.email + ')' : 'Not Linked'}">Not Linked</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 class="h6 fw-bold text-white mb-1">Google Authentication</h4>
-                                            <div class="small text-muted" id="google-link-status" th:text="${#strings.contains(currentUser.loginType, 'GOOGLE') ? 'Linked (' + currentUser.email + ')' : 'Not Linked'}">Not Linked</div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <div th:if="${!#strings.contains(currentUser.loginType, 'GOOGLE')}" id="google-link-btn-container" class="d-inline-block">
+                                            <!-- Google Sign-in standard button (linking view) -->
+                                            <div class="g_id_signin"
+                                                 data-type="standard"
+                                                 data-shape="pill"
+                                                 data-theme="outline"
+                                                 data-text="signin_with"
+                                                 data-size="medium"
+                                                 data-logo_alignment="left">
+                                            </div>
+                                        </div>
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="text-success small fw-bold">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6 text-end">
-                                    <div th:if="${!#strings.contains(currentUser.loginType, 'GOOGLE')}" id="google-link-btn-container" class="d-inline-block">
-                                        <!-- Google Sign-in standard button (linking view) -->
-                                        <div class="g_id_signin"
-                                             data-type="standard"
-                                             data-shape="pill"
-                                             data-theme="outline"
-                                             data-text="signin_with"
-                                             data-size="medium"
-                                             data-logo_alignment="left">
-                                        </div>
-                                    </div>
-                                    <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="text-success small fw-bold">
-                                        <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
-                                    </div>
-                                </div>
+                                <hr class="border-secondary my-4" style="opacity: 0.15;">
                             </div>
                             
-                            <hr class="border-secondary my-4" style="opacity: 0.15;">
+                            <!-- Discord Authentication -->
+                            <div th:if="${discordEnabled or #strings.contains(currentUser.loginType, 'DISCORD')}">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="btn-action-premium d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background: rgba(88, 101, 242, 0.1); border: 0 !important; cursor: default !important;">
+                                                <i class="fa-brands fa-discord text-primary fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="h6 fw-bold text-white mb-1">Discord Authentication</h4>
+                                                <div class="small text-muted" id="discord-link-status" th:text="${#strings.contains(currentUser.loginType, 'DISCORD') ? 'Linked (' + currentUser.email + ')' : 'Not Linked'}">Not Linked</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <div th:if="${!#strings.contains(currentUser.loginType, 'DISCORD')}" id="discord-link-btn-container" class="d-inline-block">
+                                            <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="btn btn-sm btn-outline-primary px-3">
+                                                <i class="fa-brands fa-discord me-1"></i>Link Discord
+                                            </a>
+                                        </div>
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'DISCORD')}" class="text-success small fw-bold">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="border-secondary my-4" style="opacity: 0.15;">
+                            </div>
                             
                             <!-- Local Password Linking -->
                             <div class="row g-3 align-items-center">
@@ -397,6 +427,36 @@
                     btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
                 });
             });
+
+            // Active Tab Query Param Check
+            var urlParams = new URLSearchParams(window.location.search);
+            var activeTab = urlParams.get('tab');
+            if (activeTab) {
+                switchTab(activeTab);
+            }
+
+            // Check for Account Merging parameters (for Discord redirect callback)
+            if (urlParams.get('mergeRequired') === 'true' && urlParams.get('provider') === 'discord') {
+                switchTab('settings'); // make sure settings pane is visible
+                var sourceEmail = urlParams.get('sourceUserEmail');
+                if (sourceEmail) {
+                    if (confirm("This Discord account is already linked to another user (" + sourceEmail + "). Would you like to merge all data (coins, purchases, bookmarks, comments) from that account into your current account? This action cannot be undone.")) {
+                        $.post("/api/auth/merge/discord", { email: sourceEmail })
+                        .done(function(res) {
+                            showToast("Accounts merged successfully!");
+                            setTimeout(function() {
+                                window.location.href = "/user/panel?tab=settings";
+                            }, 1500);
+                        })
+                        .fail(function(err) {
+                            showToast("Merging failed: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                        });
+                    } else {
+                        // user cancelled, clear URL parameters
+                        window.history.replaceState({}, document.title, window.location.pathname + "?tab=settings");
+                    }
+                }
+            }
         });
 
         // Tab Switcher
