@@ -25,6 +25,9 @@ public class UserPanelController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
     @GetMapping("/user/panel")
     public String userPanel(HttpSession session, Model model) {
         User loggedInUser = (User) session.getAttribute("user");
@@ -36,7 +39,12 @@ public class UserPanelController {
         User freshUser = userRepository.findById(loggedInUser.getId()).orElse(loggedInUser);
         session.setAttribute("user", freshUser);
         
+        String googleClientId = systemSettingRepository.findById("google.client_id")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("your-google-client-id");
+        
         model.addAttribute("currentUser", freshUser);
+        model.addAttribute("googleClientId", googleClientId);
         return "user_panel";
     }
 
