@@ -699,66 +699,120 @@ $(document).ready(function() {
             $("#discovery-pagination").addClass("d-none");
             $("#empty-state-container").removeClass("d-none").fadeIn(300);
         } else {
-            $("#discovery-pagination").removeClass("d-none");
             $("#empty-state-container").addClass("d-none");
-            $("#page-indicator").text("Page " + currentPage + " of " + totalPages);
-
-            if (currentPage === 1) {
-                $("#btn-prev-page").attr("disabled", true).addClass("disabled").css("opacity", "0.5");
-            } else {
-                $("#btn-prev-page").removeAttr("disabled").removeClass("disabled").css("opacity", "1");
-            }
-
-            if (currentPage === totalPages) {
-                $("#btn-next-page").attr("disabled", true).addClass("disabled").css("opacity", "0.5");
-            } else {
-                $("#btn-next-page").removeAttr("disabled").removeClass("disabled").css("opacity", "1");
-            }
+            renderPagination(currentPage, totalPages);
         }
     }
 
-    // Pagination Click Handlers
-    $("#btn-prev-page").click(function() {
-        if (currentPage > 1) {
-            currentPage--;
-            applyFilters();
-            var targetOffset = $(".filter-section").offset();
-            if (targetOffset) {
-                $('html, body').animate({
-                    scrollTop: targetOffset.top - 20
-                }, 300);
+    function renderPagination(currentPage, totalPages) {
+        var container = $("#discovery-pagination");
+        container.empty();
+
+        if (totalPages <= 1) {
+            container.addClass("d-none");
+            return;
+        }
+        container.removeClass("d-none");
+
+        // 1. Double Left chevron button "<<"
+        var btnFirst = $('<div class="yuki-pagination-btn">«</div>');
+        if (currentPage === 1) {
+            btnFirst.addClass("disabled");
+        } else {
+            btnFirst.click(function() {
+                currentPage = 1;
+                applyFilters();
+                scrollToFilterSection();
+            });
+        }
+        container.append(btnFirst);
+
+        // 2. Single Left chevron button "<"
+        var btnPrev = $('<div class="yuki-pagination-btn">‹</div>');
+        if (currentPage === 1) {
+            btnPrev.addClass("disabled");
+        } else {
+            btnPrev.click(function() {
+                currentPage--;
+                applyFilters();
+                scrollToFilterSection();
+            });
+        }
+        container.append(btnPrev);
+
+        // 3. Page Numbers list logic
+        var pagesToShow = [];
+        if (totalPages <= 7) {
+            for (var i = 1; i <= totalPages; i++) {
+                pagesToShow.push(i);
+            }
+        } else {
+            if (currentPage <= 4) {
+                pagesToShow = [1, 2, 3, 4, 5, "ellipsis", totalPages];
+            } else if (currentPage >= totalPages - 3) {
+                pagesToShow = [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+            } else {
+                pagesToShow = [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
             }
         }
-    });
 
-    $("#btn-next-page").click(function() {
-        // Calculate max page dynamically
-        var cards = $(".book-card-col");
-        var visibleCount = 0;
-        cards.each(function() {
-            var cardCol = $(this);
-            var type = cardCol.data("type");
-            var genresStr = cardCol.data("genres") || "";
-            var genres = genresStr.split(",").map(g => g.trim().toUpperCase());
-            var typeMatch = (selectedType === "ALL" || type === selectedType);
-            var genreMatch = (selectedGenre === "ALL" || genres.includes(selectedGenre.toUpperCase()));
-            if (typeMatch && genreMatch) {
-                visibleCount++;
+        pagesToShow.forEach(function(p) {
+            if (p === "ellipsis") {
+                container.append('<div class="yuki-pagination-ellipsis">...</div>');
+            } else {
+                var btnPage = $('<div class="yuki-pagination-btn">' + p + '</div>');
+                if (p === currentPage) {
+                    btnPage.addClass("active");
+                } else {
+                    btnPage.click(function() {
+                        currentPage = p;
+                        applyFilters();
+                        scrollToFilterSection();
+                    });
+                }
+                container.append(btnPage);
             }
         });
-        var totalPages = Math.ceil(visibleCount / itemsPerPage) || 1;
 
-        if (currentPage < totalPages) {
-            currentPage++;
-            applyFilters();
-            var targetOffset = $(".filter-section").offset();
-            if (targetOffset) {
-                $('html, body').animate({
-                    scrollTop: targetOffset.top - 20
-                }, 300);
-            }
+        // 4. Single Right chevron button ">"
+        var btnNext = $('<div class="yuki-pagination-btn">›</div>');
+        if (currentPage === totalPages) {
+            btnNext.addClass("disabled");
+        } else {
+            btnNext.click(function() {
+                currentPage++;
+                applyFilters();
+                scrollToFilterSection();
+            });
         }
-    });
+        container.append(btnNext);
+
+        // 5. Double Right chevron button ">>"
+        var btnLast = $('<div class="yuki-pagination-btn">»</div>');
+        if (currentPage === totalPages) {
+            btnLast.addClass("disabled");
+        } else {
+            btnLast.click(function() {
+                currentPage = totalPages;
+                applyFilters();
+                scrollToFilterSection();
+            });
+        }
+        container.append(btnLast);
+
+        // 6. Text info: Page X of Y
+        var textInfo = $('<div class="yuki-pagination-info">Page <strong>' + currentPage + '</strong> of <strong>' + totalPages + '</strong></div>');
+        container.append(textInfo);
+    }
+
+    function scrollToFilterSection() {
+        var targetOffset = $(".filter-section").offset();
+        if (targetOffset) {
+            $('html, body').animate({
+                scrollTop: targetOffset.top - 20
+            }, 300);
+        }
+    }
 
     // Tab Type Selection
     $(".filter-tab").click(function() {
