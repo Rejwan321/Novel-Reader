@@ -1200,12 +1200,29 @@
 
                         <!-- Option A: Select User from List -->
                         <div class="row g-3 mb-4" id="group-select-user">
-                            <div class="col-12">
-                                <label for="sendmail-user-select" class="form-label-admin">Select Recipient User(s)</label>
-                                <select class="form-input-admin" id="sendmail-user-select" multiple style="height: 150px;">
-                                    <option th:each="u : ${users}" th:value="${u.email}" th:text="${u.name + ' (' + u.email + ')'}"></option>
+                            <div class="col-md-6">
+                                <label for="sendmail-role-select" class="form-label-admin">Select Role</label>
+                                <select class="form-input-admin" id="sendmail-role-select">
+                                    <option value="ALL">All Roles</option>
+                                    <option value="READER">Reader</option>
+                                    <option value="EDITOR">Translator (Editor)</option>
+                                    <option value="PROOFREADER">Proofreader</option>
+                                    <option value="ADMIN">Admin</option>
+                                    <option value="OWNER">Owner</option>
                                 </select>
-                                <small class="text-muted d-block mt-1">Hold Ctrl (or Cmd) to select multiple users.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="sendmail-user-select" class="form-label-admin">Select Recipient User</label>
+                                <select class="form-input-admin" id="sendmail-user-select">
+                                    <option value="">Choose a user...</option>
+                                    <option th:each="u : ${users}" th:value="${u.email}" th:data-role="${u.user_type}" th:text="${u.name + ' (' + u.email + ')'}"></option>
+                                </select>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <label class="form-label-admin">Selected Recipient(s)</label>
+                                <div id="selected-recipients-container" class="d-flex flex-wrap gap-2 p-3 rounded" style="background-color: #120e2e; min-height: 50px; border: 1px solid rgba(255,255,255,0.05);">
+                                    <span class="text-muted small" id="no-recipients-text">No recipients selected yet.</span>
+                                </div>
                             </div>
                         </div>
 
@@ -3843,6 +3860,105 @@
                 }
             });
 
+            // Recipient selection states
+            var selectedRecipientEmails = [];
+            var originalMailOptions = [];
+
+            // Extract original users list on page load
+            $("#sendmail-user-select option").each(function() {
+                var email = $(this).val();
+                if (email) {
+                    originalMailOptions.push({
+                        value: email,
+                        text: $(this).text(),
+                        role: $(this).attr("data-role")
+                    });
+                }
+            });
+
+            // Filter users based on role selection
+            $("#sendmail-role-select").change(function() {
+                var selectedRole = $(this).val();
+                var userSelect = $("#sendmail-user-select");
+                
+                // Clear existing option list except "Choose a user..."
+                userSelect.find("option:not(:first)").remove();
+                
+                originalMailOptions.forEach(function(u) {
+                    if (selectedRole === "ALL" || u.role === selectedRole) {
+                        // Only add if not already selected
+                        if (!selectedRecipientEmails.includes(u.value)) {
+                            var option = $("<option></option>")
+                                .val(u.value)
+                                .text(u.text)
+                                .attr("data-role", u.role);
+                            userSelect.append(option);
+                        }
+                    }
+                });
+            });
+
+            // Add user when chosen from select dropdown
+            $("#sendmail-user-select").change(function() {
+                var email = $(this).val();
+                if (!email) return;
+
+                if (!selectedRecipientEmails.includes(email)) {
+                    selectedRecipientEmails.push(email);
+                    
+                    var optionText = $(this).find("option:selected").text();
+                    
+                    // Hide empty placeholder text
+                    $("#no-recipients-text").addClass("d-none");
+                    
+                    // Add visual chip to container
+                    var chip = $('<div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill text-white small" style="background-color: #2c1a4d; border: 1px solid #6f42c1; margin-bottom: 4px;"></div>')
+                        .attr("data-email", email);
+                    chip.append($("<span></span>").text(optionText));
+                    
+                    var removeBtn = $('<i class="fa-solid fa-xmark text-danger cursor-pointer ms-1 btn-remove-recipient" style="cursor: pointer; font-size: 0.9rem;"></i>');
+                    chip.append(removeBtn);
+                    
+                    $("#selected-recipients-container").append(chip);
+                    
+                    // Remove option from dropdown
+                    $(this).find("option:selected").remove();
+                }
+                
+                // Reset select field back to default
+                $(this).val("");
+            });
+
+            // Remove user chip handler
+            $(document).on("click", ".btn-remove-recipient", function() {
+                var chip = $(this).closest("[data-email]");
+                var email = chip.attr("data-email");
+                
+                // Filter out email from selection list
+                selectedRecipientEmails = selectedRecipientEmails.filter(function(e) {
+                    return e !== email;
+                });
+                
+                chip.remove();
+                
+                if (selectedRecipientEmails.length === 0) {
+                    $("#no-recipients-text").removeClass("d-none");
+                }
+                
+                // Re-trigger role select filter to rebuild option elements
+                $("#sendmail-role-select").trigger("change");
+            });
+
+            // Handle Send Email Form Reset
+            $("#form-admin-sendmail").on("reset", function() {
+                selectedRecipientEmails = [];
+                setTimeout(function() {
+                    $("#selected-recipients-container").find(".rounded-pill").remove();
+                    $("#no-recipients-text").removeClass("d-none");
+                    $("#sendmail-role-select").val("ALL").trigger("change");
+                }, 10);
+            });
+
             // AJAX: Submit Send Email form
             $("#form-admin-sendmail").submit(function(e) {
                 e.preventDefault();
@@ -3850,7 +3966,7 @@
                 var originalHtml = btn.html();
                 
                 var recipientMode = $('input[name="recipient-mode"]:checked').val();
-                var selectedEmails = $("#sendmail-user-select").val() || [];
+                var selectedEmails = selectedRecipientEmails;
                 var customEmails = $("#sendmail-custom-input").val();
                 var subject = $("#sendmail-subject").val();
                 var body = $("#sendmail-body").val();
