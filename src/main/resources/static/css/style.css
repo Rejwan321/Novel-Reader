@@ -842,10 +842,10 @@ input[type="file"].form-input-admin::-webkit-file-upload-button:hover {
 }
 
 .yuki-pagination-btn.active {
-    background-color: #e50914; /* Red color matching reference image */
-    border-color: #e50914;
+    background-color: var(--theme-primary);
+    border-color: var(--theme-primary);
     color: #ffffff;
-    box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+    box-shadow: 0 0 15px rgba(94, 99, 182, 0.4);
     font-weight: 700;
 }
 
