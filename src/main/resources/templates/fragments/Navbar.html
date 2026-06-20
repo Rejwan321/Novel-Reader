@@ -167,10 +167,26 @@
                             <div class="col-6 col-md-4">
                                 <div class="search-filter-group">
                                     <span class="search-filter-label">Translator</span>
-                                    <select id="search-filter-editor-select" class="search-filter-select">
+                                    <select id="search-filter-editor-select" class="search-filter-select" style="display: none;">
                                         <option value="ALL">Any</option>
                                         <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.name}"></option>
                                     </select>
+                                    <div class="custom-search-select-wrapper">
+                                        <div class="custom-search-select-trigger">
+                                            <span class="selected-value">Any</span>
+                                            <i class="fa-solid fa-chevron-down"></i>
+                                        </div>
+                                        <div class="custom-search-select-dropdown">
+                                            <div class="custom-search-select-search-box">
+                                                <input type="text" class="custom-search-select-search-input" placeholder="Search...">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                            </div>
+                                            <div class="custom-search-select-options">
+                                                <div class="custom-search-select-option active" data-value="ALL">Any</div>
+                                                <div th:each="editor : ${editors}" class="custom-search-select-option" th:data-value="${editor.id}" th:text="${editor.name}">System Translator</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
