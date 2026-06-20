@@ -644,14 +644,17 @@ $(document).ready(function() {
     });
 
 
-    // --- Client-Side Snappy Filter Engine (Home Page) ---
+    // --- Client-Side Snappy Filter & Pagination Engine (Home Page) ---
     var selectedType = $("#search-filter-type-val").val() || "ALL";
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
+    var currentPage = 1;
+    var pageSize = 12;
 
     function applyFilters() {
         var cards = $(".book-card-col");
-        var visibleCount = 0;
+        var matchedCards = [];
 
+        // 1. Identify matching cards
         cards.each(function() {
             var cardCol = $(this);
             var type = cardCol.data("type");
@@ -662,21 +665,105 @@ $(document).ready(function() {
             var genreMatch = (selectedGenre === "ALL" || genres.includes(selectedGenre.toUpperCase()));
 
             if (typeMatch && genreMatch) {
-                cardCol.fadeIn(300);
-                visibleCount++;
+                matchedCards.push(cardCol);
             } else {
-                cardCol.fadeOut(200);
+                cardCol.hide();
             }
         });
 
+        var visibleCount = matchedCards.length;
+
         // Toggle Empty state container
-        setTimeout(function() {
-            if (visibleCount === 0) {
-                $("#empty-state-container").removeClass("d-none").fadeIn(300);
+        if (visibleCount === 0) {
+            $("#empty-state-container").removeClass("d-none").fadeIn(300);
+            $("#discovery-pagination").empty().addClass("d-none");
+            return;
+        } else {
+            $("#empty-state-container").addClass("d-none");
+        }
+
+        // Calculate pages
+        var totalPages = Math.ceil(visibleCount / pageSize);
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        if (currentPage < 1) {
+            currentPage = 1;
+        }
+
+        // 2. Hide all and show only current page's cards
+        var startIndex = (currentPage - 1) * pageSize;
+        var endIndex = startIndex + pageSize;
+
+        for (var i = 0; i < visibleCount; i++) {
+            if (i >= startIndex && i < endIndex) {
+                matchedCards[i].fadeIn(300);
             } else {
-                $("#empty-state-container").addClass("d-none");
+                matchedCards[i].hide();
             }
-        }, 210);
+        }
+
+        // 3. Render pagination controls
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        var container = $("#discovery-pagination");
+        container.empty();
+
+        if (totalPages <= 1) {
+            container.addClass("d-none");
+            return;
+        } else {
+            container.removeClass("d-none");
+        }
+
+        // Previous Button
+        var prevDisabled = (currentPage === 1) ? "disabled" : "";
+        var prevBtn = $('<button class="btn btn-pagination" ' + prevDisabled + '><i class="fa fa-chevron-left me-1"></i> Prev</button>');
+        prevBtn.click(function() {
+            if (currentPage > 1) {
+                currentPage--;
+                applyFilters();
+                scrollToGrid();
+            }
+        });
+        container.append(prevBtn);
+
+        // Page Numbers
+        for (var p = 1; p <= totalPages; p++) {
+            var activeClass = (p === currentPage) ? "active" : "";
+            var pageBtn = $('<button class="btn btn-pagination ' + activeClass + '">' + p + '</button>');
+            (function(page) {
+                pageBtn.click(function() {
+                    currentPage = page;
+                    applyFilters();
+                    scrollToGrid();
+                });
+            })(p);
+            container.append(pageBtn);
+        }
+
+        // Next Button
+        var nextDisabled = (currentPage === totalPages) ? "disabled" : "";
+        var nextBtn = $('<button class="btn btn-pagination" ' + nextDisabled + '>Next <i class="fa fa-chevron-right ms-1"></i></button>');
+        nextBtn.click(function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                applyFilters();
+                scrollToGrid();
+            }
+        });
+        container.append(nextBtn);
+    }
+
+    function scrollToGrid() {
+        var offsetTarget = $(".filter-section").offset();
+        if (offsetTarget) {
+            $('html, body').animate({
+                scrollTop: offsetTarget.top - 20
+            }, 300);
+        }
     }
 
     // Tab Type Selection
@@ -685,6 +772,7 @@ $(document).ready(function() {
         $(this).addClass("active");
         selectedType = $(this).data("type");
         $("#search-filter-type-val").val(selectedType); // Sync hidden input
+        currentPage = 1; // Reset to page 1
         applyFilters();
     });
 
@@ -711,6 +799,7 @@ $(document).ready(function() {
             $("#tab-all").addClass("active");
         }
         selectedType = targetType;
+        currentPage = 1; // Reset to page 1
         applyFilters();
     });
 
@@ -724,6 +813,7 @@ $(document).ready(function() {
             if (selectedType === "COMIC") $("#tab-comics").addClass("active");
             if (selectedType === "MANHWA") $("#tab-manhwa").addClass("active");
             if (selectedType === "MANGA") $("#tab-manga").addClass("active");
+            currentPage = 1; // Reset
             applyFilters();
         }
         var genreParam = urlParams.get("genre");
@@ -735,6 +825,7 @@ $(document).ready(function() {
                     $(this).addClass("active");
                 }
             });
+            currentPage = 1; // Reset
             applyFilters();
         }
     }
@@ -746,6 +837,7 @@ $(document).ready(function() {
         selectedGenre = $(this).data("genre");
         $("#search-filter-genre-val").val(selectedGenre); // Sync hidden input
         $("#search-filter-genre-select").val(selectedGenre); // Sync dropdown
+        currentPage = 1; // Reset to page 1
         applyFilters();
     });
 
