@@ -806,34 +806,3 @@ input[type="file"].form-input-admin::-webkit-file-upload-button:hover {
 .text-gray-accent {
     color: var(--text-muted);
 }
-
-/* Discovery Pagination Custom Styling */
-.btn-pagination {
-    background-color: var(--card-bg);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: var(--text-gray);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.btn-pagination:hover:not([disabled]) {
-    border-color: var(--violet-accent);
-    color: var(--text-primary);
-    background-color: rgba(189, 83, 237, 0.1);
-}
-
-.btn-pagination.active {
-    background-color: var(--violet-accent);
-    border-color: var(--violet-accent);
-    color: white;
-    box-shadow: 0 4px 12px rgba(189, 83, 237, 0.3);
-}
-
-.btn-pagination[disabled] {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background-color: rgba(0, 0, 0, 0.2);
-}

@@ -644,17 +644,17 @@ $(document).ready(function() {
     });
 
 
-    // --- Client-Side Snappy Filter & Pagination Engine (Home Page) ---
+    // --- Client-Side Snappy Filter Engine (Home Page) ---
     var selectedType = $("#search-filter-type-val").val() || "ALL";
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
+    var itemsPerPage = 12;
     var currentPage = 1;
-    var pageSize = 12;
 
     function applyFilters() {
         var cards = $(".book-card-col");
         var matchedCards = [];
 
-        // 1. Identify matching cards
+        // 1. Determine matching cards
         cards.each(function() {
             var cardCol = $(this);
             var type = cardCol.data("type");
@@ -672,18 +672,9 @@ $(document).ready(function() {
         });
 
         var visibleCount = matchedCards.length;
+        var totalPages = Math.ceil(visibleCount / itemsPerPage) || 1;
 
-        // Toggle Empty state container
-        if (visibleCount === 0) {
-            $("#empty-state-container").removeClass("d-none").fadeIn(300);
-            $("#discovery-pagination").empty().addClass("d-none");
-            return;
-        } else {
-            $("#empty-state-container").addClass("d-none");
-        }
-
-        // Calculate pages
-        var totalPages = Math.ceil(visibleCount / pageSize);
+        // Keep currentPage within bounds
         if (currentPage > totalPages) {
             currentPage = totalPages;
         }
@@ -691,11 +682,11 @@ $(document).ready(function() {
             currentPage = 1;
         }
 
-        // 2. Hide all and show only current page's cards
-        var startIndex = (currentPage - 1) * pageSize;
-        var endIndex = startIndex + pageSize;
+        // 2. Paginate show/hide
+        var startIndex = (currentPage - 1) * itemsPerPage;
+        var endIndex = startIndex + itemsPerPage;
 
-        for (var i = 0; i < visibleCount; i++) {
+        for (var i = 0; i < matchedCards.length; i++) {
             if (i >= startIndex && i < endIndex) {
                 matchedCards[i].fadeIn(300);
             } else {
@@ -703,68 +694,71 @@ $(document).ready(function() {
             }
         }
 
-        // 3. Render pagination controls
-        renderPagination(totalPages);
-    }
-
-    function renderPagination(totalPages) {
-        var container = $("#discovery-pagination");
-        container.empty();
-
-        if (totalPages <= 1) {
-            container.addClass("d-none");
-            return;
+        // 3. Update Pagination UI
+        if (visibleCount === 0) {
+            $("#discovery-pagination").addClass("d-none");
+            $("#empty-state-container").removeClass("d-none").fadeIn(300);
         } else {
-            container.removeClass("d-none");
-        }
+            $("#discovery-pagination").removeClass("d-none");
+            $("#empty-state-container").addClass("d-none");
+            $("#page-indicator").text("Page " + currentPage + " of " + totalPages);
 
-        // Previous Button
-        var prevDisabled = (currentPage === 1) ? "disabled" : "";
-        var prevBtn = $('<button class="btn btn-pagination" ' + prevDisabled + '><i class="fa fa-chevron-left me-1"></i> Prev</button>');
-        prevBtn.click(function() {
-            if (currentPage > 1) {
-                currentPage--;
-                applyFilters();
-                scrollToGrid();
+            if (currentPage === 1) {
+                $("#btn-prev-page").attr("disabled", true).addClass("disabled").css("opacity", "0.5");
+            } else {
+                $("#btn-prev-page").removeAttr("disabled").removeClass("disabled").css("opacity", "1");
             }
-        });
-        container.append(prevBtn);
 
-        // Page Numbers
-        for (var p = 1; p <= totalPages; p++) {
-            var activeClass = (p === currentPage) ? "active" : "";
-            var pageBtn = $('<button class="btn btn-pagination ' + activeClass + '">' + p + '</button>');
-            (function(page) {
-                pageBtn.click(function() {
-                    currentPage = page;
-                    applyFilters();
-                    scrollToGrid();
-                });
-            })(p);
-            container.append(pageBtn);
-        }
-
-        // Next Button
-        var nextDisabled = (currentPage === totalPages) ? "disabled" : "";
-        var nextBtn = $('<button class="btn btn-pagination" ' + nextDisabled + '>Next <i class="fa fa-chevron-right ms-1"></i></button>');
-        nextBtn.click(function() {
-            if (currentPage < totalPages) {
-                currentPage++;
-                applyFilters();
-                scrollToGrid();
+            if (currentPage === totalPages) {
+                $("#btn-next-page").attr("disabled", true).addClass("disabled").css("opacity", "0.5");
+            } else {
+                $("#btn-next-page").removeAttr("disabled").removeClass("disabled").css("opacity", "1");
             }
-        });
-        container.append(nextBtn);
+        }
     }
 
-    function scrollToGrid() {
-        var offsetTarget = $(".filter-section").offset();
-        if (offsetTarget) {
-            $('html, body').animate({
-                scrollTop: offsetTarget.top - 20
-            }, 300);
+    // Pagination Click Handlers
+    $("#btn-prev-page").click(function() {
+        if (currentPage > 1) {
+            currentPage--;
+            applyFilters();
+            var targetOffset = $(".filter-section").offset();
+            if (targetOffset) {
+                $('html, body').animate({
+                    scrollTop: targetOffset.top - 20
+                }, 300);
+            }
         }
-    }
+    });
+
+    $("#btn-next-page").click(function() {
+        // Calculate max page dynamically
+        var cards = $(".book-card-col");
+        var visibleCount = 0;
+        cards.each(function() {
+            var cardCol = $(this);
+            var type = cardCol.data("type");
+            var genresStr = cardCol.data("genres") || "";
+            var genres = genresStr.split(",").map(g => g.trim().toUpperCase());
+            var typeMatch = (selectedType === "ALL" || type === selectedType);
+            var genreMatch = (selectedGenre === "ALL" || genres.includes(selectedGenre.toUpperCase()));
+            if (typeMatch && genreMatch) {
+                visibleCount++;
+            }
+        });
+        var totalPages = Math.ceil(visibleCount / itemsPerPage) || 1;
+
+        if (currentPage < totalPages) {
+            currentPage++;
+            applyFilters();
+            var targetOffset = $(".filter-section").offset();
+            if (targetOffset) {
+                $('html, body').animate({
+                    scrollTop: targetOffset.top - 20
+                }, 300);
+            }
+        }
+    });
 
     // Tab Type Selection
     $(".filter-tab").click(function() {
@@ -772,7 +766,7 @@ $(document).ready(function() {
         $(this).addClass("active");
         selectedType = $(this).data("type");
         $("#search-filter-type-val").val(selectedType); // Sync hidden input
-        currentPage = 1; // Reset to page 1
+        currentPage = 1;
         applyFilters();
     });
 
@@ -799,7 +793,7 @@ $(document).ready(function() {
             $("#tab-all").addClass("active");
         }
         selectedType = targetType;
-        currentPage = 1; // Reset to page 1
+        currentPage = 1;
         applyFilters();
     });
 
@@ -813,7 +807,7 @@ $(document).ready(function() {
             if (selectedType === "COMIC") $("#tab-comics").addClass("active");
             if (selectedType === "MANHWA") $("#tab-manhwa").addClass("active");
             if (selectedType === "MANGA") $("#tab-manga").addClass("active");
-            currentPage = 1; // Reset
+            currentPage = 1;
             applyFilters();
         }
         var genreParam = urlParams.get("genre");
@@ -825,7 +819,7 @@ $(document).ready(function() {
                     $(this).addClass("active");
                 }
             });
-            currentPage = 1; // Reset
+            currentPage = 1;
             applyFilters();
         }
     }
@@ -837,9 +831,14 @@ $(document).ready(function() {
         selectedGenre = $(this).data("genre");
         $("#search-filter-genre-val").val(selectedGenre); // Sync hidden input
         $("#search-filter-genre-select").val(selectedGenre); // Sync dropdown
-        currentPage = 1; // Reset to page 1
+        currentPage = 1;
         applyFilters();
     });
+
+    // Run filters once on initial load (so default is also paginated)
+    if (window.location.pathname === "/") {
+        applyFilters();
+    }
 
 
     // --- Novel Reader Settings Panel ---
