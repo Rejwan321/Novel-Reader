@@ -52,6 +52,9 @@ public class AdminRestController {
     @Autowired
     private com.reader.Novel.Reader.service.EmailService emailService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
             User loggedInUser = (User) session.getAttribute("user");
@@ -1277,6 +1280,7 @@ public class AdminRestController {
 
     @PostMapping("/flakes/add")
     public ResponseEntity<?> addFlakePackage(
+            @RequestParam(required = false) Long id,
             @RequestParam Integer amount,
             @RequestParam Double price,
             HttpSession session) {
@@ -1297,8 +1301,22 @@ public class AdminRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "Amount and price must be greater than zero."));
         }
 
-        FlakePackage pack = new FlakePackage(null, amount, price);
-        novelService.saveFlakePackage(pack);
+        if (id != null) {
+            FlakePackage existing = novelService.getFlakePackageById(id);
+            if (existing != null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Package ID " + id + " is already in use."));
+            }
+            try {
+                jdbcTemplate.update("INSERT INTO flake_package (id, amount, price) VALUES (?, ?, ?)", id, amount, price);
+                alignFlakePackageSequence();
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to create package: " + e.getMessage()));
+            }
+        } else {
+            FlakePackage pack = new FlakePackage(null, amount, price);
+            novelService.saveFlakePackage(pack);
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Package added successfully!"));
     }
@@ -1306,6 +1324,7 @@ public class AdminRestController {
     @PostMapping("/flakes/edit/{id}")
     public ResponseEntity<?> editFlakePackage(
             @PathVariable Long id,
+            @RequestParam(required = false) Long newId,
             @RequestParam Integer amount,
             @RequestParam Double price,
             HttpSession session) {
@@ -1331,11 +1350,41 @@ public class AdminRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "Amount and price must be greater than zero."));
         }
 
-        pack.setAmount(amount);
-        pack.setPrice(price);
-        novelService.saveFlakePackage(pack);
+        if (newId != null && !newId.equals(id)) {
+            FlakePackage existing = novelService.getFlakePackageById(newId);
+            if (existing != null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Package ID " + newId + " is already in use."));
+            }
+            try {
+                jdbcTemplate.update("UPDATE flake_package SET id = ?, amount = ?, price = ? WHERE id = ?", newId, amount, price, id);
+                alignFlakePackageSequence();
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to update package ID: " + e.getMessage()));
+            }
+        } else {
+            pack.setAmount(amount);
+            pack.setPrice(price);
+            novelService.saveFlakePackage(pack);
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Package details updated successfully!"));
+    }
+
+    private void alignFlakePackageSequence() {
+        try {
+            String dbName = jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<String>) conn -> conn.getMetaData().getDatabaseProductName());
+            if ("H2".equalsIgnoreCase(dbName)) {
+                jdbcTemplate.execute("ALTER TABLE flake_package ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM flake_package)");
+            } else if (dbName != null && dbName.toUpperCase().contains("MYSQL")) {
+                Long nextId = jdbcTemplate.queryForObject("SELECT COALESCE(MAX(id), 0) + 1 FROM flake_package", Long.class);
+                if (nextId != null) {
+                    jdbcTemplate.execute("ALTER TABLE flake_package AUTO_INCREMENT = " + nextId);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Sequence alignment failed: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/flakes/{id}")

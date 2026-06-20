@@ -944,11 +944,15 @@
                         <h3 class="h5 fw-bold text-white mb-4" id="title-add-flake"><i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Flake Package</h3>
                         <form id="form-add-flake" data-mode="create" data-edit-id="">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Package ID</label>
+                                    <input type="number" class="form-input-admin" id="flake-id" placeholder="Optional (Auto-generated)" min="1">
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label-admin">Snow Flakes Amount</label>
                                     <input type="number" class="form-input-admin" id="flake-amount" required placeholder="e.g. 100" min="1">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label-admin">Price (USD)</label>
                                     <input type="number" step="0.01" class="form-input-admin" id="flake-price" required placeholder="e.g. 0.99" min="0.01">
                                 </div>
@@ -3627,6 +3631,7 @@
                 var price = btn.data("price");
 
                 // Populate form fields
+                $("#flake-id").val(id);
                 $("#flake-amount").val(amount);
                 $("#flake-price").val(price);
 
@@ -3654,6 +3659,7 @@
             function resetFlakeForm() {
                 var form = $("#form-add-flake");
                 form[0].reset();
+                $("#flake-id").val("");
                 form.attr("data-mode", "create");
                 form.attr("data-edit-id", "");
 
@@ -3671,14 +3677,24 @@
 
                 var amount = $("#flake-amount").val();
                 var price = $("#flake-price").val();
+                var flakeId = $("#flake-id").val();
 
                 var endpoint = mode === "edit" ? "/api/admin/flakes/edit/" + editId : "/api/admin/flakes/add";
                 var successMsg = mode === "edit" ? "Package details updated successfully!" : "Package added successfully!";
 
-                $.post(endpoint, {
+                var postData = {
                     amount: amount,
                     price: price
-                })
+                };
+                if (flakeId) {
+                    if (mode === "edit") {
+                        postData.newId = flakeId;
+                    } else {
+                        postData.id = flakeId;
+                    }
+                }
+
+                $.post(endpoint, postData)
                 .done(function(res) {
                     showToast(res.message || successMsg);
                     resetFlakeForm();
