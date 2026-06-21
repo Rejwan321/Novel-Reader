@@ -950,6 +950,53 @@ public class AdminRestController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Story deleted successfully."));
     }
 
+    // 2.8.b. Bulk Delete story series (ADMIN & EDITOR)
+    @DeleteMapping("/stories/bulk")
+    public ResponseEntity<?> deleteStoriesBulk(
+            @RequestBody List<Long> ids,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"EDITOR".equals(role) && !"PROOFREADER".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only admins, editors, and proofreaders can delete stories."));
+        }
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No story IDs provided."));
+        }
+
+        // Validate all stories exist and user has permission to delete them
+        for (Long id : ids) {
+            Novel novel = novelService.getNovelById(id);
+            if (novel == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Story with ID " + id + " not found."));
+            }
+            if (!"ADMIN".equals(role) && !"PROOFREADER".equals(role) && !"OWNER".equals(role) && !loggedInUser.getId().equals(novel.getCreatorId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not own story: " + novel.getTitle()));
+            }
+        }
+
+        // Perform deletion
+        for (Long id : ids) {
+            novelService.deleteNovel(id);
+            try {
+                sseService.sendGlobalEvent("story_deleted", Map.of("storyId", id));
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Selected stories deleted successfully."));
+    }
+
     // 9. Analytics Summary (ADMIN & EDITOR)
     @GetMapping("/analytics/summary")
     public ResponseEntity<?> getAnalyticsSummary(HttpSession session) {
