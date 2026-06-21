@@ -346,10 +346,16 @@ public class AuthRestController {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("");
         if (baseUrl.isEmpty()) {
-            String scheme = request.getScheme();
+            String scheme = request.getHeader("x-forwarded-proto");
+            if (scheme == null || scheme.isEmpty()) {
+                scheme = request.getScheme();
+            }
             String serverName = request.getServerName();
+            if ("http".equalsIgnoreCase(scheme) && !serverName.equals("localhost") && !serverName.equals("127.0.0.1") && !serverName.startsWith("192.168.")) {
+                scheme = "https";
+            }
             int serverPort = request.getServerPort();
-            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
+            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 || "https".equalsIgnoreCase(scheme) ? "" : ":" + serverPort);
         }
         String redirectUri = baseUrl + "/api/auth/discord/callback";
         String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
@@ -371,10 +377,16 @@ public class AuthRestController {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("");
         if (baseUrl.isEmpty()) {
-            String scheme = request.getScheme();
+            String scheme = request.getHeader("x-forwarded-proto");
+            if (scheme == null || scheme.isEmpty()) {
+                scheme = request.getScheme();
+            }
             String serverName = request.getServerName();
+            if ("http".equalsIgnoreCase(scheme) && !serverName.equals("localhost") && !serverName.equals("127.0.0.1") && !serverName.startsWith("192.168.")) {
+                scheme = "https";
+            }
             int serverPort = request.getServerPort();
-            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
+            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 || "https".equalsIgnoreCase(scheme) ? "" : ":" + serverPort);
         }
 
         if (error != null) {
