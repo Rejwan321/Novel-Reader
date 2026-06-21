@@ -122,6 +122,7 @@ public class NotificationRestControllerTest {
     @Test
     public void testMentionInReplyCreatesNotification() throws Exception {
         Comment parent = new Comment(testChapter.getId(), readerUser, "Nice chapter");
+        parent.setCreatedAt(java.time.LocalDateTime.now().minusMinutes(10));
         parent = commentRepository.save(parent);
 
         // Post a reply containing "@System Admin"

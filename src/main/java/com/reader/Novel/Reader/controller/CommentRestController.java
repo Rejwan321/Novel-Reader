@@ -152,6 +152,15 @@ public class CommentRestController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to post comments."));
         }
 
+        java.util.Optional<Comment> lastCommentOpt = commentRepository.findFirstByUserIdOrderByCreatedAtDesc(loggedInUser.getId());
+        if (lastCommentOpt.isPresent()) {
+            java.time.LocalDateTime fiveMinutesAgo = java.time.LocalDateTime.now().minusMinutes(5);
+            if (lastCommentOpt.get().getCreatedAt().isAfter(fiveMinutesAgo)) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(Map.of("error", "You can only post one comment or reply every 5 minutes."));
+            }
+        }
+
         if (content == null || content.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Comment content cannot be empty."));
         }
@@ -253,6 +262,15 @@ public class CommentRestController {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login to post replies."));
+        }
+
+        java.util.Optional<Comment> lastCommentOpt = commentRepository.findFirstByUserIdOrderByCreatedAtDesc(loggedInUser.getId());
+        if (lastCommentOpt.isPresent()) {
+            java.time.LocalDateTime fiveMinutesAgo = java.time.LocalDateTime.now().minusMinutes(5);
+            if (lastCommentOpt.get().getCreatedAt().isAfter(fiveMinutesAgo)) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(Map.of("error", "You can only post one comment or reply every 5 minutes."));
+            }
         }
         
         if (content == null || content.trim().isEmpty()) {
