@@ -150,6 +150,7 @@ public class CommentRestControllerTest {
     @Test
     public void testReplyToComment() throws Exception {
         Comment parentComment = new Comment(testChapter.getId(), testUser, "Parent comment");
+        parentComment.setCreatedAt(java.time.LocalDateTime.now().minusMinutes(10));
         parentComment = commentRepository.save(parentComment);
 
         // 1. Post a reply
@@ -235,5 +236,29 @@ public class CommentRestControllerTest {
         // Verify report count incremented in database
         Comment updated = commentRepository.findById(comment.getId()).orElseThrow();
         assertEquals(1, updated.getReportsCount());
+    }
+
+    @Test
+    public void testCommentRateLimit() throws Exception {
+        // 1. Post first comment successfully
+        mockMvc.perform(post("/api/chapters/" + testChapter.getId() + "/comments")
+                .session(session)
+                .param("content", "First comment"))
+                .andExpect(status().isOk());
+
+        // 2. Post second comment immediately (should be blocked by rate limit)
+        mockMvc.perform(post("/api/chapters/" + testChapter.getId() + "/comments")
+                .session(session)
+                .param("content", "Second comment"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error").value("You can only post one comment or reply every 5 minutes."));
+
+        // 3. Post a reply immediately (should also be blocked by rate limit)
+        Comment comment = commentRepository.findByUserId(testUser.getId()).get(0);
+        mockMvc.perform(post("/api/comments/" + comment.getId() + "/reply")
+                .session(session)
+                .param("content", "A reply"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error").value("You can only post one comment or reply every 5 minutes."));
     }
 }
