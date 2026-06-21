@@ -534,3 +534,32 @@
     margin-right: 10px;
     fill: currentColor;
 }
+
+/* Discord Circle Button Styling */
+.discord-circle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #5865F2;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.discord-circle-btn:hover {
+    background-color: #4752C4;
+    box-shadow: 0 6px 12px rgba(88, 101, 242, 0.2);
+    transform: translateY(-1px);
+}
+.discord-circle-btn:active {
+    transform: translateY(1px) scale(0.95);
+}
+.discord-circle-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}

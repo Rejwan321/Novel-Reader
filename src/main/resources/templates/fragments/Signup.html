@@ -60,24 +60,23 @@
                 
                 <!-- Initial Signup Fields Container -->
                 <div id="signup-initial-fields" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-                    <!-- Google Sign-in standard button (signup view) -->
-                    <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
-                         data-type="standard"
-                         data-shape="pill"
-                         data-theme="outline"
-                         data-text="signup_with"
-                         data-size="large"
-                         data-logo_alignment="left"
-                         style="margin: 15px auto;">
-                    </div>
+                    <!-- Social Login Options (Google and Discord side-by-side circles) -->
+                    <div class="social-login-row" style="display: flex; gap: 15px; justify-content: center; align-items: center; margin: 15px 0;">
+                        <!-- Google Sign-in circular button (signup view) -->
+                        <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
+                             data-type="icon"
+                             data-shape="circle"
+                             data-theme="outline"
+                             data-size="large">
+                        </div>
 
-                    <!-- Discord Sign-in button (signup view) -->
-                    <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-btn">
-                        <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.9-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,73.1,0c.82.71,1.68,1.4,2.58,2a68.69,68.69,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,49.58,123.6,26.9,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
-                        </svg>
-                        <span>Sign up with Discord</span>
-                    </a>
+                        <!-- Discord Sign-in circular button (signup view) -->
+                        <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-circle-btn" title="Sign up with Discord">
+                            <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.9-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,73.1,0c.82.71,1.68,1.4,2.58,2a68.69,68.69,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,49.58,123.6,26.9,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+                            </svg>
+                        </a>
+                    </div>
                     
                     <span>or use your email for registration</span>
                     <input class="insert" id="signup-name" type="text" placeholder="Name">
@@ -120,24 +119,23 @@
             <form class="form-con" id="login-form-modal" action="#">
                 <h1>Login</h1>
                 
-                <!-- Google Sign-in standard button (login view) -->
-                <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
-                     data-type="standard"
-                     data-shape="pill"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left"
-                     style="margin: 15px auto;">
-                </div>
+                <!-- Social Login Options (Google and Discord side-by-side circles) -->
+                <div class="social-login-row" style="display: flex; gap: 15px; justify-content: center; align-items: center; margin: 15px 0;">
+                    <!-- Google Sign-in circular button (login view) -->
+                    <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
+                         data-type="icon"
+                         data-shape="circle"
+                         data-theme="outline"
+                         data-size="large">
+                    </div>
 
-                <!-- Discord Sign-in button (login view) -->
-                <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-btn">
-                    <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.9-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,73.1,0c.82.71,1.68,1.4,2.58,2a68.69,68.69,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,49.58,123.6,26.9,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
-                    </svg>
-                    <span>Sign in with Discord</span>
-                </a>
+                    <!-- Discord Sign-in circular button (login view) -->
+                    <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-circle-btn" title="Sign in with Discord">
+                        <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.9-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,73.1,0c.82.71,1.68,1.4,2.58,2a68.69,68.69,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,49.58,123.6,26.9,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+                        </svg>
+                    </a>
+                </div>
                 
                 <span>or use your account</span>
                 <input class="insert" id="login-email" type="text" placeholder="Username / Email" required>
