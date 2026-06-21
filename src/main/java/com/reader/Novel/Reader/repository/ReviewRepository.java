@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+    long countByUserIdAndCreatedAtAfter(Long userId, java.time.LocalDateTime start);
+    long countByIpAddressAndCreatedAtAfter(String ipAddress, java.time.LocalDateTime start);
 }

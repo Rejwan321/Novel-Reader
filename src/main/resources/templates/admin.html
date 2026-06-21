@@ -726,7 +726,12 @@
                     <!-- Existing Content Management Section -->
                     <div id="section-manage-existing" class="card bg-dark border-0 p-4 mt-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
                         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                            <h3 class="h5 fw-bold text-white mb-0"><i class="fa-solid fa-folder-open text-violet me-2"></i>Manage Stories</h3>
+                            <div class="d-flex align-items-center gap-3">
+                                <h3 class="h5 fw-bold text-white mb-0"><i class="fa-solid fa-folder-open text-violet me-2"></i>Manage Stories</h3>
+                                <button id="btn-bulk-delete-stories" class="btn btn-sm btn-danger px-3 d-none" type="button">
+                                    <i class="fa-solid fa-trash-can me-2"></i>Bulk Delete (<span id="bulk-delete-count">0</span>)
+                                </button>
+                            </div>
                             <div class="col-12 col-md-5 col-lg-4">
                                 <div class="position-relative">
                                     <input type="text" id="admin-story-search" class="form-input-admin ps-5" placeholder="Search stories by title or author...">
@@ -738,6 +743,9 @@
                             <table class="table table-dark table-admin table-premium align-middle">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px; text-align: center;">
+                                            <input type="checkbox" id="admin-story-select-all" class="form-check-input">
+                                        </th>
                                         <th>Cover</th>
                                         <th>Title</th>
                                         <th>Type</th>
@@ -748,6 +756,9 @@
                                 </thead>
                                 <tbody id="admin-stories-tbody">
                                     <tr th:each="n : ${novels}" th:id="'admin-story-row-' + ${n.id}">
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" class="form-check-input story-row-checkbox" th:value="${n.id}">
+                                        </td>
                                         <td>
                                             <img th:src="${n.coverUrl}" alt="Cover" class="cover-img-premium">
                                         </td>
@@ -2333,6 +2344,9 @@
                  }
 
                 var trHtml = '<tr id="admin-story-row-' + story.id + '" style="display: none;">' +
+                    '<td style="text-align: center;">' +
+                    '<input type="checkbox" class="form-check-input story-row-checkbox" value="' + story.id + '">' +
+                    '</td>' +
                     '<td><img src="' + (story.coverUrl || '') + '" alt="Cover" class="cover-img-premium"></td>' +
                     '<td class="text-white fw-bold story-row-title">' + escapeHtml(story.title) + '</td>' +
                     '<td>' +
@@ -2476,6 +2490,9 @@
                 if (row.length) {
                     row.fadeOut(300, function() {
                         $(this).remove();
+                        if (typeof updateBulkDeleteButtonState === 'function') {
+                            updateBulkDeleteButtonState();
+                        }
                     });
                 }
                 var openNovelId = $("#form-add-chapter").find("#chapter-novel-id").val();
@@ -2484,6 +2501,75 @@
                     resetChapterForm();
                 }
             };
+
+            // Selection state management for Bulk Delete
+            window.updateBulkDeleteButtonState = function() {
+                var checkedBoxes = $(".story-row-checkbox:checked");
+                var totalBoxes = $(".story-row-checkbox");
+                
+                if (checkedBoxes.length > 0) {
+                    $("#btn-bulk-delete-stories").removeClass("d-none");
+                    $("#bulk-delete-count").text(checkedBoxes.length);
+                } else {
+                    $("#btn-bulk-delete-stories").addClass("d-none");
+                }
+                
+                var allChecked = totalBoxes.length > 0 && checkedBoxes.length === totalBoxes.length;
+                $("#admin-story-select-all").prop("checked", allChecked);
+            };
+
+            // Handle "select all" checkbox
+            $(document).on("change", "#admin-story-select-all", function() {
+                var isChecked = $(this).is(":checked");
+                $(".story-row-checkbox").each(function() {
+                    var row = $(this).closest("tr");
+                    if (row.is(":visible")) {
+                        $(this).prop("checked", isChecked);
+                    } else if (!isChecked) {
+                        $(this).prop("checked", false);
+                    }
+                });
+                updateBulkDeleteButtonState();
+            });
+
+            // Handle individual checkbox change
+            $(document).on("change", ".story-row-checkbox", function() {
+                updateBulkDeleteButtonState();
+            });
+
+            // Handle bulk delete click
+            $(document).on("click", "#btn-bulk-delete-stories", function() {
+                var checkedBoxes = $(".story-row-checkbox:checked");
+                var ids = [];
+                checkedBoxes.each(function() {
+                    ids.push(Number($(this).val()));
+                });
+
+                if (ids.length === 0) return;
+
+                if (confirm("Are you sure you want to delete the " + ids.length + " selected stories? All chapters, purchases, and user bookmarks for these stories will be permanently deleted!")) {
+                    $.ajax({
+                        url: "/api/admin/stories/bulk",
+                        type: "DELETE",
+                        contentType: "application/json",
+                        data: JSON.stringify(ids),
+                        success: function(res) {
+                            showToast(res.message || "Stories deleted successfully.");
+                            ids.forEach(function(id) {
+                                if (typeof handleStoryDeletedRealtime === 'function') {
+                                    handleStoryDeletedRealtime(id);
+                                }
+                            });
+                            $("#admin-story-select-all").prop("checked", false);
+                            updateBulkDeleteButtonState();
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete stories.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
 
             window.handleChapterCreatedRealtime = function(chapter) {
                 var openNovelId = $("#chapter-novel-id").val();
