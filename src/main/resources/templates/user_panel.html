@@ -388,7 +388,7 @@
 
     <!-- Scripts -->
     <script th:src="@{/scripts/Script.js(v='1.8')}"></script>
-    <script th:inline="javascript">
+    <script>
         $(document).ready(function() {
             // Load initial notifications
             loadUserNotifications();
@@ -660,6 +660,8 @@
             // Sync badges
             updateNavbarUnreadBadge();
         };
+    </script>
+
     <!-- Account Merge Confirmation Modal -->
     <div class="modal fade" id="confirmMergeModal" tabindex="-1" aria-labelledby="confirmMergeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

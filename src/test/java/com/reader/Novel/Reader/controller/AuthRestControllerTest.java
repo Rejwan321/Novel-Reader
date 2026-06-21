@@ -475,7 +475,7 @@ public class AuthRestControllerTest {
                     .session(session)
                     .param("code", "dummy-auth-code"))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/"));
+                    .andExpect(redirectedUrl("http://localhost/"));
 
             User createdUser = userRepository.findByEmail("discord_new@example.com").orElse(null);
             assertNotNull(createdUser);
@@ -519,7 +519,7 @@ public class AuthRestControllerTest {
                     .session(session)
                     .param("code", "dummy-auth-code"))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/user/panel?tab=settings"));
+                    .andExpect(redirectedUrl("http://localhost/user/panel?tab=settings"));
 
             User updatedUser = userRepository.findById(existingUser.getId()).orElseThrow();
             assertEquals("LOCAL,DISCORD", updatedUser.getLoginType());

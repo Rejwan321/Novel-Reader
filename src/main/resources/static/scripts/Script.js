@@ -1015,6 +1015,85 @@ $(document).ready(function() {
         });
     });
 
+    // Custom Flakes dynamic pricing calculation
+    function updateCustomFlakesPrice() {
+        var input = $("#custom-flakes-input");
+        var amount = parseInt(input.val());
+        var display = $("#custom-flakes-price-display");
+        
+        if (isNaN(amount) || amount <= 0) {
+            display.text("$0.00");
+            return;
+        }
+        
+        var packages = window.flakePackages || [];
+        if (packages.length === 0) {
+            // Default rate fallback if packages list is empty
+            var price = amount * 0.01;
+            display.text("$" + price.toFixed(2));
+            return;
+        }
+        
+        // Sort ascending by amount
+        var sortedPacks = [...packages].sort(function(a, b) {
+            return a.amount - b.amount;
+        });
+        
+        // Find closest package that is <= amount
+        var applicablePack = sortedPacks[0];
+        for (var i = 0; i < sortedPacks.length; i++) {
+            if (sortedPacks[i].amount <= amount) {
+                applicablePack = sortedPacks[i];
+            }
+        }
+        
+        var rate = applicablePack.price / applicablePack.amount;
+        var price = amount * rate;
+        display.text("$" + price.toFixed(2));
+    }
+
+    $(document).on("input change keyup", "#custom-flakes-input", function() {
+        updateCustomFlakesPrice();
+    });
+
+    $(document).on("click", "#btn-purchase-custom-flakes", function(e) {
+        e.preventDefault();
+        var btn = $(this);
+        var input = $("#custom-flakes-input");
+        var amount = parseInt(input.val());
+        
+        if (isNaN(amount) || amount <= 0) {
+            showToast("Please enter a valid amount of Snow Flakes.", "error");
+            return;
+        }
+        
+        btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
+        
+        $.post("/api/user/purchase-flakes", { amount: amount })
+        .done(function(res) {
+            showToast(res.message);
+            $("#navbar-user-balance").text(res.newBalance);
+            
+            // Clear input
+            input.val('');
+            $("#custom-flakes-price-display").text("$0.00");
+            
+            // Close modal
+            var modalEl = document.getElementById('purchaseFlakesModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
+            }
+        })
+        .fail(function(err) {
+            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
+            showToast(msg, "error");
+        })
+        .always(function() {
+            btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+        });
+    });
+
     // Toggle feature/highlight novel
     $(document).on("click", ".btn-toggle-feature", function(e) {
         e.preventDefault();

@@ -346,10 +346,16 @@ public class AuthRestController {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("");
         if (baseUrl.isEmpty()) {
-            String scheme = request.getScheme();
+            String scheme = request.getHeader("x-forwarded-proto");
+            if (scheme == null || scheme.isEmpty()) {
+                scheme = request.getScheme();
+            }
             String serverName = request.getServerName();
+            if ("http".equalsIgnoreCase(scheme) && !serverName.equals("localhost") && !serverName.equals("127.0.0.1") && !serverName.startsWith("192.168.")) {
+                scheme = "https";
+            }
             int serverPort = request.getServerPort();
-            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
+            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 || "https".equalsIgnoreCase(scheme) ? "" : ":" + serverPort);
         }
         String redirectUri = baseUrl + "/api/auth/discord/callback";
         String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
@@ -367,12 +373,28 @@ public class AuthRestController {
             jakarta.servlet.http.HttpServletRequest request,
             jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         
+        String baseUrl = systemSettingRepository.findById("app.base_url")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("");
+        if (baseUrl.isEmpty()) {
+            String scheme = request.getHeader("x-forwarded-proto");
+            if (scheme == null || scheme.isEmpty()) {
+                scheme = request.getScheme();
+            }
+            String serverName = request.getServerName();
+            if ("http".equalsIgnoreCase(scheme) && !serverName.equals("localhost") && !serverName.equals("127.0.0.1") && !serverName.startsWith("192.168.")) {
+                scheme = "https";
+            }
+            int serverPort = request.getServerPort();
+            baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 || "https".equalsIgnoreCase(scheme) ? "" : ":" + serverPort);
+        }
+
         if (error != null) {
-            response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Discord auth cancelled: " + error, java.nio.charset.StandardCharsets.UTF_8));
+            response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Discord auth cancelled: " + error, java.nio.charset.StandardCharsets.UTF_8));
             return;
         }
         if (code == null || code.trim().isEmpty()) {
-            response.sendRedirect("/?error=" + java.net.URLEncoder.encode("No authorization code received.", java.nio.charset.StandardCharsets.UTF_8));
+            response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("No authorization code received.", java.nio.charset.StandardCharsets.UTF_8));
             return;
         }
 
@@ -383,15 +405,6 @@ public class AuthRestController {
             String clientSecret = systemSettingRepository.findById("discord.client_secret")
                     .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                     .orElse("");
-            String baseUrl = systemSettingRepository.findById("app.base_url")
-                    .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
-                    .orElse("");
-            if (baseUrl.isEmpty()) {
-                String scheme = request.getScheme();
-                String serverName = request.getServerName();
-                int serverPort = request.getServerPort();
-                baseUrl = scheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
-            }
             String redirectUri = baseUrl + "/api/auth/discord/callback";
 
             // Exchange code for token
@@ -415,7 +428,7 @@ public class AuthRestController {
             Map<String, Object> tokenResponse = restTemplate.postForObject(tokenUrl, requestEntity, Map.class);
 
             if (tokenResponse == null || !tokenResponse.containsKey("access_token")) {
-                response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Failed to exchange Discord authorization code.", java.nio.charset.StandardCharsets.UTF_8));
+                response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Failed to exchange Discord authorization code.", java.nio.charset.StandardCharsets.UTF_8));
                 return;
             }
 
@@ -432,7 +445,7 @@ public class AuthRestController {
             Map<String, Object> userProfile = restTemplate.exchange(userUrl, org.springframework.http.HttpMethod.GET, userRequestEntity, Map.class).getBody();
 
             if (userProfile == null || !userProfile.containsKey("email")) {
-                response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Could not retrieve email from Discord profile. Ensure email scope is authorized.", java.nio.charset.StandardCharsets.UTF_8));
+                response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Could not retrieve email from Discord profile. Ensure email scope is authorized.", java.nio.charset.StandardCharsets.UTF_8));
                 return;
             }
 
@@ -440,7 +453,7 @@ public class AuthRestController {
             String username = (String) userProfile.get("username");
 
             if (email == null || email.trim().isEmpty()) {
-                response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Discord account has no email address associated.", java.nio.charset.StandardCharsets.UTF_8));
+                response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Discord account has no email address associated.", java.nio.charset.StandardCharsets.UTF_8));
                 return;
             }
 
@@ -457,11 +470,11 @@ public class AuthRestController {
                             userRepository.save(user);
                             session.setAttribute("user", user);
                         }
-                        response.sendRedirect("/user/panel?tab=settings");
+                        response.sendRedirect(baseUrl + "/user/panel?tab=settings");
                     } else {
                         // MERGING REQUIRED
                         session.setAttribute("temp_merge_discord_email", email);
-                        response.sendRedirect("/user/panel?tab=settings&mergeRequired=true&provider=discord&sourceUserEmail=" + 
+                        response.sendRedirect(baseUrl + "/user/panel?tab=settings&mergeRequired=true&provider=discord&sourceUserEmail=" + 
                                 java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8));
                     }
                 } else {
@@ -473,7 +486,7 @@ public class AuthRestController {
                     }
                     userRepository.save(user);
                     session.setAttribute("user", user);
-                    response.sendRedirect("/user/panel?tab=settings");
+                    response.sendRedirect(baseUrl + "/user/panel?tab=settings");
                 }
                 return;
             }
@@ -506,9 +519,9 @@ public class AuthRestController {
             HttpSession newSession = request.getSession(true);
             newSession.setAttribute("user", user);
 
-            response.sendRedirect("/");
+            response.sendRedirect(baseUrl + "/");
         } catch (Exception e) {
-            response.sendRedirect("/?error=" + java.net.URLEncoder.encode("Discord authentication error: " + e.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
+            response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Discord authentication error: " + e.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
         }
     }
 
