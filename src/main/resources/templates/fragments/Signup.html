@@ -35,6 +35,56 @@
             });
         }
 
+        function triggerGoogleLogin() {
+            var onloadEl = document.getElementById('g_id_onload');
+            var clientId = onloadEl ? onloadEl.getAttribute('data-client_id') : null;
+            if (!clientId || clientId === 'your-google-client-id') {
+                alert("Google client ID is not configured.");
+                return;
+            }
+
+            var redirectUri = window.location.origin + '/';
+            var scope = 'openid email profile';
+            var responseType = 'id_token';
+            var nonce = Math.random().toString(36).substring(2);
+            
+            var oauthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+                'client_id=' + encodeURIComponent(clientId) +
+                '&redirect_uri=' + encodeURIComponent(redirectUri) +
+                '&response_type=' + encodeURIComponent(responseType) +
+                '&scope=' + encodeURIComponent(scope) +
+                '&nonce=' + encodeURIComponent(nonce);
+                
+            window.location.href = oauthUrl;
+        }
+
+        $(document).ready(function() {
+            // Check for Google OAuth2 Implicit Flow redirect token in URL hash
+            if (window.location.hash) {
+                var hash = window.location.hash.substring(1);
+                var params = new URLSearchParams(hash);
+                var idToken = params.get('id_token');
+                if (idToken) {
+                    // Clean hash from URL bar without reload
+                    window.history.replaceState(null, null, window.location.pathname + window.location.search);
+                    
+                    // Submit token to backend
+                    $.ajax({
+                        url: '/api/auth/google',
+                        type: 'POST',
+                        data: { token: idToken },
+                        success: function(res) {
+                            window.location.reload();
+                        },
+                        error: function(err) {
+                            var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Google Sign-In failed.";
+                            alert(errMsg);
+                        }
+                    });
+                }
+            }
+        });
+
         function togglePasswordVisibility(inputId, button) {
             var input = document.getElementById(inputId);
             var eyeIcon = button.querySelector('.eye-icon');
@@ -63,12 +113,14 @@
                     <!-- Social Login Options (Google and Discord side-by-side circles) -->
                     <div class="social-login-row" style="display: flex; gap: 15px; justify-content: center; align-items: center; margin: 15px 0;">
                         <!-- Google Sign-in circular button (signup view) -->
-                        <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
-                             data-type="icon"
-                             data-shape="circle"
-                             data-theme="outline"
-                             data-size="large">
-                        </div>
+                        <a th:if="${googleEnabled}" href="#" class="google-circle-btn" onclick="triggerGoogleLogin(); return false;" title="Sign up with Google">
+                            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                <path fill="#4285F4" d="M46.5 24c0-1.61-.15-3.16-.42-4.67H24v9.34h12.7c-.55 2.87-2.17 5.3-4.61 6.93l7.2 5.58C43.5 36.31 46.5 30.73 46.5 24z"/>
+                                <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.98-6.19z"/>
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.2-5.58c-2.11 1.41-4.81 2.29-8.69 2.29-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                            </svg>
+                        </a>
 
                         <!-- Discord Sign-in circular button (signup view) -->
                         <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-circle-btn" title="Sign up with Discord">
@@ -122,12 +174,14 @@
                 <!-- Social Login Options (Google and Discord side-by-side circles) -->
                 <div class="social-login-row" style="display: flex; gap: 15px; justify-content: center; align-items: center; margin: 15px 0;">
                     <!-- Google Sign-in circular button (login view) -->
-                    <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
-                         data-type="icon"
-                         data-shape="circle"
-                         data-theme="outline"
-                         data-size="large">
-                    </div>
+                    <a th:if="${googleEnabled}" href="#" class="google-circle-btn" onclick="triggerGoogleLogin(); return false;" title="Sign in with Google">
+                        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.5 24c0-1.61-.15-3.16-.42-4.67H24v9.34h12.7c-.55 2.87-2.17 5.3-4.61 6.93l7.2 5.58C43.5 36.31 46.5 30.73 46.5 24z"/>
+                            <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.98-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.2-5.58c-2.11 1.41-4.81 2.29-8.69 2.29-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                    </a>
 
                     <!-- Discord Sign-in circular button (login view) -->
                     <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-circle-btn" title="Sign in with Discord">
