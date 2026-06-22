@@ -3,6 +3,9 @@ package com.reader.Novel.Reader.controller;
 import com.reader.Novel.Reader.model.Novel;
 import com.reader.Novel.Reader.model.Bookmark;
 import com.reader.Novel.Reader.model.User;
+import com.reader.Novel.Reader.model.FlakePurchase;
+import com.reader.Novel.Reader.model.FlakePackage;
+import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import com.reader.Novel.Reader.service.NovelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +26,9 @@ public class NovelRestController {
 
     @Autowired
     private com.reader.Novel.Reader.service.UserService userService;
+
+    @Autowired
+    private FlakePurchaseRepository flakePurchaseRepository;
 
     @GetMapping("/novels")
     public List<Novel> getNovels(
@@ -288,9 +294,33 @@ public class NovelRestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
         }
         
+        // Calculate price based on standard/custom package pricing
+        List<FlakePackage> packages = novelService.getAllFlakePackages();
+        double price = 0.0;
+        if (packages == null || packages.isEmpty()) {
+            price = amount * 0.01;
+        } else {
+            FlakePackage applicablePack = packages.get(0);
+            for (FlakePackage pack : packages) {
+                if (pack.getAmount() <= amount) {
+                    applicablePack = pack;
+                }
+            }
+            double rate = applicablePack.getPrice() / applicablePack.getAmount();
+            price = amount * rate;
+        }
+
         user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + amount);
         userService.updateUser(user);
         
+        // Save the flake purchase record
+        FlakePurchase flakePurchase = new FlakePurchase();
+        flakePurchase.setUserId(user.getId());
+        flakePurchase.setAmount(amount);
+        flakePurchase.setPrice(price);
+        flakePurchase.setPurchasedAt(java.time.LocalDateTime.now());
+        flakePurchaseRepository.save(flakePurchase);
+
         loggedInUser.setBalance(user.getBalance());
         session.setAttribute("user", loggedInUser);
         

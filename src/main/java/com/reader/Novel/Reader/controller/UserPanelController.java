@@ -2,8 +2,10 @@ package com.reader.Novel.Reader.controller;
 
 import com.reader.Novel.Reader.model.Notification;
 import com.reader.Novel.Reader.model.User;
+import com.reader.Novel.Reader.model.FlakePurchase;
 import com.reader.Novel.Reader.repository.NotificationRepository;
 import com.reader.Novel.Reader.repository.UserRepository;
+import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Controller
@@ -26,7 +30,13 @@ public class UserPanelController {
     private UserRepository userRepository;
 
     @Autowired
+    private FlakePurchaseRepository flakePurchaseRepository;
+
+    @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
+    @Autowired
+    private com.reader.Novel.Reader.service.NovelService novelService;
 
     @GetMapping("/user/panel")
     public String userPanel(HttpSession session, Model model) {
@@ -153,5 +163,111 @@ public class UserPanelController {
         session.setAttribute("user", user);
 
         return ResponseEntity.ok(Map.of("success", true, "user", user));
+    }
+
+    @GetMapping("/api/user/profile")
+    @ResponseBody
+    public ResponseEntity<?> getUserProfile(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+        User freshUser = userRepository.findById(loggedInUser.getId()).orElse(loggedInUser);
+        session.setAttribute("user", freshUser);
+        return ResponseEntity.ok(freshUser);
+    }
+
+    @GetMapping("/api/user/purchases")
+    @ResponseBody
+    public ResponseEntity<?> getUserPurchases(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+
+        List<com.reader.Novel.Reader.model.Purchase> purchases = novelService.getPurchasesByUserId(loggedInUser.getId());
+        List<Map<String, Object>> purchaseDetailsList = new java.util.ArrayList<>();
+        for (com.reader.Novel.Reader.model.Purchase p : purchases) {
+            com.reader.Novel.Reader.model.Chapter chapter = novelService.getChapterById(p.getChapterId());
+            if (chapter != null) {
+                com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
+                Map<String, Object> details = new java.util.HashMap<>();
+                details.put("id", p.getId());
+                details.put("novelTitle", novel != null ? novel.getTitle() : "Unknown Story");
+                details.put("novelId", novel != null ? novel.getId() : null);
+                details.put("chapterNumber", chapter.getChapterNumber());
+                details.put("chapterTitle", chapter.getTitle());
+                details.put("price", chapter.getPrice());
+                details.put("purchasedAt", p.getPurchasedAt());
+                purchaseDetailsList.add(details);
+            }
+        }
+        purchaseDetailsList.sort((a, b) -> {
+            java.time.LocalDateTime dtA = (java.time.LocalDateTime) a.get("purchasedAt");
+            java.time.LocalDateTime dtB = (java.time.LocalDateTime) b.get("purchasedAt");
+            if (dtA == null || dtB == null) return 0;
+            return dtB.compareTo(dtA);
+        });
+
+        return ResponseEntity.ok(purchaseDetailsList);
+    }
+
+    @GetMapping("/api/user/flake-purchases")
+    @ResponseBody
+    public ResponseEntity<?> getUserFlakePurchases(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+
+        List<FlakePurchase> flakePurchases = flakePurchaseRepository.findByUserIdOrderByPurchasedAtDesc(loggedInUser.getId());
+        return ResponseEntity.ok(flakePurchases);
+    }
+
+    @GetMapping("/api/user/statement")
+    @ResponseBody
+    public ResponseEntity<?> getUserStatement(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+
+        List<Map<String, Object>> statement = new ArrayList<>();
+
+        // 1. Chapter Unlocks (DEBITs)
+        List<com.reader.Novel.Reader.model.Purchase> purchases = novelService.getPurchasesByUserId(loggedInUser.getId());
+        for (com.reader.Novel.Reader.model.Purchase p : purchases) {
+            com.reader.Novel.Reader.model.Chapter chapter = novelService.getChapterById(p.getChapterId());
+            if (chapter != null) {
+                com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
+                Map<String, Object> details = new HashMap<>();
+                details.put("date", p.getPurchasedAt());
+                details.put("description", "Unlocked " + (novel != null ? novel.getTitle() : "Unknown Story") + " - Ch. " + chapter.getChapterNumber());
+                details.put("amount", -chapter.getPrice());
+                details.put("type", "DEBIT");
+                statement.add(details);
+            }
+        }
+
+        // 2. Flake Purchases (CREDITs)
+        List<FlakePurchase> flakePurchases = flakePurchaseRepository.findByUserIdOrderByPurchasedAtDesc(loggedInUser.getId());
+        for (FlakePurchase fp : flakePurchases) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("date", fp.getPurchasedAt());
+            details.put("description", "Purchased " + fp.getAmount() + " Snow Flakes");
+            details.put("amount", fp.getAmount());
+            details.put("type", "CREDIT");
+            statement.add(details);
+        }
+
+        // Sort by date descending
+        statement.sort((a, b) -> {
+            java.time.LocalDateTime dtA = (java.time.LocalDateTime) a.get("date");
+            java.time.LocalDateTime dtB = (java.time.LocalDateTime) b.get("date");
+            if (dtA == null || dtB == null) return 0;
+            return dtB.compareTo(dtA);
+        });
+
+        return ResponseEntity.ok(statement);
     }
 }
