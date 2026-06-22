@@ -383,15 +383,28 @@
                                     </div>
                                     <h3 class="h6 text-white-50 text-uppercase fw-bold mb-2">Available Balance</h3>
                                     <div class="d-flex align-items-center gap-3 my-3">
-                                        <span class="fs-1 fw-bold text-cyan" id="wallet-balance-text" th:text="${currentUser.balance}">100</span>
+                                        <span class="fs-1 fw-bold text-cyan" id="wallet-balance-text" th:text="${currentUser.user_type == 'ADMIN' or currentUser.user_type == 'OWNER' or currentUser.user_type == 'PROOFREADER' ? '∞' : currentUser.balance}">100</span>
                                         <span class="fs-5 text-muted">Snow Flakes</span>
                                     </div>
                                     <p class="small text-white-50 mb-0">Use Snow Flakes to unlock premium novel and comic chapters.</p>
                                 </div>
                             </div>
 
-                            <!-- Quick Action Card -->
-                            <div class="col-12 col-md-6">
+                            <!-- Quick Action Card for Infinite Roles -->
+                            <div class="col-12 col-md-6" id="quick-actions-infinite" th:style="${currentUser.user_type == 'ADMIN' or currentUser.user_type == 'OWNER' or currentUser.user_type == 'PROOFREADER'} ? '' : 'display: none;'">
+                                <div class="p-4 rounded-3 text-white h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <div>
+                                        <h3 class="h6 text-muted text-uppercase fw-bold mb-2">Quick Actions</h3>
+                                        <p class="small text-white-50">You have unlimited access to premium chapters.</p>
+                                    </div>
+                                    <button class="btn btn-premium w-100 py-2 mt-3" type="button" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                        <i class="fa-solid fa-infinity me-2"></i>Unlimited Access
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Quick Action Card for Standard Roles -->
+                            <div class="col-12 col-md-6" id="quick-actions-standard" th:style="${currentUser.user_type == 'ADMIN' or currentUser.user_type == 'OWNER' or currentUser.user_type == 'PROOFREADER'} ? 'display: none;' : ''">
                                 <div class="p-4 rounded-3 text-white h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
                                     <div>
                                         <h3 class="h6 text-muted text-uppercase fw-bold mb-2">Quick Actions</h3>
@@ -660,8 +673,18 @@
             $.get("/api/user/profile")
                 .done(function(profile) {
                     if (profile && profile.balance !== undefined) {
-                        $("#wallet-balance-text").text(profile.balance);
-                        $("#navbar-user-balance").text(profile.balance);
+                        var isInfinite = (profile.user_type === 'ADMIN' || profile.user_type === 'OWNER' || profile.user_type === 'PROOFREADER');
+                        var displayBalance = isInfinite ? '∞' : profile.balance;
+                        $("#wallet-balance-text").text(displayBalance);
+                        $("#navbar-user-balance").text(displayBalance);
+                        
+                        if (isInfinite) {
+                            $("#quick-actions-infinite").show();
+                            $("#quick-actions-standard").hide();
+                        } else {
+                            $("#quick-actions-infinite").hide();
+                            $("#quick-actions-standard").show();
+                        }
                     }
                 });
 

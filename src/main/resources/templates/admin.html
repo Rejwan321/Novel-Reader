@@ -2122,7 +2122,7 @@
                     input.attr("data-original", balance);
                 }
                 if (currentUserSession && Number(userId) === Number(currentUserSession.id)) {
-                    if (currentUserSession.user_type === 'ADMIN' || currentUserSession.user_type === 'OWNER') {
+                    if (currentUserSession.user_type === 'ADMIN' || currentUserSession.user_type === 'OWNER' || currentUserSession.user_type === 'PROOFREADER') {
                         $("#navbar-user-balance").text('∞');
                     } else {
                         $("#navbar-user-balance").text(balance);
@@ -3272,7 +3272,7 @@
                     const currentLoggedInId = /*[[${session.user.id}]]*/ null;
                     if (userId == currentLoggedInId) {
                         const userType = /*[[${session.user.user_type}]]*/ '';
-                        if (userType === 'ADMIN' || userType === 'OWNER') {
+                        if (userType === 'ADMIN' || userType === 'OWNER' || userType === 'PROOFREADER') {
                             $("#navbar-user-balance").text('∞');
                         } else {
                             $("#navbar-user-balance").text(balance);
