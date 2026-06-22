@@ -596,6 +596,16 @@
                 switchTab(activeTab);
             }
 
+            // Check for payment status from Stripe checkout redirects
+            var paymentStatus = urlParams.get('paymentStatus');
+            if (paymentStatus === 'success') {
+                showToast("Payment successful! Your Snow Flakes have been added to your wallet.");
+                window.history.replaceState({}, document.title, window.location.pathname + "?tab=wallet");
+            } else if (paymentStatus === 'cancel') {
+                showToast("Payment cancelled. No Snow Flakes were added.", "error");
+                window.history.replaceState({}, document.title, window.location.pathname + "?tab=wallet");
+            }
+
             // Check for Account Merging parameters (for Discord redirect callback)
             if (urlParams.get('mergeRequired') === 'true' && urlParams.get('provider') === 'discord') {
                 switchTab('settings'); // make sure settings pane is visible

@@ -7,6 +7,7 @@ import com.reader.Novel.Reader.model.FlakePurchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import com.reader.Novel.Reader.service.NovelService;
+import com.reader.Novel.Reader.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,9 @@ public class NovelRestController {
 
     @Autowired
     private FlakePurchaseRepository flakePurchaseRepository;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @GetMapping("/novels")
     public List<Novel> getNovels(
@@ -310,6 +314,21 @@ public class NovelRestController {
             price = amount * rate;
         }
 
+        if (paymentService.isStripeEnabled()) {
+            try {
+                String checkoutUrl = paymentService.createStripeCheckoutSession(user.getId(), amount, price);
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "stripe", true,
+                    "redirectUrl", checkoutUrl
+                ));
+            } catch (com.stripe.exception.StripeException e) {
+                System.err.println("Stripe session creation failed: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Payment gateway initialization failed: " + e.getMessage()));
+            }
+        }
+
         user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + amount);
         userService.updateUser(user);
         
@@ -326,6 +345,7 @@ public class NovelRestController {
         
         return ResponseEntity.ok(Map.of(
             "success", true,
+            "stripe", false,
             "newBalance", user.getBalance(),
             "message", "Successfully purchased " + amount + " Snow Flakes!"
         ));
