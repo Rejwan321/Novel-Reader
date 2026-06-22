@@ -1044,7 +1044,11 @@ $(document).ready(function() {
             if (res.stripe) {
                 window.location.href = res.redirectUrl;
             } else if (res.razorpay) {
-                launchRazorpayCheckout(res, amount);
+                try {
+                    launchRazorpayCheckout(res, amount);
+                } catch (err) {
+                    showToast("Checkout failed to load: " + err.message, "error");
+                }
                 btn.prop("disabled", false).text("Purchase");
             } else {
                 showToast(res.message);
@@ -1126,7 +1130,11 @@ $(document).ready(function() {
             if (res.stripe) {
                 window.location.href = res.redirectUrl;
             } else if (res.razorpay) {
-                launchRazorpayCheckout(res, amount);
+                try {
+                    launchRazorpayCheckout(res, amount);
+                } catch (err) {
+                    showToast("Checkout failed to load: " + err.message, "error");
+                }
                 btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
             } else {
                 showToast(res.message);
