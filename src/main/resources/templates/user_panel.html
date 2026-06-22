@@ -60,6 +60,26 @@
             height: 100%;
         }
 
+        .btn-wallet-subtab {
+            background: transparent;
+            border: none;
+            color: #8c8c9e;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            transition: all 0.3s ease;
+        }
+
+        .btn-wallet-subtab:hover {
+            color: #ffffff;
+        }
+
+        .btn-wallet-subtab.active {
+            color: #bd53ed;
+            border-bottom-color: #bd53ed;
+        }
+
         .user-input {
             background-color: rgba(0, 0, 0, 0.2) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -417,29 +437,92 @@
                             </div>
                         </div>
 
-                        <!-- Purchase History -->
-                        <h3 class="h5 fw-bold text-white mb-3 mt-5 font-outfit">
-                            <i class="fa-solid fa-clock-rotate-left text-violet me-2"></i>Unlock History
-                        </h3>
-                        <div class="table-responsive">
-                            <table class="table table-dark table-admin align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Story Title</th>
-                                        <th>Chapter</th>
-                                        <th>Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="wallet-purchases-tbody">
-                                    <!-- Populated dynamically via AJAX -->
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">
-                                            <i class="fa fa-spinner fa-spin me-2"></i>Loading history...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <!-- Wallet Sub-tabs / History Navigation -->
+                        <div class="d-flex align-items-center justify-content-between mt-5 mb-3 border-bottom border-secondary pb-2">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-wallet-subtab active" id="subtab-statement-btn" onclick="switchWalletSubtab('statement')">
+                                    <i class="fa-solid fa-receipt me-1 text-violet"></i>Statement
+                                </button>
+                                <button class="btn btn-sm btn-wallet-subtab" id="subtab-purchase-btn" onclick="switchWalletSubtab('purchase')">
+                                    <i class="fa-solid fa-snowflake me-1 text-success"></i>Purchase History (Snow Flake)
+                                </button>
+                                <button class="btn btn-sm btn-wallet-subtab" id="subtab-unlock-btn" onclick="switchWalletSubtab('unlock')">
+                                    <i class="fa-solid fa-book-open me-1 text-info"></i>Unlock History (Unlocked chapter)
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadWalletHistoryData()">
+                                <i class="fa-solid fa-rotate me-1"></i>Refresh
+                            </button>
+                        </div>
+
+                        <!-- 1. Statement Pane -->
+                        <div id="wallet-pane-statement" class="wallet-history-pane">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-admin align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wallet-statement-tbody">
+                                        <!-- Populated dynamically via AJAX -->
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">
+                                                <i class="fa fa-spinner fa-spin me-2"></i>Loading statement...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 2. Purchase History Pane -->
+                        <div id="wallet-pane-purchase" class="wallet-history-pane" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-admin align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Price Paid</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wallet-flake-purchases-tbody">
+                                        <!-- Populated dynamically via AJAX -->
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">
+                                                <i class="fa fa-spinner fa-spin me-2"></i>Loading purchase history...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 3. Unlock History Pane -->
+                        <div id="wallet-pane-unlock" class="wallet-history-pane" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-admin align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Story Title</th>
+                                            <th>Chapter</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wallet-purchases-tbody">
+                                        <!-- Populated dynamically via AJAX -->
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">
+                                                <i class="fa fa-spinner fa-spin me-2"></i>Loading unlock history...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -664,11 +747,112 @@
             }
         }
 
+        // Switch subtabs under wallet history
+        function switchWalletSubtab(subtab) {
+            $('.btn-wallet-subtab').removeClass('active');
+            $('#subtab-' + subtab + '-btn').addClass('active');
+
+            $('.wallet-history-pane').hide();
+            $('#wallet-pane-' + subtab).show();
+        }
+
+        // Fetch statement, flake purchase history, and unlock history
+        function loadWalletHistoryData() {
+            var statementTbody = $("#wallet-statement-tbody");
+            var flakePurchaseTbody = $("#wallet-flake-purchases-tbody");
+            var unlockTbody = $("#wallet-purchases-tbody");
+
+            statementTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading statement...</td></tr>');
+            flakePurchaseTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading purchase history...</td></tr>');
+            unlockTbody.html('<tr><td colspan="4" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading unlock history...</td></tr>');
+
+            // 1. Fetch unified statement
+            $.get("/api/user/statement")
+                .done(function(statement) {
+                    if (!statement || statement.length === 0) {
+                        statementTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No transaction history found.</td></tr>');
+                        return;
+                    }
+
+                    statementTbody.empty();
+                    statement.forEach(function(item) {
+                        var dateStr = item.date ? new Date(item.date).toLocaleString() : 'N/A';
+                        var isCredit = item.type === 'CREDIT';
+                        var badgeClass = isCredit ? 'bg-success text-white' : 'bg-violet text-cyan';
+                        var changePrefix = isCredit ? '+' : '';
+                        
+                        var rowHtml = `
+                            <tr>
+                                <td class="text-muted small">${dateStr}</td>
+                                <td class="text-white">${escapeHtml(item.description)}</td>
+                                <td>
+                                    <span class="badge ${badgeClass} fw-bold">${changePrefix}${item.amount} Flakes</span>
+                                </td>
+                            </tr>
+                        `;
+                        statementTbody.append(rowHtml);
+                    });
+                })
+                .fail(function() {
+                    statementTbody.html('<tr><td colspan="3" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load statement.</td></tr>');
+                });
+
+            // 2. Fetch flake package purchases
+            $.get("/api/user/flake-purchases")
+                .done(function(purchases) {
+                    if (!purchases || purchases.length === 0) {
+                        flakePurchaseTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No flake package purchases found.</td></tr>');
+                        return;
+                    }
+
+                    flakePurchaseTbody.empty();
+                    purchases.forEach(function(item) {
+                        var dateStr = item.purchasedAt ? new Date(item.purchasedAt).toLocaleString() : 'N/A';
+                        var rowHtml = `
+                            <tr>
+                                <td class="text-muted small">${dateStr}</td>
+                                <td class="text-white fw-bold">+${item.amount} Flakes</td>
+                                <td class="text-success fw-bold">$${parseFloat(item.price).toFixed(2)}</td>
+                            </tr>
+                        `;
+                        flakePurchaseTbody.append(rowHtml);
+                    });
+                })
+                .fail(function() {
+                    flakePurchaseTbody.html('<tr><td colspan="3" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load purchases.</td></tr>');
+                });
+
+            // 3. Fetch chapter unlock history
+            $.get("/api/user/purchases")
+                .done(function(purchases) {
+                    if (!purchases || purchases.length === 0) {
+                        unlockTbody.html('<tr><td colspan="4" class="text-center py-4 text-muted">No unlock history found.</td></tr>');
+                        return;
+                    }
+
+                    unlockTbody.empty();
+                    purchases.forEach(function(item) {
+                        var dateStr = item.purchasedAt ? new Date(item.purchasedAt).toLocaleString() : 'N/A';
+                        var rowHtml = `
+                            <tr>
+                                <td class="text-muted small">${dateStr}</td>
+                                <td class="text-white fw-bold">${escapeHtml(item.novelTitle)}</td>
+                                <td class="text-info">Chapter ${item.chapterNumber}${item.chapterTitle ? ': ' + escapeHtml(item.chapterTitle) : ''}</td>
+                                <td>
+                                    <span class="badge bg-violet text-cyan fw-bold">-${item.price} Flakes</span>
+                                </td>
+                            </tr>
+                        `;
+                        unlockTbody.append(rowHtml);
+                    });
+                })
+                .fail(function() {
+                    unlockTbody.html('<tr><td colspan="4" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load unlock history.</td></tr>');
+                });
+        }
+
         // Load Wallet balance and transaction history via REST
         function loadWalletBalanceAndHistory() {
-            var tbody = $("#wallet-purchases-tbody");
-            tbody.html('<tr><td colspan="4" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading history...</td></tr>');
-
             // 1. Fetch current profile to get updated balance
             $.get("/api/user/profile")
                 .done(function(profile) {
@@ -688,33 +872,8 @@
                     }
                 });
 
-            // 2. Fetch purchase history
-            $.get("/api/user/purchases")
-                .done(function(purchases) {
-                    if (!purchases || purchases.length === 0) {
-                        tbody.html('<tr><td colspan="4" class="text-center py-4 text-muted">No unlock history found.</td></tr>');
-                        return;
-                    }
-
-                    tbody.empty();
-                    purchases.forEach(function(item) {
-                        var dateStr = item.purchasedAt ? new Date(item.purchasedAt).toLocaleString() : 'N/A';
-                        var rowHtml = `
-                            <tr>
-                                <td class="text-muted small">${dateStr}</td>
-                                <td class="text-white fw-bold">${escapeHtml(item.novelTitle)}</td>
-                                <td class="text-info">Chapter ${item.chapterNumber}${item.chapterTitle ? ': ' + escapeHtml(item.chapterTitle) : ''}</td>
-                                <td>
-                                    <span class="badge bg-violet text-cyan fw-bold">-${item.price} Flakes</span>
-                                </td>
-                            </tr>
-                        `;
-                        tbody.append(rowHtml);
-                    });
-                })
-                .fail(function() {
-                    tbody.html('<tr><td colspan="4" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load history.</td></tr>');
-                });
+            // 2. Fetch history tables
+            loadWalletHistoryData();
         }
 
         // Helper to escape HTML characters
