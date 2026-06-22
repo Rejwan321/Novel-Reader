@@ -996,21 +996,24 @@ $(document).ready(function() {
 
         $.post("/api/user/purchase-flakes", { amount: amount })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.stripe) {
+                window.location.href = res.redirectUrl;
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).text("Purchase");
             }
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
             showToast(msg, "error");
-        })
-        .always(function() {
             btn.prop("disabled", false).text("Purchase");
         });
     });
@@ -1071,25 +1074,28 @@ $(document).ready(function() {
         
         $.post("/api/user/purchase-flakes", { amount: amount })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Clear input
-            input.val('');
-            $("#custom-flakes-price-display").text("$0.00");
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.stripe) {
+                window.location.href = res.redirectUrl;
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Clear input
+                input.val('');
+                $("#custom-flakes-price-display").text("$0.00");
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
             }
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
             showToast(msg, "error");
-        })
-        .always(function() {
             btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
         });
     });
