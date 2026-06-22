@@ -167,10 +167,26 @@
                             <div class="col-6 col-md-4">
                                 <div class="search-filter-group">
                                     <span class="search-filter-label">Translator</span>
-                                    <select id="search-filter-editor-select" class="search-filter-select">
+                                    <select id="search-filter-editor-select" class="search-filter-select" style="display: none;">
                                         <option value="ALL">Any</option>
                                         <option th:each="editor : ${editors}" th:value="${editor.id}" th:text="${editor.name}"></option>
                                     </select>
+                                    <div class="custom-search-select-wrapper">
+                                        <div class="custom-search-select-trigger">
+                                            <span class="selected-value">Any</span>
+                                            <i class="fa-solid fa-chevron-down"></i>
+                                        </div>
+                                        <div class="custom-search-select-dropdown">
+                                            <div class="custom-search-select-search-box">
+                                                <input type="text" class="custom-search-select-search-input" placeholder="Search...">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                            </div>
+                                            <div class="custom-search-select-options">
+                                                <div class="custom-search-select-option active" data-value="ALL">Any</div>
+                                                <div th:each="editor : ${editors}" class="custom-search-select-option" th:data-value="${editor.id}" th:text="${editor.name}">System Translator</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -199,7 +215,7 @@
                     <!-- Shown when User IS logged in -->
                     <div th:if="${session.user != null}" class="dropdown d-flex align-items-center">
                         <span id="btn-navbar-balance" class="badge rounded-pill me-2 px-3 py-2 d-flex align-items-center" style="background-color: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); color: #00e5ff; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" title="Purchase Snow Flakes">
-                            <span id="navbar-user-balance" th:text="${session.user.user_type == 'ADMIN' or session.user.user_type == 'OWNER' ? '∞' : session.user.balance}">100</span>
+                            <span id="navbar-user-balance" th:text="${session.user.user_type == 'ADMIN' or session.user.user_type == 'OWNER' or session.user.user_type == 'PROOFREADER' ? '∞' : session.user.balance}">100</span>
                             <i class="fa-solid fa-snowflake ms-2" style="color: #00e5ff;"></i>
                         </span>
                         <button class="btn btn-profile-dropdown dropdown-toggle position-relative" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -277,6 +293,38 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Custom Flakes Option -->
+                <div class="row mt-4 justify-content-center">
+                    <div class="col-12 col-md-10">
+                        <div class="card p-3 border-0 rounded-3 text-center" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                            <h3 class="h6 fw-bold text-white mb-2 font-outfit">
+                                <i class="fa-solid fa-wand-magic-sparkles text-info me-2"></i>Custom Snow Flakes Amount
+                            </h3>
+                            <p class="text-muted small mb-3">Enter any custom amount you wish to purchase.</p>
+                            
+                            <div class="row g-2 align-items-center justify-content-center">
+                                <div class="col-auto">
+                                    <div class="input-group" style="max-width: 220px;">
+                                        <span class="input-group-text bg-dark text-white border-secondary" style="border-radius: 8px 0 0 8px;"><i class="fa-solid fa-snowflake text-info"></i></span>
+                                        <input type="number" id="custom-flakes-input" class="form-control bg-dark text-white border-secondary text-center fw-bold" placeholder="e.g. 250" min="10" max="50000" step="10" style="border-radius: 0 8px 8px 0;">
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="d-flex align-items-center gap-2 px-2">
+                                        <span class="fw-bold text-white-50">=</span>
+                                        <span id="custom-flakes-price-display" class="fs-5 fw-bold text-success">$0.00</span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-premium btn-sm px-3" id="btn-purchase-custom-flakes" style="padding-top: 7px; padding-bottom: 7px;">
+                                        <i class="fa-solid fa-credit-card me-2"></i>Purchase Custom
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-sm btn-outline-light px-4 py-2" data-bs-dismiss="modal">Cancel</button>
@@ -343,6 +391,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 <script th:inline="javascript">
+window.flakePackages = [[${flakePackages}]];
 $(document).ready(function() {
     // Star rating interactions
     $(document).on('click', '.star-select-btn', function() {

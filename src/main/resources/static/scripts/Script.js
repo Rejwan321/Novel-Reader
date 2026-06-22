@@ -43,6 +43,81 @@ $(document).ready(function() {
     var initSource = $("#search-filter-source-val").val() || "ALL";
     var initEditorSelection = $("#search-filter-editor-val").val() || "ALL";
 
+    function initCustomEditorDropdown() {
+        var $realSelect = $("#search-filter-editor-select");
+        var $customWrapper = $(".custom-search-select-wrapper");
+        var $trigger = $(".custom-search-select-trigger");
+        var $triggerText = $trigger.find(".selected-value");
+        var $dropdown = $(".custom-search-select-dropdown");
+        var $searchInput = $(".custom-search-select-search-input");
+        var $optionsContainer = $(".custom-search-select-options");
+
+        // Close dropdown when clicking outside
+        $(document).on("click", function(e) {
+            if (!$(e.target).closest(".custom-search-select-wrapper").length) {
+                $dropdown.removeClass("active");
+                $trigger.removeClass("active");
+            }
+        });
+
+        // Toggle dropdown
+        $trigger.on("click", function(e) {
+            e.stopPropagation();
+            $dropdown.toggleClass("active");
+            $(this).toggleClass("active");
+            if ($dropdown.hasClass("active")) {
+                $searchInput.val("").trigger("input").focus();
+            }
+        });
+
+        // Search filter input behavior
+        $searchInput.on("click", function(e) {
+            e.stopPropagation();
+        });
+
+        $searchInput.on("input", function() {
+            var query = $(this).val().toLowerCase().trim();
+            $optionsContainer.find(".custom-search-select-option").each(function() {
+                var text = $(this).text().toLowerCase();
+                if (text.indexOf(query) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Option selection
+        $optionsContainer.on("click", ".custom-search-select-option", function(e) {
+            e.stopPropagation();
+            var val = $(this).data("value");
+            var text = $(this).text();
+
+            $optionsContainer.find(".custom-search-select-option").removeClass("active");
+            $(this).addClass("active");
+
+            $triggerText.text(text);
+            $dropdown.removeClass("active");
+            $trigger.removeClass("active");
+
+            $realSelect.val(val).trigger("change");
+        });
+
+        window.syncCustomEditorDropdown = function() {
+            var val = $realSelect.val() || "ALL";
+            var $activeOpt = $optionsContainer.find('.custom-search-select-option[data-value="' + val + '"]');
+            if ($activeOpt.length) {
+                $optionsContainer.find(".custom-search-select-option").removeClass("active");
+                $activeOpt.addClass("active");
+                $triggerText.text($activeOpt.text());
+            }
+        };
+
+        window.syncCustomEditorDropdown();
+    }
+
+    initCustomEditorDropdown();
+
     $("#search-filter-genre-select").val(initGenre);
     $("#search-filter-year-select").val(initYear);
     $("#search-filter-sort-select").val(initSort);
@@ -51,6 +126,7 @@ $(document).ready(function() {
     $("#search-filter-country-select").val(initCountry);
     $("#search-filter-source-select").val(initSource);
     $("#search-filter-editor-select").val(initEditorSelection);
+    if (typeof window.syncCustomEditorDropdown === 'function') window.syncCustomEditorDropdown();
 
     // Expand search bar on page load if search is active
     var currentSearchVal = $(".search-bar .input").val();
@@ -185,6 +261,7 @@ $(document).ready(function() {
         $("#search-filter-country-select").val("ALL");
         $("#search-filter-source-select").val("ALL");
         $("#search-filter-editor-select").val("ALL");
+        if (typeof window.syncCustomEditorDropdown === 'function') window.syncCustomEditorDropdown();
 
         // Reset hidden inputs
         $("#search-filter-type-val").val("ALL");
@@ -380,15 +457,18 @@ $(document).ready(function() {
     // --- Sign In / Sign Up Modal Controls ---
     $(".log").click(function() {
         document.body.classList.toggle("show-popup");
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     $(".blur-bg-overlay").click(function() {
         document.body.classList.remove("show-popup");
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             document.body.classList.remove("show-popup");
+            if (typeof resetSignupForm === 'function') resetSignupForm();
         }
     });
 
@@ -396,11 +476,13 @@ $(document).ready(function() {
     $('#signup, #to-signup-btn').click(function(e) {
         e.preventDefault();
         $('#container').addClass('right-panel-active');
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     $('#login, #to-login-btn').click(function(e) {
         e.preventDefault();
         $('#container').removeClass('right-panel-active');
+        if (typeof resetSignupForm === 'function') resetSignupForm();
     });
 
     // --- AJAX Authentication Operations ---
@@ -428,30 +510,73 @@ $(document).ready(function() {
     });
 
     // Signup Form Submit
-    $("#signup-form-modal").submit(function(e) {
-        e.preventDefault();
+    function requestVerificationCode() {
         var name = $("#signup-name").val();
         var email = $("#signup-email").val();
         var password = $("#signup-password").val();
         var user_type = $("#signup-role").val() || "READER";
 
-        $.post("/api/auth/signup", {
+        if (!name || !name.trim() || !email || !email.trim() || !password) {
+            showToast("All fields are required.", "warning");
+            return;
+        }
+
+        showToast("Sending verification code...", "info");
+
+        $.post("/api/auth/signup/send-code", {
             name: name,
             email: email,
             password: password,
             user_type: user_type
         })
         .done(function(res) {
-            showToast("Account created successfully! Logged in as " + res.user.name);
-            setTimeout(function() {
-                location.reload();
-            }, 1200);
+            showToast(res.message, "success");
+            $("#signup-initial-fields").fadeOut(200, function() {
+                $("#signup-verification-fields").fadeIn(200);
+            });
         })
         .fail(function(err) {
-            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Signup failed. Try again.";
+            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to send code.";
             showToast(msg, "error");
         });
+    }
+
+    $("#signup-form-modal").submit(function(e) {
+        e.preventDefault();
+        
+        if ($("#signup-verification-fields").is(":visible")) {
+            var code = $("#signup-verification-code").val();
+            if (!code || !code.trim()) {
+                showToast("Please enter the verification code.", "warning");
+                return;
+            }
+            
+            $.post("/api/auth/signup/verify", { code: code.trim() })
+            .done(function(res) {
+                showToast("Account created successfully! Logged in as " + res.user.name, "success");
+                setTimeout(function() {
+                    location.reload();
+                }, 1200);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Verification failed.";
+                showToast(msg, "error");
+            });
+        } else {
+            requestVerificationCode();
+        }
     });
+
+    $("#btn-resend-signup-code").click(function(e) {
+        e.preventDefault();
+        requestVerificationCode();
+    });
+
+    function resetSignupForm() {
+        $("#signup-verification-fields").hide();
+        $("#signup-initial-fields").show();
+        $("#signup-verification-code").val("");
+    }
     // Logout Click
     $(document).on("click", "#btn-logout", function(e) {
         e.preventDefault();
@@ -522,11 +647,15 @@ $(document).ready(function() {
     // --- Client-Side Snappy Filter Engine (Home Page) ---
     var selectedType = $("#search-filter-type-val").val() || "ALL";
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
+    var itemsPerPage = 12;
+    var currentPage = 1;
+    var totalPages = 1;
 
     function applyFilters() {
         var cards = $(".book-card-col");
-        var visibleCount = 0;
+        var matchedCards = [];
 
+        // 1. Determine matching cards
         cards.each(function() {
             var cardCol = $(this);
             var type = cardCol.data("type");
@@ -537,22 +666,142 @@ $(document).ready(function() {
             var genreMatch = (selectedGenre === "ALL" || genres.includes(selectedGenre.toUpperCase()));
 
             if (typeMatch && genreMatch) {
-                cardCol.fadeIn(300);
-                visibleCount++;
+                matchedCards.push(cardCol);
             } else {
-                cardCol.fadeOut(200);
+                cardCol.hide();
             }
         });
 
-        // Toggle Empty state container
-        setTimeout(function() {
-            if (visibleCount === 0) {
-                $("#empty-state-container").removeClass("d-none").fadeIn(300);
+        var visibleCount = matchedCards.length;
+        totalPages = Math.ceil(visibleCount / itemsPerPage) || 1;
+
+        // Keep currentPage within bounds
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        if (currentPage < 1) {
+            currentPage = 1;
+        }
+
+        // 2. Paginate show/hide
+        var startIndex = (currentPage - 1) * itemsPerPage;
+        var endIndex = startIndex + itemsPerPage;
+
+        for (var i = 0; i < matchedCards.length; i++) {
+            if (i >= startIndex && i < endIndex) {
+                matchedCards[i].fadeIn(300);
             } else {
-                $("#empty-state-container").addClass("d-none");
+                matchedCards[i].hide();
             }
-        }, 210);
+        }
+
+        // 3. Update Pagination UI
+        if (visibleCount === 0) {
+            $("#discovery-pagination").addClass("d-none");
+            $("#empty-state-container").removeClass("d-none").fadeIn(300);
+        } else {
+            $("#empty-state-container").addClass("d-none");
+            renderPagination(currentPage, totalPages);
+        }
     }
+
+    function renderPagination(activePage, totalPages) {
+        var container = $("#discovery-pagination");
+        container.empty();
+
+        if (totalPages <= 1) {
+            container.addClass("d-none");
+            return;
+        }
+        container.removeClass("d-none");
+
+        // 1. Double Left chevron button "<<"
+        var btnFirst = $('<div class="yuki-pagination-btn" data-page="first">«</div>');
+        if (activePage === 1) {
+            btnFirst.addClass("disabled");
+        }
+        container.append(btnFirst);
+
+        // 2. Single Left chevron button "<"
+        var btnPrev = $('<div class="yuki-pagination-btn" data-page="prev">‹</div>');
+        if (activePage === 1) {
+            btnPrev.addClass("disabled");
+        }
+        container.append(btnPrev);
+
+        // 3. Page Numbers list logic
+        var pagesToShow = [];
+        if (totalPages <= 7) {
+            for (var i = 1; i <= totalPages; i++) {
+                pagesToShow.push(i);
+            }
+        } else {
+            if (activePage <= 4) {
+                pagesToShow = [1, 2, 3, 4, 5, "ellipsis", totalPages];
+            } else if (activePage >= totalPages - 3) {
+                pagesToShow = [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+            } else {
+                pagesToShow = [1, "ellipsis", activePage - 1, activePage, activePage + 1, "ellipsis", totalPages];
+            }
+        }
+
+        pagesToShow.forEach(function(p) {
+            if (p === "ellipsis") {
+                container.append('<div class="yuki-pagination-ellipsis">...</div>');
+            } else {
+                var btnPage = $('<div class="yuki-pagination-btn" data-page="' + p + '">' + p + '</div>');
+                if (p === activePage) {
+                    btnPage.addClass("active");
+                }
+                container.append(btnPage);
+            }
+        });
+
+        // 4. Single Right chevron button ">"
+        var btnNext = $('<div class="yuki-pagination-btn" data-page="next">›</div>');
+        if (activePage === totalPages) {
+            btnNext.addClass("disabled");
+        }
+        container.append(btnNext);
+
+        // 5. Double Right chevron button ">>"
+        var btnLast = $('<div class="yuki-pagination-btn" data-page="last">»</div>');
+        if (activePage === totalPages) {
+            btnLast.addClass("disabled");
+        }
+        container.append(btnLast);
+
+        // 6. Text info: Page X of Y
+        var textInfo = $('<div class="yuki-pagination-info">Page <strong>' + activePage + '</strong> of <strong>' + totalPages + '</strong></div>');
+        container.append(textInfo);
+    }
+
+    function scrollToFilterSection() {
+        var targetOffset = $(".filter-section").offset();
+        if (targetOffset) {
+            $('html, body').animate({
+                scrollTop: targetOffset.top - 20
+            }, 300);
+        }
+    }
+
+    // Delegated click handler for Snappy Filter Engine pagination buttons
+    $(document).on("click", "#discovery-pagination .yuki-pagination-btn:not(.disabled):not(.active)", function() {
+        var pageAttr = $(this).attr("data-page");
+        if (pageAttr === "first") {
+            currentPage = 1;
+        } else if (pageAttr === "prev") {
+            currentPage--;
+        } else if (pageAttr === "next") {
+            currentPage++;
+        } else if (pageAttr === "last") {
+            currentPage = totalPages;
+        } else {
+            currentPage = parseInt(pageAttr);
+        }
+        applyFilters();
+        scrollToFilterSection();
+    });
 
     // Tab Type Selection
     $(".filter-tab").click(function() {
@@ -560,6 +809,7 @@ $(document).ready(function() {
         $(this).addClass("active");
         selectedType = $(this).data("type");
         $("#search-filter-type-val").val(selectedType); // Sync hidden input
+        currentPage = 1;
         applyFilters();
     });
 
@@ -586,6 +836,7 @@ $(document).ready(function() {
             $("#tab-all").addClass("active");
         }
         selectedType = targetType;
+        currentPage = 1;
         applyFilters();
     });
 
@@ -599,6 +850,7 @@ $(document).ready(function() {
             if (selectedType === "COMIC") $("#tab-comics").addClass("active");
             if (selectedType === "MANHWA") $("#tab-manhwa").addClass("active");
             if (selectedType === "MANGA") $("#tab-manga").addClass("active");
+            currentPage = 1;
             applyFilters();
         }
         var genreParam = urlParams.get("genre");
@@ -610,6 +862,7 @@ $(document).ready(function() {
                     $(this).addClass("active");
                 }
             });
+            currentPage = 1;
             applyFilters();
         }
     }
@@ -621,8 +874,14 @@ $(document).ready(function() {
         selectedGenre = $(this).data("genre");
         $("#search-filter-genre-val").val(selectedGenre); // Sync hidden input
         $("#search-filter-genre-select").val(selectedGenre); // Sync dropdown
+        currentPage = 1;
         applyFilters();
     });
+
+    // Run filters once on initial load (so default is also paginated)
+    if (window.location.pathname === "/") {
+        applyFilters();
+    }
 
 
     // --- Novel Reader Settings Panel ---
@@ -753,6 +1012,85 @@ $(document).ready(function() {
         })
         .always(function() {
             btn.prop("disabled", false).text("Purchase");
+        });
+    });
+
+    // Custom Flakes dynamic pricing calculation
+    function updateCustomFlakesPrice() {
+        var input = $("#custom-flakes-input");
+        var amount = parseInt(input.val());
+        var display = $("#custom-flakes-price-display");
+        
+        if (isNaN(amount) || amount <= 0) {
+            display.text("$0.00");
+            return;
+        }
+        
+        var packages = window.flakePackages || [];
+        if (packages.length === 0) {
+            // Default rate fallback if packages list is empty
+            var price = amount * 0.01;
+            display.text("$" + price.toFixed(2));
+            return;
+        }
+        
+        // Sort ascending by amount
+        var sortedPacks = [...packages].sort(function(a, b) {
+            return a.amount - b.amount;
+        });
+        
+        // Find closest package that is <= amount
+        var applicablePack = sortedPacks[0];
+        for (var i = 0; i < sortedPacks.length; i++) {
+            if (sortedPacks[i].amount <= amount) {
+                applicablePack = sortedPacks[i];
+            }
+        }
+        
+        var rate = applicablePack.price / applicablePack.amount;
+        var price = amount * rate;
+        display.text("$" + price.toFixed(2));
+    }
+
+    $(document).on("input change keyup", "#custom-flakes-input", function() {
+        updateCustomFlakesPrice();
+    });
+
+    $(document).on("click", "#btn-purchase-custom-flakes", function(e) {
+        e.preventDefault();
+        var btn = $(this);
+        var input = $("#custom-flakes-input");
+        var amount = parseInt(input.val());
+        
+        if (isNaN(amount) || amount <= 0) {
+            showToast("Please enter a valid amount of Snow Flakes.", "error");
+            return;
+        }
+        
+        btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
+        
+        $.post("/api/user/purchase-flakes", { amount: amount })
+        .done(function(res) {
+            showToast(res.message);
+            $("#navbar-user-balance").text(res.newBalance);
+            
+            // Clear input
+            input.val('');
+            $("#custom-flakes-price-display").text("$0.00");
+            
+            // Close modal
+            var modalEl = document.getElementById('purchaseFlakesModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
+            }
+        })
+        .fail(function(err) {
+            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
+            showToast(msg, "error");
+        })
+        .always(function() {
+            btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
         });
     });
 

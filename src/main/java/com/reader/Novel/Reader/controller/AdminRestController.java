@@ -52,6 +52,9 @@ public class AdminRestController {
     @Autowired
     private com.reader.Novel.Reader.service.EmailService emailService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
             User loggedInUser = (User) session.getAttribute("user");
@@ -947,6 +950,53 @@ public class AdminRestController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Story deleted successfully."));
     }
 
+    // 2.8.b. Bulk Delete story series (ADMIN & EDITOR)
+    @DeleteMapping("/stories/bulk")
+    public ResponseEntity<?> deleteStoriesBulk(
+            @RequestBody List<Long> ids,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"EDITOR".equals(role) && !"PROOFREADER".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only admins, editors, and proofreaders can delete stories."));
+        }
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No story IDs provided."));
+        }
+
+        // Validate all stories exist and user has permission to delete them
+        for (Long id : ids) {
+            Novel novel = novelService.getNovelById(id);
+            if (novel == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Story with ID " + id + " not found."));
+            }
+            if (!"ADMIN".equals(role) && !"PROOFREADER".equals(role) && !"OWNER".equals(role) && !loggedInUser.getId().equals(novel.getCreatorId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not own story: " + novel.getTitle()));
+            }
+        }
+
+        // Perform deletion
+        for (Long id : ids) {
+            novelService.deleteNovel(id);
+            try {
+                sseService.sendGlobalEvent("story_deleted", Map.of("storyId", id));
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Selected stories deleted successfully."));
+    }
+
     // 9. Analytics Summary (ADMIN & EDITOR)
     @GetMapping("/analytics/summary")
     public ResponseEntity<?> getAnalyticsSummary(HttpSession session) {
@@ -1277,6 +1327,7 @@ public class AdminRestController {
 
     @PostMapping("/flakes/add")
     public ResponseEntity<?> addFlakePackage(
+            @RequestParam(required = false) Long id,
             @RequestParam Integer amount,
             @RequestParam Double price,
             HttpSession session) {
@@ -1297,8 +1348,22 @@ public class AdminRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "Amount and price must be greater than zero."));
         }
 
-        FlakePackage pack = new FlakePackage(null, amount, price);
-        novelService.saveFlakePackage(pack);
+        if (id != null) {
+            FlakePackage existing = novelService.getFlakePackageById(id);
+            if (existing != null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Package ID " + id + " is already in use."));
+            }
+            try {
+                jdbcTemplate.update("INSERT INTO flake_package (id, amount, price) VALUES (?, ?, ?)", id, amount, price);
+                alignFlakePackageSequence();
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to create package: " + e.getMessage()));
+            }
+        } else {
+            FlakePackage pack = new FlakePackage(null, amount, price);
+            novelService.saveFlakePackage(pack);
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Package added successfully!"));
     }
@@ -1306,6 +1371,7 @@ public class AdminRestController {
     @PostMapping("/flakes/edit/{id}")
     public ResponseEntity<?> editFlakePackage(
             @PathVariable Long id,
+            @RequestParam(required = false) Long newId,
             @RequestParam Integer amount,
             @RequestParam Double price,
             HttpSession session) {
@@ -1331,11 +1397,41 @@ public class AdminRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "Amount and price must be greater than zero."));
         }
 
-        pack.setAmount(amount);
-        pack.setPrice(price);
-        novelService.saveFlakePackage(pack);
+        if (newId != null && !newId.equals(id)) {
+            FlakePackage existing = novelService.getFlakePackageById(newId);
+            if (existing != null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Package ID " + newId + " is already in use."));
+            }
+            try {
+                jdbcTemplate.update("UPDATE flake_package SET id = ?, amount = ?, price = ? WHERE id = ?", newId, amount, price, id);
+                alignFlakePackageSequence();
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to update package ID: " + e.getMessage()));
+            }
+        } else {
+            pack.setAmount(amount);
+            pack.setPrice(price);
+            novelService.saveFlakePackage(pack);
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Package details updated successfully!"));
+    }
+
+    private void alignFlakePackageSequence() {
+        try {
+            String dbName = jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<String>) conn -> conn.getMetaData().getDatabaseProductName());
+            if ("H2".equalsIgnoreCase(dbName)) {
+                jdbcTemplate.execute("ALTER TABLE flake_package ALTER COLUMN id RESTART WITH (SELECT COALESCE(MAX(id), 0) + 1 FROM flake_package)");
+            } else if (dbName != null && dbName.toUpperCase().contains("MYSQL")) {
+                Long nextId = jdbcTemplate.queryForObject("SELECT COALESCE(MAX(id), 0) + 1 FROM flake_package", Long.class);
+                if (nextId != null) {
+                    jdbcTemplate.execute("ALTER TABLE flake_package AUTO_INCREMENT = " + nextId);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Sequence alignment failed: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/flakes/{id}")
@@ -1588,6 +1684,10 @@ public class AdminRestController {
         java.util.Map<String, String> creds = new java.util.HashMap<>();
         creds.put("googleClientId", systemSettingRepository.findById("google.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("googleClientSecret", systemSettingRepository.findById("google.client_secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("googleEnabled", systemSettingRepository.findById("google.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("true"));
+        creds.put("discordClientId", systemSettingRepository.findById("discord.client_id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("discordClientSecret", systemSettingRepository.findById("discord.client_secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("discordEnabled", systemSettingRepository.findById("discord.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("true"));
         creds.put("mailHost", systemSettingRepository.findById("mail.host").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailPort", systemSettingRepository.findById("mail.port").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailUsername", systemSettingRepository.findById("mail.username").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
@@ -1604,6 +1704,10 @@ public class AdminRestController {
     public ResponseEntity<?> saveCredentials(
             @RequestParam(required = false) String googleClientId,
             @RequestParam(required = false) String googleClientSecret,
+            @RequestParam(required = false) String googleEnabled,
+            @RequestParam(required = false) String discordClientId,
+            @RequestParam(required = false) String discordClientSecret,
+            @RequestParam(required = false) String discordEnabled,
             @RequestParam(required = false) String mailHost,
             @RequestParam(required = false) String mailPort,
             @RequestParam(required = false) String mailUsername,
@@ -1624,6 +1728,10 @@ public class AdminRestController {
 
         if (googleClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_id", googleClientId.trim()));
         if (googleClientSecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.client_secret", googleClientSecret.trim()));
+        if (googleEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("google.enabled", googleEnabled.trim()));
+        if (discordClientId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("discord.client_id", discordClientId.trim()));
+        if (discordClientSecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("discord.client_secret", discordClientSecret.trim()));
+        if (discordEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("discord.enabled", discordEnabled.trim()));
         if (mailHost != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.host", mailHost.trim()));
         if (mailPort != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.port", mailPort.trim()));
         if (mailUsername != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.username", mailUsername.trim()));

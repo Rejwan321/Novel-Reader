@@ -6,7 +6,7 @@
     <meta name="description" content="Your personal user panel. Manage your notifications, profile, and settings on Yuki Tales.">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='1.4')}"/>
+    <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/style.css(v='1.5')}"/>
     <link rel="stylesheet" type="text/css" media="all" th:href ="@{/css/login.css}"/>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,6 +58,26 @@
             border-radius: 12px;
             padding: 20px;
             height: 100%;
+        }
+
+        .btn-wallet-subtab {
+            background: transparent;
+            border: none;
+            color: #8c8c9e;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            transition: all 0.3s ease;
+        }
+
+        .btn-wallet-subtab:hover {
+            color: #ffffff;
+        }
+
+        .btn-wallet-subtab.active {
+            color: #bd53ed;
+            border-bottom-color: #bd53ed;
         }
 
         .user-input {
@@ -185,6 +205,9 @@
                         <button class="user-sidebar-btn active" id="tab-notifications-btn" onclick="switchTab('notifications')">
                             <i class="fa-solid fa-bell text-warning me-2"></i>Notifications
                         </button>
+                        <button class="user-sidebar-btn" id="tab-wallet-btn" onclick="switchTab('wallet')">
+                            <i class="fa-solid fa-wallet text-success me-2"></i>My Wallet
+                        </button>
                         <button class="user-sidebar-btn" id="tab-settings-btn" onclick="switchTab('settings')">
                             <i class="fa-solid fa-cog text-info me-2"></i>Settings & Profile
                         </button>
@@ -262,6 +285,245 @@
                                 </div>
                             </div>
                         </form>
+
+                        <!-- Google Identity Services client library -->
+                        <script src="https://accounts.google.com/gsi/client" async defer></script>
+                        <div id="g_id_onload"
+                             th:data-client_id="${googleClientId}"
+                             data-context="signin"
+                             data-ux_mode="popup"
+                             data-callback="handleGoogleLinkResponse"
+                             data-auto_select="false">
+                        </div>
+
+                        <!-- Account Linking & Merging Section -->
+                        <div class="card bg-dark border-0 p-4 mt-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                            <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-link text-violet me-2"></i>Account Linking & Login Methods</h3>
+                            <p class="text-muted small mb-4">Link additional login providers to access your account via multiple methods.</p>
+                            
+                            <!-- Google Authentication -->
+                            <div th:if="${googleEnabled or #strings.contains(currentUser.loginType, 'GOOGLE')}">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="btn-action-premium d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background: rgba(189, 83, 237, 0.1); border: 0 !important; cursor: default !important;">
+                                                <i class="fa-brands fa-google text-violet fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="h6 fw-bold text-white mb-1">Google Authentication</h4>
+                                                <div class="small text-muted" id="google-link-status" th:text="${#strings.contains(currentUser.loginType, 'GOOGLE') ? 'Linked (' + currentUser.email + ')' : 'Not Linked'}">Not Linked</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <div th:if="${!#strings.contains(currentUser.loginType, 'GOOGLE')}" id="google-link-btn-container" class="d-inline-block">
+                                            <!-- Google Sign-in standard button (linking view) -->
+                                            <div class="g_id_signin"
+                                                 data-type="standard"
+                                                 data-shape="pill"
+                                                 data-theme="outline"
+                                                 data-text="signin_with"
+                                                 data-size="medium"
+                                                 data-logo_alignment="left">
+                                            </div>
+                                        </div>
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="text-success small fw-bold">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="border-secondary my-4" style="opacity: 0.15;">
+                            </div>
+                            
+                            <!-- Discord Authentication -->
+                            <div th:if="${discordEnabled or #strings.contains(currentUser.loginType, 'DISCORD')}">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="btn-action-premium d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background: rgba(88, 101, 242, 0.1); border: 0 !important; cursor: default !important;">
+                                                <i class="fa-brands fa-discord text-primary fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="h6 fw-bold text-white mb-1">Discord Authentication</h4>
+                                                <div class="small text-muted" id="discord-link-status" th:text="${#strings.contains(currentUser.loginType, 'DISCORD') ? 'Linked (' + currentUser.email + ')' : 'Not Linked'}">Not Linked</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <div th:if="${!#strings.contains(currentUser.loginType, 'DISCORD')}" id="discord-link-btn-container" class="d-inline-block">
+                                            <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="btn btn-sm btn-outline-primary px-3">
+                                                <i class="fa-brands fa-discord me-1"></i>Link Discord
+                                            </a>
+                                        </div>
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'DISCORD')}" class="text-success small fw-bold">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="border-secondary my-4" style="opacity: 0.15;">
+                            </div>
+                            
+                            <!-- Local Password Linking -->
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="btn-action-premium d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background: rgba(0, 188, 212, 0.1); border: 0 !important; cursor: default !important;">
+                                            <i class="fa-solid fa-lock text-info fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="h6 fw-bold text-white mb-1">Password Authentication</h4>
+                                            <div class="small text-muted" th:text="${#strings.contains(currentUser.loginType, 'LOCAL') ? 'Linked & Active' : 'Not Linked'}">Linked & Active</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button th:if="${!#strings.contains(currentUser.loginType, 'LOCAL')}" type="button" class="btn btn-sm btn-outline-info px-3" data-bs-toggle="modal" data-bs-target="#linkPasswordModal">
+                                        <i class="fa-solid fa-key me-1"></i>Link Password
+                                    </button>
+                                    <div th:if="${#strings.contains(currentUser.loginType, 'LOCAL')}" class="text-success small fw-bold">
+                                        <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wallet Pane -->
+                    <div class="user-card" id="pane-wallet" style="display: none;">
+                        <h2 class="h4 fw-bold text-white mb-4 pb-2 border-bottom border-secondary font-outfit">
+                            <i class="fa-solid fa-wallet text-success me-2"></i>My Wallet
+                        </h2>
+
+                        <div class="row g-4 mb-4">
+                            <!-- Balance Card -->
+                            <div class="col-12 col-md-6">
+                                <div class="p-4 rounded-3 text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #1d1947, #3e1b6b); border: 1px solid rgba(189, 83, 237, 0.3);">
+                                    <div class="position-absolute" style="right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.05; color: #fff;">
+                                        <i class="fa-solid fa-snowflake"></i>
+                                    </div>
+                                    <h3 class="h6 text-white-50 text-uppercase fw-bold mb-2">Available Balance</h3>
+                                    <div class="d-flex align-items-center gap-3 my-3">
+                                        <span class="fs-1 fw-bold text-cyan" id="wallet-balance-text" th:text="${currentUser.user_type == 'ADMIN' or currentUser.user_type == 'OWNER' or currentUser.user_type == 'PROOFREADER' ? '∞' : currentUser.balance}">100</span>
+                                        <span class="fs-5 text-muted">Snow Flakes</span>
+                                    </div>
+                                    <p class="small text-white-50 mb-0">Use Snow Flakes to unlock premium novel and comic chapters.</p>
+                                </div>
+                            </div>
+
+                            <!-- Quick Action Card for Infinite Roles -->
+                            <div class="col-12 col-md-6" id="quick-actions-infinite" th:style="${currentUser.user_type == 'ADMIN' or currentUser.user_type == 'OWNER' or currentUser.user_type == 'PROOFREADER'} ? '' : 'display: none;'">
+                                <div class="p-4 rounded-3 text-white h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <div>
+                                        <h3 class="h6 text-muted text-uppercase fw-bold mb-2">Quick Actions</h3>
+                                        <p class="small text-white-50">You have unlimited access to premium chapters.</p>
+                                    </div>
+                                    <button class="btn btn-premium w-100 py-2 mt-3" type="button" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                        <i class="fa-solid fa-infinity me-2"></i>Unlimited Access
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Quick Action Card for Standard Roles -->
+                            <div class="col-12 col-md-6" id="quick-actions-standard" th:style="${currentUser.user_type == 'ADMIN' or currentUser.user_type == 'OWNER' or currentUser.user_type == 'PROOFREADER'} ? 'display: none;' : ''">
+                                <div class="p-4 rounded-3 text-white h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <div>
+                                        <h3 class="h6 text-muted text-uppercase fw-bold mb-2">Quick Actions</h3>
+                                        <p class="small text-white-50">Need more Snow Flakes? Recharge your wallet instantly using our secured options.</p>
+                                    </div>
+                                    <button class="btn btn-premium w-100 py-2 mt-3" type="button" data-bs-toggle="modal" data-bs-target="#purchaseFlakesModal">
+                                        <i class="fa-solid fa-plus me-2"></i>Buy Snow Flakes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wallet Sub-tabs / History Navigation -->
+                        <div class="d-flex align-items-center justify-content-between mt-5 mb-3 border-bottom border-secondary pb-2">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-wallet-subtab active" id="subtab-statement-btn" onclick="switchWalletSubtab('statement')">
+                                    <i class="fa-solid fa-receipt me-1 text-violet"></i>Statement
+                                </button>
+                                <button class="btn btn-sm btn-wallet-subtab" id="subtab-purchase-btn" onclick="switchWalletSubtab('purchase')">
+                                    <i class="fa-solid fa-snowflake me-1 text-success"></i>Purchase History (Snow Flake)
+                                </button>
+                                <button class="btn btn-sm btn-wallet-subtab" id="subtab-unlock-btn" onclick="switchWalletSubtab('unlock')">
+                                    <i class="fa-solid fa-book-open me-1 text-info"></i>Unlock History (Unlocked chapter)
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadWalletHistoryData()">
+                                <i class="fa-solid fa-rotate me-1"></i>Refresh
+                            </button>
+                        </div>
+
+                        <!-- 1. Statement Pane -->
+                        <div id="wallet-pane-statement" class="wallet-history-pane">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-admin align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wallet-statement-tbody">
+                                        <!-- Populated dynamically via AJAX -->
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">
+                                                <i class="fa fa-spinner fa-spin me-2"></i>Loading statement...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 2. Purchase History Pane -->
+                        <div id="wallet-pane-purchase" class="wallet-history-pane" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-admin align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Price Paid</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wallet-flake-purchases-tbody">
+                                        <!-- Populated dynamically via AJAX -->
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">
+                                                <i class="fa fa-spinner fa-spin me-2"></i>Loading purchase history...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 3. Unlock History Pane -->
+                        <div id="wallet-pane-unlock" class="wallet-history-pane" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-admin align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Story Title</th>
+                                            <th>Chapter</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wallet-purchases-tbody">
+                                        <!-- Populated dynamically via AJAX -->
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">
+                                                <i class="fa fa-spinner fa-spin me-2"></i>Loading unlock history...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -286,8 +548,8 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='1.6')}"></script>
-    <script th:inline="javascript">
+    <script th:src="@{/scripts/Script.js(v='1.8')}"></script>
+    <script>
         $(document).ready(function() {
             // Load initial notifications
             loadUserNotifications();
@@ -326,6 +588,36 @@
                     btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
                 });
             });
+
+            // Active Tab Query Param Check
+            var urlParams = new URLSearchParams(window.location.search);
+            var activeTab = urlParams.get('tab');
+            if (activeTab) {
+                switchTab(activeTab);
+            }
+
+            // Check for Account Merging parameters (for Discord redirect callback)
+            if (urlParams.get('mergeRequired') === 'true' && urlParams.get('provider') === 'discord') {
+                switchTab('settings'); // make sure settings pane is visible
+                var sourceEmail = urlParams.get('sourceUserEmail');
+                if (sourceEmail) {
+                    if (confirm("This Discord account is already linked to another user (" + sourceEmail + "). Would you like to merge all data (coins, purchases, bookmarks, comments) from that account into your current account? This action cannot be undone.")) {
+                        $.post("/api/auth/merge/discord", { email: sourceEmail })
+                        .done(function(res) {
+                            showToast("Accounts merged successfully!");
+                            setTimeout(function() {
+                                window.location.href = "/user/panel?tab=settings";
+                            }, 1500);
+                        })
+                        .fail(function(err) {
+                            showToast("Merging failed: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                        });
+                    } else {
+                        // user cancelled, clear URL parameters
+                        window.history.replaceState({}, document.title, window.location.pathname + "?tab=settings");
+                    }
+                }
+            }
         });
 
         // Tab Switcher
@@ -335,10 +627,17 @@
 
             if (tab === 'notifications') {
                 $('#pane-notifications').show();
+                $('#pane-wallet').hide();
                 $('#pane-settings').hide();
                 loadUserNotifications();
+            } else if (tab === 'wallet') {
+                $('#pane-notifications').hide();
+                $('#pane-wallet').show();
+                $('#pane-settings').hide();
+                loadWalletBalanceAndHistory();
             } else if (tab === 'settings') {
                 $('#pane-notifications').hide();
+                $('#pane-wallet').hide();
                 $('#pane-settings').show();
             }
         }
@@ -448,6 +747,156 @@
             }
         }
 
+        // Switch subtabs under wallet history
+        function switchWalletSubtab(subtab) {
+            $('.btn-wallet-subtab').removeClass('active');
+            $('#subtab-' + subtab + '-btn').addClass('active');
+
+            $('.wallet-history-pane').hide();
+            $('#wallet-pane-' + subtab).show();
+        }
+
+        // Fetch statement, flake purchase history, and unlock history
+        function loadWalletHistoryData() {
+            var statementTbody = $("#wallet-statement-tbody");
+            var flakePurchaseTbody = $("#wallet-flake-purchases-tbody");
+            var unlockTbody = $("#wallet-purchases-tbody");
+
+            statementTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading statement...</td></tr>');
+            flakePurchaseTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading purchase history...</td></tr>');
+            unlockTbody.html('<tr><td colspan="4" class="text-center py-4 text-muted"><i class="fa fa-spinner fa-spin me-2"></i>Loading unlock history...</td></tr>');
+
+            // 1. Fetch unified statement
+            $.get("/api/user/statement")
+                .done(function(statement) {
+                    if (!statement || statement.length === 0) {
+                        statementTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No transaction history found.</td></tr>');
+                        return;
+                    }
+
+                    statementTbody.empty();
+                    statement.forEach(function(item) {
+                        var dateStr = item.date ? new Date(item.date).toLocaleString() : 'N/A';
+                        var isCredit = item.type === 'CREDIT';
+                        var badgeClass = isCredit ? 'bg-success text-white' : 'bg-violet text-cyan';
+                        var changePrefix = isCredit ? '+' : '';
+                        
+                        var rowHtml = `
+                            <tr>
+                                <td class="text-muted small">${dateStr}</td>
+                                <td class="text-white">${escapeHtml(item.description)}</td>
+                                <td>
+                                    <span class="badge ${badgeClass} fw-bold">${changePrefix}${item.amount} Flakes</span>
+                                </td>
+                            </tr>
+                        `;
+                        statementTbody.append(rowHtml);
+                    });
+                })
+                .fail(function() {
+                    statementTbody.html('<tr><td colspan="3" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load statement.</td></tr>');
+                });
+
+            // 2. Fetch flake package purchases
+            $.get("/api/user/flake-purchases")
+                .done(function(purchases) {
+                    if (!purchases || purchases.length === 0) {
+                        flakePurchaseTbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No flake package purchases found.</td></tr>');
+                        return;
+                    }
+
+                    flakePurchaseTbody.empty();
+                    purchases.forEach(function(item) {
+                        var dateStr = item.purchasedAt ? new Date(item.purchasedAt).toLocaleString() : 'N/A';
+                        var rowHtml = `
+                            <tr>
+                                <td class="text-muted small">${dateStr}</td>
+                                <td class="text-white fw-bold">+${item.amount} Flakes</td>
+                                <td class="text-success fw-bold">$${parseFloat(item.price).toFixed(2)}</td>
+                            </tr>
+                        `;
+                        flakePurchaseTbody.append(rowHtml);
+                    });
+                })
+                .fail(function() {
+                    flakePurchaseTbody.html('<tr><td colspan="3" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load purchases.</td></tr>');
+                });
+
+            // 3. Fetch chapter unlock history
+            $.get("/api/user/purchases")
+                .done(function(purchases) {
+                    if (!purchases || purchases.length === 0) {
+                        unlockTbody.html('<tr><td colspan="4" class="text-center py-4 text-muted">No unlock history found.</td></tr>');
+                        return;
+                    }
+
+                    unlockTbody.empty();
+                    purchases.forEach(function(item) {
+                        var dateStr = item.purchasedAt ? new Date(item.purchasedAt).toLocaleString() : 'N/A';
+                        var rowHtml = `
+                            <tr>
+                                <td class="text-muted small">${dateStr}</td>
+                                <td class="text-white fw-bold">${escapeHtml(item.novelTitle)}</td>
+                                <td class="text-info">Chapter ${item.chapterNumber}${item.chapterTitle ? ': ' + escapeHtml(item.chapterTitle) : ''}</td>
+                                <td>
+                                    <span class="badge bg-violet text-cyan fw-bold">-${item.price} Flakes</span>
+                                </td>
+                            </tr>
+                        `;
+                        unlockTbody.append(rowHtml);
+                    });
+                })
+                .fail(function() {
+                    unlockTbody.html('<tr><td colspan="4" class="text-center py-4 text-danger"><i class="fa fa-exclamation-triangle me-2"></i>Failed to load unlock history.</td></tr>');
+                });
+        }
+
+        // Load Wallet balance and transaction history via REST
+        function loadWalletBalanceAndHistory() {
+            // 1. Fetch current profile to get updated balance
+            $.get("/api/user/profile")
+                .done(function(profile) {
+                    if (profile && profile.balance !== undefined) {
+                        var isInfinite = (profile.user_type === 'ADMIN' || profile.user_type === 'OWNER' || profile.user_type === 'PROOFREADER');
+                        var displayBalance = isInfinite ? '∞' : profile.balance;
+                        $("#wallet-balance-text").text(displayBalance);
+                        $("#navbar-user-balance").text(displayBalance);
+                        
+                        if (isInfinite) {
+                            $("#quick-actions-infinite").show();
+                            $("#quick-actions-standard").hide();
+                        } else {
+                            $("#quick-actions-infinite").hide();
+                            $("#quick-actions-standard").show();
+                        }
+                    }
+                });
+
+            // 2. Fetch history tables
+            loadWalletHistoryData();
+        }
+
+        // Helper to escape HTML characters
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Auto-refresh wallet when the purchase flakes modal is closed
+        $(document).ready(function() {
+            $('#purchaseFlakesModal').on('hidden.bs.modal', function () {
+                var activeBtn = $('.user-sidebar-btn.active').attr('id');
+                if (activeBtn === 'tab-wallet-btn') {
+                    loadWalletBalanceAndHistory();
+                }
+            });
+        });
+
         // Toast Helper
         function showToast(message, type = "success") {
             var toastEl = document.getElementById('actionToast');
@@ -530,8 +979,145 @@
             updateNavbarUnreadBadge();
         };
     </script>
+
+    <!-- Account Merge Confirmation Modal -->
+    <div class="modal fade" id="confirmMergeModal" tabindex="-1" aria-labelledby="confirmMergeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold font-outfit" id="confirmMergeModalLabel">
+                        <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Merge Accounts?
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="merge-modal-message" class="text-white-50 small mb-0"></p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning btn-sm text-dark fw-bold px-3" id="btn-confirm-merge">Yes, Merge Accounts</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Password Modal -->
+    <div class="modal fade" id="linkPasswordModal" tabindex="-1" aria-labelledby="linkPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold font-outfit" id="linkPasswordModalLabel">
+                        <i class="fa-solid fa-key text-info me-2"></i>Link Password Credentials
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-link-password">
+                    <div class="modal-body">
+                        <p class="text-muted small mb-4">Set a password for your account to allow logging in with either Google or email and password.</p>
+                        <div class="mb-3">
+                            <label for="link-password-input" class="form-label text-white-50 small">New Password</label>
+                            <input type="password" class="form-control user-input" id="link-password-input" required placeholder="Choose a strong password">
+                        </div>
+                        <div class="mb-0">
+                            <label for="link-password-confirm" class="form-label text-white-50 small">Confirm Password</label>
+                            <input type="password" class="form-control user-input" id="link-password-confirm" required placeholder="Retype password">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info btn-sm text-dark fw-bold px-3" id="btn-submit-link-password">Link Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google authentication link callback
+        function handleGoogleLinkResponse(response) {
+            if (!response.credential) return;
+            
+            $.ajax({
+                url: '/api/auth/link/google',
+                type: 'POST',
+                data: { token: response.credential },
+                success: function(res) {
+                    if (res.mergeRequired) {
+                        window.pendingGoogleToken = response.credential;
+                        $('#merge-modal-message').text(res.message);
+                        var mergeModal = new bootstrap.Modal(document.getElementById('confirmMergeModal'));
+                        mergeModal.show();
+                    } else {
+                        showToast(res.message || "Google account linked successfully!");
+                        setTimeout(() => window.location.reload(), 1500);
+                    }
+                },
+                error: function(err) {
+                    var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to link Google account.";
+                    showToast(errMsg, "error");
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Confirm merge handler
+            $('#btn-confirm-merge').click(function() {
+                var token = window.pendingGoogleToken;
+                if (!token) return;
+                
+                var btn = $(this);
+                btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Merging...');
+                
+                $.ajax({
+                    url: '/api/auth/merge/google',
+                    type: 'POST',
+                    data: { token: token },
+                    success: function(res) {
+                        showToast("Accounts merged successfully!");
+                        setTimeout(() => window.location.reload(), 1500);
+                    },
+                    error: function(err) {
+                        var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to merge accounts.";
+                        showToast(errMsg, "error");
+                        btn.prop('disabled', false).text('Yes, Merge Accounts');
+                    }
+                });
+            });
+
+            // Link password form submission
+            $('#form-link-password').submit(function(e) {
+                e.preventDefault();
+                var password = $('#link-password-input').val();
+                var confirm = $('#link-password-confirm').val();
+                
+                if (password !== confirm) {
+                    showToast("Passwords do not match.", "error");
+                    return;
+                }
+                
+                var btn = $('#btn-submit-link-password');
+                btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Linking...');
+                
+                $.ajax({
+                    url: '/api/auth/link/password',
+                    type: 'POST',
+                    data: { password: password },
+                    success: function(res) {
+                        showToast("Password linked successfully!");
+                        setTimeout(() => window.location.reload(), 1500);
+                    },
+                    error: function(err) {
+                        var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to link password.";
+                        showToast(errMsg, "error");
+                        btn.prop('disabled', false).text('Link Password');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
+
 
 
 
