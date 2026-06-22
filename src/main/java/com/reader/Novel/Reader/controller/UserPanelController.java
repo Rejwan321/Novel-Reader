@@ -28,6 +28,9 @@ public class UserPanelController {
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.service.NovelService novelService;
+
     @GetMapping("/user/panel")
     public String userPanel(HttpSession session, Model model) {
         User loggedInUser = (User) session.getAttribute("user");
@@ -153,5 +156,52 @@ public class UserPanelController {
         session.setAttribute("user", user);
 
         return ResponseEntity.ok(Map.of("success", true, "user", user));
+    }
+
+    @GetMapping("/api/user/profile")
+    @ResponseBody
+    public ResponseEntity<?> getUserProfile(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+        User freshUser = userRepository.findById(loggedInUser.getId()).orElse(loggedInUser);
+        session.setAttribute("user", freshUser);
+        return ResponseEntity.ok(freshUser);
+    }
+
+    @GetMapping("/api/user/purchases")
+    @ResponseBody
+    public ResponseEntity<?> getUserPurchases(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in first."));
+        }
+
+        List<com.reader.Novel.Reader.model.Purchase> purchases = novelService.getPurchasesByUserId(loggedInUser.getId());
+        List<Map<String, Object>> purchaseDetailsList = new java.util.ArrayList<>();
+        for (com.reader.Novel.Reader.model.Purchase p : purchases) {
+            com.reader.Novel.Reader.model.Chapter chapter = novelService.getChapterById(p.getChapterId());
+            if (chapter != null) {
+                com.reader.Novel.Reader.model.Novel novel = chapter.getNovel();
+                Map<String, Object> details = new java.util.HashMap<>();
+                details.put("id", p.getId());
+                details.put("novelTitle", novel != null ? novel.getTitle() : "Unknown Story");
+                details.put("novelId", novel != null ? novel.getId() : null);
+                details.put("chapterNumber", chapter.getChapterNumber());
+                details.put("chapterTitle", chapter.getTitle());
+                details.put("price", chapter.getPrice());
+                details.put("purchasedAt", p.getPurchasedAt());
+                purchaseDetailsList.add(details);
+            }
+        }
+        purchaseDetailsList.sort((a, b) -> {
+            java.time.LocalDateTime dtA = (java.time.LocalDateTime) a.get("purchasedAt");
+            java.time.LocalDateTime dtB = (java.time.LocalDateTime) b.get("purchasedAt");
+            if (dtA == null || dtB == null) return 0;
+            return dtB.compareTo(dtA);
+        });
+
+        return ResponseEntity.ok(purchaseDetailsList);
     }
 }
