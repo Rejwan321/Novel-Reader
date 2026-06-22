@@ -519,15 +519,7 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
                 <div>
                     <h2 class="h3 fw-bold text-white mb-1"><i class="fa fa-compass text-violet me-2"></i>Discover Series</h2>
-                    <p class="text-muted small">Explore novels and comics by type or genre</p>
-                </div>
-                <!-- Format Tabs -->
-                <div class="nav-pills-custom d-flex gap-2">
-                    <button class="filter-tab active" data-type="ALL" id="tab-all">All</button>
-                    <button class="filter-tab" data-type="NOVEL" id="tab-novels">Novels</button>
-                    <button class="filter-tab" data-type="COMIC" id="tab-comics">Comics</button>
-                    <button class="filter-tab" data-type="MANHWA" id="tab-manhwa">Manhwa</button>
-                    <button class="filter-tab" data-type="MANGA" id="tab-manga">Manga</button>
+                    <p class="text-muted small">Explore novels by genre</p>
                 </div>
             </div>
 
@@ -548,9 +540,6 @@
                 <!-- Loop over novels -->
                 <div class="col book-card-col" th:each="novel : ${novels}" th:data-type="${novel.type}" th:data-genres="${novel.genre}" th:id="'book-card-col-' + ${novel.id}">
                     <div class="book-card position-relative overflow-hidden h-100 rounded-3 d-flex flex-column" th:id="'book-card-' + ${novel.id}">
-                        <!-- Ribbon status -->
-                        <span class="card-ribbon" th:classappend="${novel.type == 'NOVEL' ? 'bg-violet' : 'bg-coral'}" th:text="${novel.type}">NOVEL</span>
-                        
                         <!-- Cover Image Wrapper -->
                         <div class="cover-wrapper position-relative">
                             <img th:src="${novel.coverUrl}" class="card-img-top book-cover-img" th:alt="${novel.title}">

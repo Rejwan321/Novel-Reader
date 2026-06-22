@@ -645,7 +645,7 @@ $(document).ready(function() {
 
 
     // --- Client-Side Snappy Filter Engine (Home Page) ---
-    var selectedType = $("#search-filter-type-val").val() || "ALL";
+    var selectedType = $("#search-filter-type-val").val() || "NOVEL";
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
     var itemsPerPage = 12;
     var currentPage = 1;
