@@ -109,6 +109,10 @@ public class NovelService {
                 .toList();
     }
 
+    public List<Purchase> getPurchasesByUserId(Long userId) {
+        return purchaseRepository.findByUserId(userId);
+    }
+
     @Transactional
     public void purchaseChapter(Long userId, Long chapterId) {
         purchaseRepository.save(new Purchase(null, userId, chapterId, LocalDateTime.now()));
