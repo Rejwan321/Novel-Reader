@@ -7,6 +7,7 @@ import com.reader.Novel.Reader.model.FlakePurchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import com.reader.Novel.Reader.service.NovelService;
+import com.reader.Novel.Reader.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,9 @@ public class NovelRestController {
 
     @Autowired
     private FlakePurchaseRepository flakePurchaseRepository;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @GetMapping("/novels")
     public List<Novel> getNovels(
@@ -276,7 +280,10 @@ public class NovelRestController {
     }
 
     @PostMapping("/user/purchase-flakes")
-    public ResponseEntity<?> purchaseFlakes(@RequestParam Integer amount, HttpSession session) {
+    public ResponseEntity<?> purchaseFlakes(
+            @RequestParam Integer amount,
+            @RequestParam(required = false) String gateway,
+            HttpSession session) {
         if (isRestricted(session)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
         }
@@ -310,6 +317,40 @@ public class NovelRestController {
             price = amount * rate;
         }
 
+        // Determine which gateway option to route to based on parameter
+        String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
+        
+        // If not specified, default to Razorpay if enabled, else mock
+        if (activeGateway.isEmpty()) {
+            if (paymentService.isRazorpayEnabled()) {
+                activeGateway = "razorpay";
+            } else {
+                activeGateway = "mock";
+            }
+        }
+
+        if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
+            try {
+                Map<String, Object> order = paymentService.createRazorpayOrder(price);
+                
+                // Return data for frontend Razorpay handler to trigger checkout modal
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "razorpay", true,
+                    "keyId", paymentService.getRazorpayApiKey(),
+                    "amount", order.get("amount"),
+                    "currency", order.get("currency"),
+                    "orderId", order.get("id"),
+                    "price", price
+                ));
+            } catch (Exception e) {
+                System.err.println("Razorpay order creation failed: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Razorpay payment gateway initialization failed: " + e.getMessage()));
+            }
+        }
+
+        // Mock Checkout Fallback
         user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + amount);
         userService.updateUser(user);
         
@@ -326,6 +367,7 @@ public class NovelRestController {
         
         return ResponseEntity.ok(Map.of(
             "success", true,
+            "razorpay", false,
             "newBalance", user.getBalance(),
             "message", "Successfully purchased " + amount + " Snow Flakes!"
         ));

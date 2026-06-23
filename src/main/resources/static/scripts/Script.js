@@ -645,7 +645,7 @@ $(document).ready(function() {
 
 
     // --- Client-Side Snappy Filter Engine (Home Page) ---
-    var selectedType = $("#search-filter-type-val").val() || "ALL";
+    var selectedType = $("#search-filter-type-val").val() || "NOVEL";
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
     var itemsPerPage = 12;
     var currentPage = 1;
@@ -987,30 +987,83 @@ $(document).ready(function() {
         purchaseModal.show();
     });
 
+    // Helper to launch Razorpay Checkout Modal
+    function launchRazorpayCheckout(res, amount) {
+        var options = {
+            "key": res.keyId,
+            "amount": res.amount,
+            "currency": res.currency,
+            "name": "Yuki Tales",
+            "description": "Purchase " + amount + " Snow Flakes",
+            "order_id": res.orderId,
+            "handler": function (response){
+                // On payment success, send verification payload to backend
+                $.post("/api/payment/razorpay/verify", {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    amount: amount,
+                    price: res.price
+                }).done(function(resVerify) {
+                    showToast(resVerify.message);
+                    $("#navbar-user-balance").text(resVerify.newBalance);
+                    
+                    // Close checkout modal
+                    var modalEl = document.getElementById('purchaseFlakesModal');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) {
+                        modal.hide();
+                    }
+                }).fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to verify Razorpay payment.";
+                    showToast(msg, "error");
+                });
+            },
+            "prefill": {
+                "name": (window.currentUser && window.currentUser.name) ? window.currentUser.name : "Yuki Tales Member",
+                "email": (window.currentUser && window.currentUser.email && window.currentUser.email.indexOf('@') !== -1) ? window.currentUser.email : undefined
+            },
+            "theme": {
+                "color": "#6855e0" // Yuki Tales violet
+            }
+        };
+        var rzp = new Razorpay(options);
+        rzp.open();
+    }
+
     $(document).on("click", ".btn-purchase-pack", function(e) {
         e.preventDefault();
         var btn = $(this);
         var amount = btn.data("amount");
+        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
 
-        $.post("/api/user/purchase-flakes", { amount: amount })
+        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.razorpay) {
+                try {
+                    launchRazorpayCheckout(res, amount);
+                } catch (err) {
+                    showToast("Checkout failed to load: " + err.message, "error");
+                }
+                btn.prop("disabled", false).text("Purchase");
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).text("Purchase");
             }
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
             showToast(msg, "error");
-        })
-        .always(function() {
             btn.prop("disabled", false).text("Purchase");
         });
     });
@@ -1067,29 +1120,38 @@ $(document).ready(function() {
             return;
         }
         
+        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         
-        $.post("/api/user/purchase-flakes", { amount: amount })
+        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Clear input
-            input.val('');
-            $("#custom-flakes-price-display").text("$0.00");
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.razorpay) {
+                try {
+                    launchRazorpayCheckout(res, amount);
+                } catch (err) {
+                    showToast("Checkout failed to load: " + err.message, "error");
+                }
+                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Clear input
+                input.val('');
+                $("#custom-flakes-price-display").text("$0.00");
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
             }
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
             showToast(msg, "error");
-        })
-        .always(function() {
             btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
         });
     });
