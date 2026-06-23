@@ -285,12 +285,7 @@
                         </label>
                     </div>
                     
-                    <div class="form-check form-check-inline" id="gateway-option-stripe-container">
-                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-stripe" value="stripe">
-                        <label class="form-check-label text-white" for="gateway-stripe" style="cursor: pointer;">
-                            <i class="fa-brands fa-stripe text-info me-1" style="font-size: 1.2rem;"></i>Stripe (International Cards)
-                        </label>
-                    </div>
+
                     
                     <div class="form-check form-check-inline" id="gateway-option-mock-container">
                         <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-mock" value="mock">
@@ -420,6 +415,7 @@
 
 <script th:inline="javascript">
 window.flakePackages = [[${flakePackages}]];
+window.currentUser = [[${session.user != null ? session.user : null}]];
 $(document).ready(function() {
     // Star rating interactions
     $(document).on('click', '.star-select-btn', function() {
@@ -464,16 +460,7 @@ $(document).ready(function() {
                     $("#gateway-option-razorpay-container").hide();
                 }
 
-                if (config.stripeEnabled) {
-                    $("#gateway-option-stripe-container").show();
-                    if (!activeGateway) {
-                        $("#gateway-stripe").prop("checked", true);
-                        activeGateway = "stripe";
-                    }
-                    showSelector = true;
-                } else {
-                    $("#gateway-option-stripe-container").hide();
-                }
+
 
                 if (showSelector) {
                     $("#gateway-option-mock-container").show();
