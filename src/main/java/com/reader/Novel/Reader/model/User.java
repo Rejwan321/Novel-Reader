@@ -26,7 +26,6 @@ public class User {
     private String updatesEmail;
     private Boolean subscribedToUpdates = true;
     private Boolean subscribedToMentions = true;
-    private String ipAddress;
 
     public User() {
 
@@ -102,16 +101,8 @@ public class User {
         this.subscribedToMentions = subscribedToMentions;
     }
 
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
     @Override
     public String toString() {
-        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + ", subscribedToMentions=" + subscribedToMentions + ", ipAddress='" + ipAddress + "'}";
+        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + ", subscribedToMentions=" + subscribedToMentions + "}";
     }
 }

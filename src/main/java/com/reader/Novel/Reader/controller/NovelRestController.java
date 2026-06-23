@@ -320,31 +320,16 @@ public class NovelRestController {
         // Determine which gateway option to route to based on parameter
         String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
         
-        // If not specified, default to Stripe if enabled, else Razorpay if enabled, else mock
+        // If not specified, default to Razorpay if enabled, else mock
         if (activeGateway.isEmpty()) {
-            if (paymentService.isStripeEnabled()) {
-                activeGateway = "stripe";
-            } else if (paymentService.isRazorpayEnabled()) {
+            if (paymentService.isRazorpayEnabled()) {
                 activeGateway = "razorpay";
             } else {
                 activeGateway = "mock";
             }
         }
 
-        if ("stripe".equals(activeGateway) && paymentService.isStripeEnabled()) {
-            try {
-                String checkoutUrl = paymentService.createStripeCheckoutSession(user.getId(), amount, price);
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "stripe", true,
-                    "redirectUrl", checkoutUrl
-                ));
-            } catch (com.stripe.exception.StripeException e) {
-                System.err.println("Stripe session creation failed: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Stripe payment gateway initialization failed: " + e.getMessage()));
-            }
-        } else if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
+        if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
             try {
                 Map<String, Object> order = paymentService.createRazorpayOrder(price);
                 
@@ -382,7 +367,6 @@ public class NovelRestController {
         
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "stripe", false,
             "razorpay", false,
             "newBalance", user.getBalance(),
             "message", "Successfully purchased " + amount + " Snow Flakes!"

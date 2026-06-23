@@ -163,8 +163,7 @@ public class AuthRestController {
             @RequestParam String email,
             @RequestParam String password,
             @RequestParam(required = false, defaultValue = "READER") String user_type,
-            HttpSession session,
-            jakarta.servlet.http.HttpServletRequest request) {
+            HttpSession session) {
 
         if (name == null || name.trim().isEmpty() ||
             email == null || email.trim().isEmpty() ||
@@ -187,7 +186,6 @@ public class AuthRestController {
 
         String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password);
         User user = new User(null, name.trim(), email.trim(), hashedPassword, role);
-        user.setIpAddress(getClientIp(request));
         userService.addUser(user);
         
         // Auto-login after signup
@@ -212,9 +210,6 @@ public class AuthRestController {
         }
 
         User user = userOpt.get();
-        user.setIpAddress(getClientIp(request));
-        userService.updateUser(user);
-
         // Prevent session fixation
         HttpSession oldSession = request.getSession(false);
         if (oldSession != null) {
@@ -318,7 +313,6 @@ public class AuthRestController {
 
             user.setSubscribedToUpdates(true);
             user.setUpdatesEmail(email);
-            user.setIpAddress(getClientIp(request));
             userService.addUser(user);
 
             // Prevent session fixation
@@ -909,16 +903,5 @@ public class AuthRestController {
         session.setAttribute("user", user);
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Password linked successfully.", "user", user));
-    }
-
-    private String getClientIp(jakarta.servlet.http.HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }

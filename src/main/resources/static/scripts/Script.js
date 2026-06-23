@@ -1020,8 +1020,8 @@ $(document).ready(function() {
                 });
             },
             "prefill": {
-                "name": "Yuki Tales Member",
-                "email": ""
+                "name": (window.currentUser && window.currentUser.name) ? window.currentUser.name : "Yuki Tales Member",
+                "email": (window.currentUser && window.currentUser.email && window.currentUser.email.indexOf('@') !== -1) ? window.currentUser.email : undefined
             },
             "theme": {
                 "color": "#6855e0" // Yuki Tales violet
@@ -1041,9 +1041,7 @@ $(document).ready(function() {
 
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            if (res.stripe) {
-                window.location.href = res.redirectUrl;
-            } else if (res.razorpay) {
+            if (res.razorpay) {
                 try {
                     launchRazorpayCheckout(res, amount);
                 } catch (err) {
@@ -1127,9 +1125,7 @@ $(document).ready(function() {
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            if (res.stripe) {
-                window.location.href = res.redirectUrl;
-            } else if (res.razorpay) {
+            if (res.razorpay) {
                 try {
                     launchRazorpayCheckout(res, amount);
                 } catch (err) {
