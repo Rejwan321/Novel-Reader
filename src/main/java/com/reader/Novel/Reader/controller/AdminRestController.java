@@ -391,6 +391,271 @@ public class AdminRestController {
         return ResponseEntity.ok(Map.of("success", true, "message", "User deleted successfully."));
     }
 
+    // Ban User (ADMIN/OWNER only)
+    @PostMapping("/users/{id}/ban")
+    public ResponseEntity<?> banUser(
+            @PathVariable Long id,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can ban users."));
+        }
+
+        User userToBan = userService.getUserById(id);
+        if (userToBan.getId() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        if ("OWNER".equals(userToBan.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot ban an owner account."));
+        }
+
+        if (loggedInUser.getId().equals(userToBan.getId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot ban yourself."));
+        }
+
+        userToBan.setBanned(true);
+        userService.updateUser(userToBan);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "User banned successfully."));
+    }
+
+    // Unban User (ADMIN/OWNER only)
+    @PostMapping("/users/{id}/unban")
+    public ResponseEntity<?> unbanUser(
+            @PathVariable Long id,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can unban users."));
+        }
+
+        User userToUnban = userService.getUserById(id);
+        if (userToUnban.getId() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        userToUnban.setBanned(false);
+        userService.updateUser(userToUnban);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "User unbanned successfully."));
+    }
+
+    // Timeout User (ADMIN/OWNER only)
+    @PostMapping("/users/{id}/timeout")
+    public ResponseEntity<?> timeoutUser(
+            @PathVariable Long id,
+            @RequestParam Integer durationMinutes,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can timeout users."));
+        }
+
+        User userToTimeout = userService.getUserById(id);
+        if (userToTimeout.getId() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        if ("OWNER".equals(userToTimeout.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot timeout an owner account."));
+        }
+
+        if (loggedInUser.getId().equals(userToTimeout.getId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot timeout yourself."));
+        }
+
+        if (durationMinutes <= 0) {
+            userToTimeout.setTimeoutUntil(null);
+        } else {
+            userToTimeout.setTimeoutUntil(java.time.LocalDateTime.now().plusMinutes(durationMinutes));
+        }
+        userService.updateUser(userToTimeout);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "User timeout updated successfully."));
+    }
+
+    // Bulk Delete Users (ADMIN/OWNER only)
+    @PostMapping("/users/bulk-delete")
+    public ResponseEntity<?> bulkDeleteUsers(
+            @RequestBody Map<String, List<Long>> payload,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can delete users."));
+        }
+
+        List<Long> ids = payload.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No user IDs provided."));
+        }
+
+        int count = 0;
+        for (Long id : ids) {
+            if (loggedInUser.getId().equals(id)) continue; // skip self
+            User u = userService.getUserById(id);
+            if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
+                userService.deleteUser(id);
+                try {
+                    sseService.sendGlobalEvent("user_deleted", Map.of("userId", id));
+                } catch (Exception e) {}
+                count++;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", count + " users deleted successfully."));
+    }
+
+    // Bulk Ban Users (ADMIN/OWNER only)
+    @PostMapping("/users/bulk-ban")
+    public ResponseEntity<?> bulkBanUsers(
+            @RequestBody Map<String, List<Long>> payload,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can ban users."));
+        }
+
+        List<Long> ids = payload.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No user IDs provided."));
+        }
+
+        int count = 0;
+        for (Long id : ids) {
+            if (loggedInUser.getId().equals(id)) continue; // skip self
+            User u = userService.getUserById(id);
+            if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
+                u.setBanned(true);
+                userService.updateUser(u);
+                count++;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", count + " users banned successfully."));
+    }
+
+    // Bulk Unban Users (ADMIN/OWNER only)
+    @PostMapping("/users/bulk-unban")
+    public ResponseEntity<?> bulkUnbanUsers(
+            @RequestBody Map<String, List<Long>> payload,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can unban users."));
+        }
+
+        List<Long> ids = payload.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No user IDs provided."));
+        }
+
+        int count = 0;
+        for (Long id : ids) {
+            User u = userService.getUserById(id);
+            if (u != null && u.getId() != null) {
+                u.setBanned(false);
+                userService.updateUser(u);
+                count++;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", count + " users unbanned successfully."));
+    }
+
+    // Bulk Timeout Users (ADMIN/OWNER only)
+    @PostMapping("/users/bulk-timeout")
+    public ResponseEntity<?> bulkTimeoutUsers(
+            @RequestBody Map<String, Object> payload,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can timeout users."));
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object> rawIds = (List<Object>) payload.get("ids");
+        Object rawDuration = payload.get("durationMinutes");
+        if (rawIds == null || rawIds.isEmpty() || rawDuration == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "User IDs and duration are required."));
+        }
+
+        Integer durationMinutes = Integer.parseInt(rawDuration.toString());
+        int count = 0;
+        for (Object rawId : rawIds) {
+            Long id = Long.parseLong(rawId.toString());
+            if (loggedInUser.getId().equals(id)) continue; // skip self
+            User u = userService.getUserById(id);
+            if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
+                if (durationMinutes <= 0) {
+                    u.setTimeoutUntil(null);
+                } else {
+                    u.setTimeoutUntil(java.time.LocalDateTime.now().plusMinutes(durationMinutes));
+                }
+                userService.updateUser(u);
+                count++;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "message", count + " users timeout updated."));
+    }
+
     @PostMapping("/stories/add")
     public ResponseEntity<?> addStory(
             @RequestParam String title,
