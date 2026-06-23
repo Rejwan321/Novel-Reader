@@ -27,6 +27,9 @@ public class User {
     private Boolean subscribedToUpdates = true;
     private Boolean subscribedToMentions = true;
 
+    private Boolean banned = false;
+    private java.time.LocalDateTime timeoutUntil;
+
     public User() {
 
     }
@@ -101,8 +104,14 @@ public class User {
         this.subscribedToMentions = subscribedToMentions;
     }
 
+    public Boolean getBanned() { return banned != null ? banned : false; }
+    public void setBanned(Boolean banned) { this.banned = banned; }
+
+    public java.time.LocalDateTime getTimeoutUntil() { return timeoutUntil; }
+    public void setTimeoutUntil(java.time.LocalDateTime timeoutUntil) { this.timeoutUntil = timeoutUntil; }
+
     @Override
     public String toString() {
-        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + ", subscribedToMentions=" + subscribedToMentions + "}";
+        return "User {id=" + id + ", name='" + name + "', email='" + email + "', password='" + password + "', user_type='" + user_type + "', balance=" + balance + ", loginType='" + loginType + "', updatesEmail='" + updatesEmail + "', subscribedToUpdates=" + subscribedToUpdates + ", subscribedToMentions=" + subscribedToMentions + ", banned=" + banned + ", timeoutUntil=" + timeoutUntil + "}";
     }
 }
