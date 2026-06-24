@@ -44,7 +44,7 @@ public class PaymentService {
     }
 
     public String getRazorpayApiKey() {
-        return razorpayApiKey;
+        return razorpayApiKey != null ? razorpayApiKey.trim() : "";
     }
 
     /**
@@ -53,6 +53,9 @@ public class PaymentService {
      * Returns a Map containing the order details.
      */
     public Map<String, Object> createRazorpayOrder(Double price) throws Exception {
+        String trimmedKey = razorpayApiKey != null ? razorpayApiKey.trim() : "";
+        String trimmedSecret = razorpaySecretKey != null ? razorpaySecretKey.trim() : "";
+
         // Convert USD to INR (using standard rate of 83 INR per USD)
         double priceInInr = price * 83.0;
         long amountInPaise = Math.round(priceInInr * 100);
@@ -63,7 +66,7 @@ public class PaymentService {
             System.currentTimeMillis()
         );
 
-        String auth = razorpayApiKey + ":" + razorpaySecretKey;
+        String auth = trimmedKey + ":" + trimmedSecret;
         String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
@@ -89,9 +92,10 @@ public class PaymentService {
      */
     public boolean verifyRazorpaySignature(String orderId, String paymentId, String signature) {
         try {
+            String trimmedSecret = razorpaySecretKey != null ? razorpaySecretKey.trim() : "";
             String data = orderId + "|" + paymentId;
             javax.crypto.spec.SecretKeySpec signingKey = new javax.crypto.spec.SecretKeySpec(
-                razorpaySecretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8), 
+                trimmedSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8), 
                 "HmacSHA256"
             );
             javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");

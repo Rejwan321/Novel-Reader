@@ -990,18 +990,18 @@ $(document).ready(function() {
     // Helper to launch Razorpay Checkout Modal
     function launchRazorpayCheckout(res, amount) {
         var options = {
-            "key": res.keyId,
-            "amount": res.amount,
-            "currency": res.currency,
+            "key": String(res.keyId).trim(),
+            "amount": parseInt(res.amount),
+            "currency": String(res.currency).trim(),
             "name": "Yuki Tales",
             "description": "Purchase " + amount + " Snow Flakes",
-            "order_id": res.orderId,
+            "order_id": String(res.orderId).trim(),
             "handler": function (response){
                 // On payment success, send verification payload to backend
                 $.post("/api/payment/razorpay/verify", {
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_signature: response.razorpay_signature,
+                    razorpay_payment_id: String(response.razorpay_payment_id).trim(),
+                    razorpay_order_id: String(response.razorpay_order_id).trim(),
+                    razorpay_signature: String(response.razorpay_signature).trim(),
                     amount: amount,
                     price: res.price
                 }).done(function(resVerify) {
