@@ -77,7 +77,9 @@ public class PaymentService {
                 .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
 
+        System.out.println("Razorpay Request payload: " + jsonPayload);
         java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        System.out.println("Razorpay Response status: " + response.statusCode() + " | Body: " + response.body());
 
         if (response.statusCode() != 200 && response.statusCode() != 201) {
             throw new RuntimeException("Failed to create Razorpay order: Status " + response.statusCode() + " - " + response.body());
@@ -107,6 +109,7 @@ public class PaymentService {
                 sb.append(String.format("%02x", b));
             }
             String generatedSignature = sb.toString();
+            System.out.println("Razorpay signature verification: orderId=" + orderId + ", paymentId=" + paymentId + " | Expected=" + signature + " | Generated=" + generatedSignature);
             return generatedSignature.equals(signature);
         } catch (Exception e) {
             System.err.println("Razorpay signature verification exception: " + e.getMessage());

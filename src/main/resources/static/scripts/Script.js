@@ -991,11 +991,9 @@ $(document).ready(function() {
     function launchRazorpayCheckout(res, amount) {
         var options = {
             "key": String(res.keyId).trim(),
-            "amount": parseInt(res.amount),
-            "currency": String(res.currency).trim(),
             "name": "Yuki Tales",
             "description": "Purchase " + amount + " Snow Flakes",
-            "order_id": String(res.orderId).trim(),
+            "order_id": String(res.id || res.orderId).trim(),
             "handler": function (response){
                 // On payment success, send verification payload to backend
                 $.post("/api/payment/razorpay/verify", {
@@ -1019,14 +1017,21 @@ $(document).ready(function() {
                     showToast(msg, "error");
                 });
             },
-            "prefill": {
-                "name": (window.currentUser && window.currentUser.name) ? window.currentUser.name : "Yuki Tales Member",
-                "email": (window.currentUser && window.currentUser.email && window.currentUser.email.indexOf('@') !== -1) ? window.currentUser.email : undefined
-            },
+            "prefill": {},
             "theme": {
                 "color": "#6855e0" // Yuki Tales violet
             }
         };
+
+        if (window.currentUser) {
+            if (window.currentUser.name) {
+                options.prefill.name = window.currentUser.name;
+            }
+            if (window.currentUser.email && window.currentUser.email.indexOf('@') !== -1) {
+                options.prefill.email = window.currentUser.email;
+            }
+        }
+
         var rzp = new Razorpay(options);
         rzp.open();
     }
