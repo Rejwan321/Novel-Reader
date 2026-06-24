@@ -340,6 +340,7 @@ public class NovelRestController {
                     "keyId", paymentService.getRazorpayApiKey(),
                     "amount", order.get("amount"),
                     "currency", order.get("currency"),
+                    "id", order.get("id"),
                     "orderId", order.get("id"),
                     "price", price
                 ));
