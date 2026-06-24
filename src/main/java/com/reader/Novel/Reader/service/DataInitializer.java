@@ -73,6 +73,35 @@ public class DataInitializer implements CommandLineRunner {
             // Delete legacy users
             jdbcTemplate.execute("DELETE FROM reader_internal WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
 
+            // Safe migration of any regular users occupying system IDs (0, 1, 3)
+            for (Long sysId : new Long[]{0L, 1L, 3L}) {
+                String sysEmail = sysId == 0L ? "sakura" : (sysId == 1L ? "admin" : "editor");
+                java.util.List<java.util.Map<String, Object>> conflictingUsers = jdbcTemplate.queryForList(
+                    "SELECT id, email FROM reader_internal WHERE id = ?", sysId);
+                if (!conflictingUsers.isEmpty()) {
+                    String email = (String) conflictingUsers.get(0).get("email");
+                    if (!sysEmail.equals(email)) {
+                        // Conflicting regular user! Move them to a high ID
+                        Long newId = 1000L + sysId;
+                        while (!jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = ?", newId).isEmpty()) {
+                            newId += 100L;
+                        }
+                        
+                        // Update referencing tables
+                        jdbcTemplate.update("UPDATE bookmarks SET user_id = ? WHERE user_id = ?", newId, sysId);
+                        jdbcTemplate.update("UPDATE purchases SET user_id = ? WHERE user_id = ?", newId, sysId);
+                        jdbcTemplate.update("UPDATE ratings SET user_id = ? WHERE user_id = ?", newId, sysId);
+                        jdbcTemplate.update("UPDATE comments SET user_id = ? WHERE user_id = ?", newId, sysId);
+                        jdbcTemplate.update("UPDATE notifications SET user_id = ? WHERE user_id = ?", newId, sysId);
+                        jdbcTemplate.update("UPDATE reader_internal SET id = ? WHERE id = ?", newId, sysId);
+                        System.out.println("Migrated conflicting user '" + email + "' from system ID " + sysId + " to new ID " + newId);
+                    }
+                }
+            }
+
+            // Ensure H2 auto-increment sequence restarts at 200 to avoid future conflicts
+            jdbcTemplate.execute("ALTER TABLE reader_internal ALTER COLUMN id RESTART WITH 200");
+
             // One-time database migration to default existing users to subscribed to updates
             java.util.List<java.util.Map<String, Object>> migrationSetting = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'email_migration_done'");
             if (migrationSetting.isEmpty()) {
