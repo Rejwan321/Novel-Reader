@@ -987,84 +987,28 @@ $(document).ready(function() {
         purchaseModal.show();
     });
 
-    // Helper to launch Razorpay Checkout Modal
-    function launchRazorpayCheckout(res, amount) {
-        var options = {
-            "key": String(res.keyId).trim(),
-            "name": "Yuki Tales",
-            "description": "Purchase " + amount + " Snow Flakes",
-            "order_id": String(res.id || res.orderId).trim(),
-            "handler": function (response){
-                // On payment success, send verification payload to backend
-                $.post("/api/payment/razorpay/verify", {
-                    razorpay_payment_id: String(response.razorpay_payment_id).trim(),
-                    razorpay_order_id: String(response.razorpay_order_id).trim(),
-                    razorpay_signature: String(response.razorpay_signature).trim(),
-                    amount: amount,
-                    price: res.price
-                }).done(function(resVerify) {
-                    showToast(resVerify.message);
-                    $("#navbar-user-balance").text(resVerify.newBalance);
-                    
-                    // Close checkout modal
-                    var modalEl = document.getElementById('purchaseFlakesModal');
-                    var modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) {
-                        modal.hide();
-                    }
-                }).fail(function(err) {
-                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to verify Razorpay payment.";
-                    showToast(msg, "error");
-                });
-            },
-            "prefill": {},
-            "theme": {
-                "color": "#6855e0" // Yuki Tales violet
-            }
-        };
 
-        if (window.currentUser) {
-            if (window.currentUser.name) {
-                options.prefill.name = window.currentUser.name;
-            }
-            if (window.currentUser.email && window.currentUser.email.indexOf('@') !== -1) {
-                options.prefill.email = window.currentUser.email;
-            }
-        }
-
-        var rzp = new Razorpay(options);
-        rzp.open();
-    }
 
     $(document).on("click", ".btn-purchase-pack", function(e) {
         e.preventDefault();
         var btn = $(this);
         var amount = btn.data("amount");
-        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
+        var gateway = "mock";
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
 
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            if (res.razorpay) {
-                try {
-                    launchRazorpayCheckout(res, amount);
-                } catch (err) {
-                    showToast("Checkout failed to load: " + err.message, "error");
-                }
-                btn.prop("disabled", false).text("Purchase");
-            } else {
-                showToast(res.message);
-                $("#navbar-user-balance").text(res.newBalance);
-                
-                // Close modal
-                var modalEl = document.getElementById('purchaseFlakesModal');
-                var modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) {
-                    modal.hide();
-                }
-                btn.prop("disabled", false).text("Purchase");
+            showToast(res.message);
+            $("#navbar-user-balance").text(res.newBalance);
+            
+            // Close modal
+            var modalEl = document.getElementById('purchaseFlakesModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
             }
+            btn.prop("disabled", false).text("Purchase");
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
@@ -1125,34 +1069,25 @@ $(document).ready(function() {
             return;
         }
         
-        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
+        var gateway = "mock";
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            if (res.razorpay) {
-                try {
-                    launchRazorpayCheckout(res, amount);
-                } catch (err) {
-                    showToast("Checkout failed to load: " + err.message, "error");
-                }
-                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
-            } else {
-                showToast(res.message);
-                $("#navbar-user-balance").text(res.newBalance);
-                
-                // Clear input
-                input.val('');
-                $("#custom-flakes-price-display").text("$0.00");
-                
-                // Close modal
-                var modalEl = document.getElementById('purchaseFlakesModal');
-                var modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) {
-                    modal.hide();
-                }
-                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+            showToast(res.message);
+            $("#navbar-user-balance").text(res.newBalance);
+            
+            // Clear input
+            input.val('');
+            $("#custom-flakes-price-display").text("$0.00");
+            
+            // Close modal
+            var modalEl = document.getElementById('purchaseFlakesModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
             }
+            btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
