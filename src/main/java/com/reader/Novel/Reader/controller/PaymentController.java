@@ -50,14 +50,14 @@ public class PaymentController {
                     session.setAttribute("user", loggedInUser);
                 }
 
-                return "redirect:/user_panel?payment=success";
+                return "redirect:/user/panel?payment=success";
             } catch (Exception e) {
                 System.err.println("Error processing PayU success parameters: " + e.getMessage());
-                return "redirect:/user_panel?payment=failure&reason=" + URLEncoder.encode("Error processing transaction data.", StandardCharsets.UTF_8);
+                return "redirect:/user/panel?payment=failure&reason=" + URLEncoder.encode("Error processing transaction data.", StandardCharsets.UTF_8);
             }
         } else {
             System.err.println("PayU success callback verification failed. Verified=" + verified + ", status=" + params.get("status"));
-            return "redirect:/user_panel?payment=failure&reason=" + URLEncoder.encode("Transaction verification failed.", StandardCharsets.UTF_8);
+            return "redirect:/user/panel?payment=failure&reason=" + URLEncoder.encode("Transaction verification failed.", StandardCharsets.UTF_8);
         }
     }
 
@@ -74,6 +74,6 @@ public class PaymentController {
         if (reason == null || reason.trim().isEmpty()) {
             reason = "Payment declined or cancelled.";
         }
-        return "redirect:/user_panel?payment=failure&reason=" + URLEncoder.encode(reason, StandardCharsets.UTF_8);
+        return "redirect:/user/panel?payment=failure&reason=" + URLEncoder.encode(reason, StandardCharsets.UTF_8);
     }
 }
