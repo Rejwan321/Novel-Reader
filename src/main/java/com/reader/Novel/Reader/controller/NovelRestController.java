@@ -7,7 +7,9 @@ import com.reader.Novel.Reader.model.FlakePurchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import com.reader.Novel.Reader.service.NovelService;
+
 import com.reader.Novel.Reader.service.PaymentService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,14 @@ public class NovelRestController {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
+
 
     @GetMapping("/novels")
     public List<Novel> getNovels(
@@ -317,37 +327,57 @@ public class NovelRestController {
             price = amount * rate;
         }
 
-        // Determine which gateway option to route to based on parameter
+        // Determine active gateway
         String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
-        
-        // If not specified, default to Razorpay if enabled, else mock
         if (activeGateway.isEmpty()) {
-            if (paymentService.isRazorpayEnabled()) {
-                activeGateway = "razorpay";
-            } else {
-                activeGateway = "mock";
-            }
+            activeGateway = paymentService.isPayUEnabled() ? "payu" : "mock";
         }
 
-        if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
-            try {
-                Map<String, Object> order = paymentService.createRazorpayOrder(price);
-                
-                // Return data for frontend Razorpay handler to trigger checkout modal
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "razorpay", true,
-                    "keyId", paymentService.getRazorpayApiKey(),
-                    "amount", order.get("amount"),
-                    "currency", order.get("currency"),
-                    "orderId", order.get("id"),
-                    "price", price
-                ));
-            } catch (Exception e) {
-                System.err.println("Razorpay order creation failed: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Razorpay payment gateway initialization failed: " + e.getMessage()));
+        if ("payu".equals(activeGateway) && paymentService.isPayUEnabled()) {
+            String txnid = "txn_" + System.currentTimeMillis();
+            // Convert USD price to INR assuming 1 USD = 83 INR
+            double priceInInr = price * 83.0;
+            String productinfo = "Purchase " + amount + " Snow Flakes";
+            String firstname = user.getName() != null && !user.getName().trim().isEmpty() ? user.getName().trim() : "Reader";
+            String email = user.getEmail() != null && !user.getEmail().trim().isEmpty() ? user.getEmail().trim() : "reader@yukitales.com";
+            
+            // Build callback URLs
+            String dynamicBaseUrl = systemSettingRepository.findById("app.base_url")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(appBaseUrl);
+            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "http://localhost:8080";
+            if (cleanBaseUrl.endsWith("/")) {
+                cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
             }
+            String surl = cleanBaseUrl + "/api/payment/payu/success";
+            String furl = cleanBaseUrl + "/api/payment/payu/failure";
+            
+            // Generate the checkout hash
+            String hash = paymentService.generatePaymentHash(
+                txnid, priceInInr, productinfo, firstname, email,
+                String.valueOf(user.getId()), String.valueOf(amount), String.valueOf(price)
+            );
+            
+            Map<String, Object> responseMap = new java.util.HashMap<>();
+            responseMap.put("success", true);
+            responseMap.put("payu", true);
+            responseMap.put("key", paymentService.getPayUMerchantKey());
+            responseMap.put("txnid", txnid);
+            responseMap.put("amount", String.format(java.util.Locale.US, "%.2f", priceInInr));
+            responseMap.put("productinfo", productinfo);
+            responseMap.put("firstname", firstname);
+            responseMap.put("email", email);
+            responseMap.put("phone", "9999999999");
+            responseMap.put("surl", surl);
+            responseMap.put("furl", furl);
+            responseMap.put("hash", hash);
+            responseMap.put("service_provider", "payu_paisa");
+            responseMap.put("actionUrl", paymentService.getPayUActionUrl());
+            responseMap.put("udf1", String.valueOf(user.getId()));
+            responseMap.put("udf2", String.valueOf(amount));
+            responseMap.put("udf3", String.valueOf(price));
+            
+            return ResponseEntity.ok(responseMap);
         }
 
         // Mock Checkout Fallback
@@ -367,7 +397,6 @@ public class NovelRestController {
         
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "razorpay", false,
             "newBalance", user.getBalance(),
             "message", "Successfully purchased " + amount + " Snow Flakes!"
         ));

@@ -210,6 +210,13 @@ public class AuthRestController {
         }
 
         User user = userOpt.get();
+        if (Boolean.TRUE.equals(user.getBanned())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account has been banned."));
+        }
+        if (user.getTimeoutUntil() != null && user.getTimeoutUntil().isAfter(java.time.LocalDateTime.now())) {
+            long minutesLeft = java.time.Duration.between(java.time.LocalDateTime.now(), user.getTimeoutUntil()).toMinutes() + 1;
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account is temporarily timed out. Try again in " + minutesLeft + " minutes."));
+        }
         // Prevent session fixation
         HttpSession oldSession = request.getSession(false);
         if (oldSession != null) {
@@ -314,6 +321,14 @@ public class AuthRestController {
             user.setSubscribedToUpdates(true);
             user.setUpdatesEmail(email);
             userService.addUser(user);
+
+            if (Boolean.TRUE.equals(user.getBanned())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account has been banned."));
+            }
+            if (user.getTimeoutUntil() != null && user.getTimeoutUntil().isAfter(java.time.LocalDateTime.now())) {
+                long minutesLeft = java.time.Duration.between(java.time.LocalDateTime.now(), user.getTimeoutUntil()).toMinutes() + 1;
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account is temporarily timed out. Try again in " + minutesLeft + " minutes."));
+            }
 
             // Prevent session fixation
             HttpSession oldSession = request.getSession(false);
@@ -509,6 +524,16 @@ public class AuthRestController {
                 user.setSubscribedToUpdates(true);
                 user.setUpdatesEmail(email);
                 userService.addUser(user);
+            }
+
+            if (Boolean.TRUE.equals(user.getBanned())) {
+                response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Your account has been banned.", java.nio.charset.StandardCharsets.UTF_8));
+                return;
+            }
+            if (user.getTimeoutUntil() != null && user.getTimeoutUntil().isAfter(java.time.LocalDateTime.now())) {
+                long minutesLeft = java.time.Duration.between(java.time.LocalDateTime.now(), user.getTimeoutUntil()).toMinutes() + 1;
+                response.sendRedirect(baseUrl + "/?error=" + java.net.URLEncoder.encode("Your account is temporarily timed out. Try again in " + minutesLeft + " minutes.", java.nio.charset.StandardCharsets.UTF_8));
+                return;
             }
 
             // Secure Session Management: Prevent session fixation

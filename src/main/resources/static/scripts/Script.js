@@ -32,6 +32,16 @@ $(document).ready(function() {
         showToast("Please sign in or register to access this page.", "info");
     }
 
+    // Check for PayU payment redirect parameters
+    if (urlParams.get('payment') === 'success') {
+        showToast("Payment successful! Snow Flakes added to your wallet.", "success");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('payment') === 'failure') {
+        var reason = urlParams.get('reason') || "Transaction declined/cancelled.";
+        showToast("Payment failed: " + reason, "error");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // Initialize search filter UI states from hidden inputs on page load
     var initType = $("#search-filter-type-val").val() || "ALL";
     var initGenre = $("#search-filter-genre-val").val() || "ALL";
@@ -987,50 +997,26 @@ $(document).ready(function() {
         purchaseModal.show();
     });
 
-    // Helper to launch Razorpay Checkout Modal
-    function launchRazorpayCheckout(res, amount) {
-        var options = {
-            "key": res.keyId,
-            "amount": res.amount,
-            "currency": res.currency,
-            "name": "Yuki Tales",
-            "description": "Purchase " + amount + " Snow Flakes",
-            "order_id": res.orderId,
-            "handler": function (response){
-                // On payment success, send verification payload to backend
-                $.post("/api/payment/razorpay/verify", {
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_signature: response.razorpay_signature,
-                    amount: amount,
-                    price: res.price
-                }).done(function(resVerify) {
-                    showToast(resVerify.message);
-                    $("#navbar-user-balance").text(resVerify.newBalance);
-                    
-                    // Close checkout modal
-                    var modalEl = document.getElementById('purchaseFlakesModal');
-                    var modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) {
-                        modal.hide();
-                    }
-                }).fail(function(err) {
-                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to verify Razorpay payment.";
-                    showToast(msg, "error");
-                });
-            },
-            "prefill": {
-                "name": (window.currentUser && window.currentUser.name) ? window.currentUser.name : "Yuki Tales Member",
-                "email": (window.currentUser && window.currentUser.email && window.currentUser.email.indexOf('@') !== -1) ? window.currentUser.email : undefined
-            },
-            "theme": {
-                "color": "#6855e0" // Yuki Tales violet
-            }
-        };
-        var rzp = new Razorpay(options);
-        rzp.open();
-    }
+    // Helper to dynamically build a form and redirect to PayU checkout page
+    function redirectToPayU(res) {
+        var form = document.createElement("form");
+        form.method = "POST";
+        form.action = res.actionUrl;
 
+        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3"];
+        fields.forEach(function(field) {
+            if (res[field] !== undefined) {
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = field;
+                input.value = res[field];
+                form.appendChild(input);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
     $(document).on("click", ".btn-purchase-pack", function(e) {
         e.preventDefault();
         var btn = $(this);
@@ -1041,13 +1027,8 @@ $(document).ready(function() {
 
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            if (res.razorpay) {
-                try {
-                    launchRazorpayCheckout(res, amount);
-                } catch (err) {
-                    showToast("Checkout failed to load: " + err.message, "error");
-                }
-                btn.prop("disabled", false).text("Purchase");
+            if (res.payu) {
+                redirectToPayU(res);
             } else {
                 showToast(res.message);
                 $("#navbar-user-balance").text(res.newBalance);
@@ -1125,13 +1106,8 @@ $(document).ready(function() {
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            if (res.razorpay) {
-                try {
-                    launchRazorpayCheckout(res, amount);
-                } catch (err) {
-                    showToast("Checkout failed to load: " + err.message, "error");
-                }
-                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+            if (res.payu) {
+                redirectToPayU(res);
             } else {
                 showToast(res.message);
                 $("#navbar-user-balance").text(res.newBalance);

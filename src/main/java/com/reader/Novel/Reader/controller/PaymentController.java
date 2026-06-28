@@ -3,17 +3,19 @@ package com.reader.Novel.Reader.controller;
 import com.reader.Novel.Reader.model.User;
 import com.reader.Novel.Reader.service.PaymentService;
 import com.reader.Novel.Reader.service.UserService;
-
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-@RestController
+@Controller
 public class PaymentController {
 
     @Autowired
@@ -22,71 +24,56 @@ public class PaymentController {
     @Autowired
     private UserService userService;
 
-
     @GetMapping("/api/payment/config")
-    public ResponseEntity<?> getPaymentConfig() {
-        return ResponseEntity.ok(Map.of(
-            "razorpayEnabled", paymentService.isRazorpayEnabled(),
-            "razorpayApiKey", paymentService.isRazorpayEnabled() ? paymentService.getRazorpayApiKey() : ""
-        ));
+    @ResponseBody
+    public Map<String, Object> getPaymentConfig() {
+        return Map.of("payuEnabled", paymentService.isPayUEnabled());
     }
 
+    @PostMapping("/api/payment/payu/success")
+    public String payuSuccess(@RequestParam Map<String, String> params, HttpSession session) {
+        System.out.println("Received PayU success callback with params: " + params);
+        boolean verified = paymentService.verifyPaymentHash(params);
+        if (verified && "success".equalsIgnoreCase(params.get("status"))) {
+            try {
+                Long userId = Long.parseLong(params.get("udf1"));
+                Integer flakesAmount = Integer.parseInt(params.get("udf2"));
+                Double price = Double.parseDouble(params.get("udf3"));
 
-    @PostMapping("/api/payment/razorpay/create-order")
-    public ResponseEntity<?> createRazorpayOrder(@RequestParam Double price, HttpSession session) {
-        User loggedInUser = (User) session.getAttribute("user");
-        if (loggedInUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login first."));
-        }
-        
-        if (!paymentService.isRazorpayEnabled()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Razorpay is disabled"));
-        }
+                paymentService.fulfillPayment(userId, flakesAmount, price);
 
-        try {
-            Map<String, Object> order = paymentService.createRazorpayOrder(price);
-            return ResponseEntity.ok(order);
-        } catch (Exception e) {
-            System.err.println("Razorpay order creation failed: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to create payment order: " + e.getMessage()));
-        }
-    }
+                // Synchronize user session balance
+                User loggedInUser = (User) session.getAttribute("user");
+                if (loggedInUser != null && loggedInUser.getId().equals(userId)) {
+                    User updatedUser = userService.getUserById(userId);
+                    loggedInUser.setBalance(updatedUser.getBalance());
+                    session.setAttribute("user", loggedInUser);
+                }
 
-    @PostMapping("/api/payment/razorpay/verify")
-    public ResponseEntity<?> verifyRazorpayPayment(
-            @RequestParam String razorpay_payment_id,
-            @RequestParam String razorpay_order_id,
-            @RequestParam String razorpay_signature,
-            @RequestParam Integer amount,
-            @RequestParam Double price,
-            HttpSession session) {
-            
-        User loggedInUser = (User) session.getAttribute("user");
-        if (loggedInUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login first."));
-        }
-
-        if (!paymentService.isRazorpayEnabled()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Razorpay is disabled"));
-        }
-
-        boolean verified = paymentService.verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
-        if (verified) {
-            paymentService.fulfillRazorpayPayment(loggedInUser.getId(), amount, price);
-            
-            // Sync session
-            User user = userService.getUserById(loggedInUser.getId());
-            loggedInUser.setBalance(user.getBalance());
-            session.setAttribute("user", loggedInUser);
-
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "newBalance", user.getBalance(),
-                "message", "Payment verified and Snow Flakes added successfully!"
-            ));
+                return "redirect:/user/panel?payment=success";
+            } catch (Exception e) {
+                System.err.println("Error processing PayU success parameters: " + e.getMessage());
+                return "redirect:/user/panel?payment=failure&reason=" + URLEncoder.encode("Error processing transaction data.", StandardCharsets.UTF_8);
+            }
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Payment verification failed. Invalid signature."));
+            System.err.println("PayU success callback verification failed. Verified=" + verified + ", status=" + params.get("status"));
+            return "redirect:/user/panel?payment=failure&reason=" + URLEncoder.encode("Transaction verification failed.", StandardCharsets.UTF_8);
         }
+    }
+
+    @PostMapping("/api/payment/payu/failure")
+    public String payuFailure(@RequestParam Map<String, String> params) {
+        System.out.println("Received PayU failure callback with params: " + params);
+        String reason = params.get("field9"); // PayU maps actual failure message to field9
+        if (reason == null || reason.trim().isEmpty()) {
+            reason = params.get("error_Message");
+        }
+        if (reason == null || reason.trim().isEmpty()) {
+            reason = params.get("error");
+        }
+        if (reason == null || reason.trim().isEmpty()) {
+            reason = "Payment declined or cancelled.";
+        }
+        return "redirect:/user/panel?payment=failure&reason=" + URLEncoder.encode(reason, StandardCharsets.UTF_8);
     }
 }
