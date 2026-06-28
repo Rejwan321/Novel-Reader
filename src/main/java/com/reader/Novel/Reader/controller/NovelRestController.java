@@ -367,6 +367,9 @@ public class NovelRestController {
             responseMap.put("hash", hash);
             responseMap.put("service_provider", "payu_paisa");
             responseMap.put("actionUrl", paymentService.getPayUActionUrl());
+            responseMap.put("udf1", String.valueOf(user.getId()));
+            responseMap.put("udf2", String.valueOf(amount));
+            responseMap.put("udf3", String.valueOf(price));
             
             return ResponseEntity.ok(responseMap);
         }
