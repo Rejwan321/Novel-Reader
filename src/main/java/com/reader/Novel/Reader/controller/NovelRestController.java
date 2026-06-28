@@ -39,6 +39,9 @@ public class NovelRestController {
     @Value("${app.base-url:http://localhost:8080}")
     private String appBaseUrl;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
 
 
     @GetMapping("/novels")
@@ -339,7 +342,10 @@ public class NovelRestController {
             String email = user.getEmail() != null && !user.getEmail().trim().isEmpty() ? user.getEmail().trim() : "reader@yukitales.com";
             
             // Build callback URLs
-            String cleanBaseUrl = appBaseUrl != null ? appBaseUrl.trim() : "http://localhost:8080";
+            String dynamicBaseUrl = systemSettingRepository.findById("app.base_url")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(appBaseUrl);
+            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "http://localhost:8080";
             if (cleanBaseUrl.endsWith("/")) {
                 cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
             }
