@@ -894,10 +894,19 @@
                         </form>
                     </div>
 
+                    <div class="mb-3 d-flex flex-wrap align-items-center gap-2 bg-dark p-3 rounded border border-secondary" style="border-width: 1px !important;">
+                        <span class="text-white me-2 fw-bold"><i class="fa-solid fa-list-check me-2 text-info"></i>Bulk Actions:</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-bulk-delete" disabled><i class="fa-solid fa-trash me-1"></i>Delete</button>
+                        <button type="button" class="btn btn-sm btn-outline-warning btn-bulk-ban" disabled><i class="fa-solid fa-ban me-1"></i>Ban</button>
+                        <button type="button" class="btn btn-sm btn-outline-success btn-bulk-unban" disabled><i class="fa-solid fa-circle-check me-1"></i>Unban</button>
+                        <button type="button" class="btn btn-sm btn-outline-info btn-bulk-timeout" data-bs-toggle="modal" data-bs-target="#bulkTimeoutModal" disabled><i class="fa-solid fa-hourglass-half me-1"></i>Timeout</button>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-dark table-admin align-middle">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="user-bulk-select-all" class="form-check-input-admin"></th>
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
@@ -908,8 +917,17 @@
                             </thead>
                             <tbody>
                                 <tr th:each="u : ${users}" th:id="'admin-user-row-' + ${u.id}">
+                                    <td>
+                                        <input type="checkbox" class="user-bulk-checkbox form-check-input-admin" th:value="${u.id}" th:if="${session.user.id != u.id}">
+                                        <span th:if="${session.user.id == u.id}" class="text-muted small">-</span>
+                                    </td>
                                     <td th:text="${u.id}">1</td>
-                                    <td th:text="${u.name}" class="text-white fw-bold">Sakura Reader</td>
+                                    <td class="text-white fw-bold">
+                                        <span th:text="${u.name}">Sakura Reader</span>
+                                        <span th:if="${u.banned}" class="badge bg-danger ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Banned</span>
+                                        <span th:if="${u.timeoutUntil != null and u.timeoutUntil.isAfter(T(java.time.LocalDateTime).now())}" 
+                                              class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Timeout</span>
+                                    </td>
                                     <td th:text="${u.email}">sakura@sakura.com</td>
                                     <td>
                                         <!-- Prevent changing self -->
@@ -947,6 +965,32 @@
                                                     th:data-email="${u.email}"
                                                     th:data-role="${u.user_type}">
                                                 <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                            </button>
+                                            <!-- Ban / Unban -->
+                                            <button th:if="${session.user.id != u.id and !u.banned}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-outline-warning btn-ban-user"
+                                                    th:data-id="${u.id}"
+                                                    th:data-name="${u.name}"
+                                                    title="Ban User">
+                                                <i class="fa-solid fa-ban"></i>
+                                            </button>
+                                            <button th:if="${session.user.id != u.id and u.banned}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-warning btn-unban-user"
+                                                    th:data-id="${u.id}"
+                                                    th:data-name="${u.name}"
+                                                    title="Unban User">
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            </button>
+                                            <!-- Timeout -->
+                                            <button th:if="${session.user.id != u.id}" 
+                                                    type="button" 
+                                                    class="btn btn-sm btn-outline-info btn-timeout-user-trigger"
+                                                    th:data-id="${u.id}"
+                                                    th:data-name="${u.name}"
+                                                    title="Timeout User">
+                                                <i class="fa-solid fa-hourglass-half"></i>
                                             </button>
                                             <!-- Prevent deleting self -->
                                             <button th:if="${session.user.id != u.id}" 
@@ -1173,6 +1217,37 @@
                                         <i class="fa-solid fa-eye text-white-50" id="eye-cred-discord-client-secret"></i>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- PayU Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-success me-2"></i>PayU Payment Gateway Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cred-payu-enabled" checked>
+                                    <label class="form-check-label text-white-50" for="cred-payu-enabled">Enable PayU Gateway</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-payu-merchant-key" class="form-label-admin">Merchant Key (API Key)</label>
+                                <input type="text" class="form-input-admin" id="cred-payu-merchant-key" placeholder="e.g. EbzvKE">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-payu-merchant-salt" class="form-label-admin">Merchant Salt (API Salt)</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-payu-merchant-salt" placeholder="e.g. QmovYILTgz5XYKUeon3hEoS0v6onGrx4">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-payu-merchant-salt')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-payu-merchant-salt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-payu-mode" class="form-label-admin">PayU Environment Mode</label>
+                                <select class="form-input-admin" id="cred-payu-mode">
+                                    <option value="test">Sandbox (Test Mode)</option>
+                                    <option value="production">Production (Live Mode)</option>
+                                </select>
                             </div>
                         </div>
 
@@ -1551,7 +1626,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='1.8')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.0')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -1608,6 +1683,10 @@
                 $("#cred-mail-sender").val(data.mailSender || "");
                 $("#cred-mail-recipient").val(data.mailRecipient || "");
                 $("#cred-app-base-url").val(data.appBaseUrl || "");
+                $("#cred-payu-enabled").prop("checked", data.payuEnabled !== "false");
+                $("#cred-payu-merchant-key").val(data.payuMerchantKey || "");
+                $("#cred-payu-merchant-salt").val(data.payuMerchantSalt || "");
+                $("#cred-payu-mode").val(data.payuMode || "test");
             })
             .fail(function(err) {
                 var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
@@ -1629,7 +1708,11 @@
                 mailPassword: $("#cred-mail-password").val(),
                 mailSender: $("#cred-mail-sender").val(),
                 mailRecipient: $("#cred-mail-recipient").val(),
-                appBaseUrl: $("#cred-app-base-url").val()
+                appBaseUrl: $("#cred-app-base-url").val(),
+                payuEnabled: $("#cred-payu-enabled").is(":checked") ? "true" : "false",
+                payuMerchantKey: $("#cred-payu-merchant-key").val(),
+                payuMerchantSalt: $("#cred-payu-merchant-salt").val(),
+                payuMode: $("#cred-payu-mode").val()
             };
             
             var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
@@ -1667,6 +1750,10 @@
                     $("#cred-mail-sender").val(creds.mailSender || "");
                     $("#cred-mail-recipient").val(creds.mailRecipient || "");
                     $("#cred-app-base-url").val(creds.appBaseUrl || "");
+                    $("#cred-payu-enabled").prop("checked", creds.payuEnabled !== "false");
+                    $("#cred-payu-merchant-key").val(creds.payuMerchantKey || "");
+                    $("#cred-payu-merchant-salt").val(creds.payuMerchantSalt || "");
+                    $("#cred-payu-mode").val(creds.payuMode || "test");
 
                     showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
                 } catch (err) {
@@ -2051,6 +2138,204 @@
                     var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to update role.";
                     showToast(msg, "error");
                     select.val(original); // revert selection
+                });
+            });
+
+            // Toggle select all user checkboxes
+            $(document).on("change", "#user-bulk-select-all", function() {
+                var checked = $(this).prop("checked");
+                $(".user-bulk-checkbox").prop("checked", checked);
+                toggleBulkButtonsState();
+            });
+
+            $(document).on("change", ".user-bulk-checkbox", function() {
+                var allChecked = $(".user-bulk-checkbox").length === $(".user-bulk-checkbox:checked").length;
+                $("#user-bulk-select-all").prop("checked", allChecked);
+                toggleBulkButtonsState();
+            });
+
+            function toggleBulkButtonsState() {
+                var selectedCount = $(".user-bulk-checkbox:checked").length;
+                var disabled = selectedCount === 0;
+                $(".btn-bulk-delete, .btn-bulk-ban, .btn-bulk-unban, .btn-bulk-timeout").prop("disabled", disabled);
+                $("#bulk-timeout-count").text(selectedCount);
+            }
+
+            function getSelectedUserIds() {
+                var ids = [];
+                $(".user-bulk-checkbox:checked").each(function() {
+                    ids.push(Number($(this).val()));
+                });
+                return ids;
+            }
+
+            // AJAX: Bulk Delete Users
+            $(document).on("click", ".btn-bulk-delete", function() {
+                var ids = getSelectedUserIds();
+                if (ids.length === 0) return;
+                
+                if (confirm("Are you sure you want to delete the " + ids.length + " selected users? This action cannot be undone.")) {
+                    $.ajax({
+                        url: "/api/admin/users/bulk-delete",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({ ids: ids }),
+                        success: function(res) {
+                            showToast(res.message || "Users deleted successfully.");
+                            ids.forEach(function(id) {
+                                handleUserDeletedRealtime(id);
+                            });
+                            $("#user-bulk-select-all").prop("checked", false);
+                            toggleBulkButtonsState();
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete users.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+
+            // AJAX: Bulk Ban Users
+            $(document).on("click", ".btn-bulk-ban", function() {
+                var ids = getSelectedUserIds();
+                if (ids.length === 0) return;
+                
+                if (confirm("Are you sure you want to ban the " + ids.length + " selected users?")) {
+                    $.ajax({
+                        url: "/api/admin/users/bulk-ban",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({ ids: ids }),
+                        success: function(res) {
+                            showToast(res.message || "Users banned successfully.");
+                            setTimeout(function() { location.reload(); }, 1500);
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to ban users.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+
+            // AJAX: Bulk Unban Users
+            $(document).on("click", ".btn-bulk-unban", function() {
+                var ids = getSelectedUserIds();
+                if (ids.length === 0) return;
+                
+                if (confirm("Are you sure you want to unban the " + ids.length + " selected users?")) {
+                    $.ajax({
+                        url: "/api/admin/users/bulk-unban",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({ ids: ids }),
+                        success: function(res) {
+                            showToast(res.message || "Users unbanned successfully.");
+                            setTimeout(function() { location.reload(); }, 1500);
+                        },
+                        error: function(err) {
+                            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to unban users.";
+                            showToast(msg, "error");
+                        }
+                    });
+                }
+            });
+
+            // AJAX: Bulk Timeout Users Form Submit
+            $(document).on("submit", "#form-bulk-timeout-users", function(e) {
+                e.preventDefault();
+                var ids = getSelectedUserIds();
+                var duration = $("#bulk-timeout-duration").val();
+                if (ids.length === 0) return;
+
+                $.ajax({
+                    url: "/api/admin/users/bulk-timeout",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ ids: ids, durationMinutes: duration }),
+                    success: function(res) {
+                        showToast(res.message || "Users timeout updated.");
+                        var modalEl = document.getElementById('bulkTimeoutModal');
+                        var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        if (modal) modal.hide();
+                        setTimeout(function() { location.reload(); }, 1500);
+                    },
+                    error: function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to timeout users.";
+                        showToast(msg, "error");
+                    }
+                });
+            });
+
+            // AJAX: Individual Ban User
+            $(document).on("click", ".btn-ban-user", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var name = btn.data("name");
+                
+                if (confirm("Are you sure you want to ban user '" + name + "'?")) {
+                    $.post("/api/admin/users/" + id + "/ban")
+                    .done(function(res) {
+                        showToast(res.message || "User banned successfully.");
+                        setTimeout(function() { location.reload(); }, 1500);
+                    })
+                    .fail(function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to ban user.";
+                        showToast(msg, "error");
+                    });
+                }
+            });
+
+            // AJAX: Individual Unban User
+            $(document).on("click", ".btn-unban-user", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var name = btn.data("name");
+                
+                if (confirm("Are you sure you want to unban user '" + name + "'?")) {
+                    $.post("/api/admin/users/" + id + "/unban")
+                    .done(function(res) {
+                        showToast(res.message || "User unbanned successfully.");
+                        setTimeout(function() { location.reload(); }, 1500);
+                    })
+                    .fail(function(err) {
+                        var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to unban user.";
+                        showToast(msg, "error");
+                    });
+                }
+            });
+
+            // Individual Timeout Trigger Modal Setup
+            $(document).on("click", ".btn-timeout-user-trigger", function() {
+                var btn = $(this);
+                var id = btn.data("id");
+                var name = btn.data("name");
+                
+                $("#timeout-user-id").val(id);
+                $("#timeout-user-name").text(name);
+                
+                var timeoutModal = new bootstrap.Modal(document.getElementById('timeoutModal'));
+                timeoutModal.show();
+            });
+
+            // AJAX: Individual Timeout User Form Submit
+            $(document).on("submit", "#form-timeout-user", function(e) {
+                e.preventDefault();
+                var id = $("#timeout-user-id").val();
+                var duration = $("#timeout-duration").val();
+                
+                $.post("/api/admin/users/" + id + "/timeout?durationMinutes=" + duration)
+                .done(function(res) {
+                    showToast(res.message || "User timeout updated.");
+                    var modalEl = document.getElementById('timeoutModal');
+                    var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    if (modal) modal.hide();
+                    setTimeout(function() { location.reload(); }, 1500);
+                })
+                .fail(function(err) {
+                    var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to timeout user.";
+                    showToast(msg, "error");
                 });
             });
 
@@ -4030,6 +4315,10 @@
                 var mailSender = $("#cred-mail-sender").val();
                 var mailRecipient = $("#cred-mail-recipient").val();
                 var appBaseUrl = $("#cred-app-base-url").val();
+                var payuEnabled = $("#cred-payu-enabled").is(":checked") ? "true" : "false";
+                var payuMerchantKey = $("#cred-payu-merchant-key").val();
+                var payuMerchantSalt = $("#cred-payu-merchant-salt").val();
+                var payuMode = $("#cred-payu-mode").val();
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
@@ -4044,7 +4333,11 @@
                     mailPassword: mailPassword,
                     mailSender: mailSender,
                     mailRecipient: mailRecipient,
-                    appBaseUrl: appBaseUrl
+                    appBaseUrl: appBaseUrl,
+                    payuEnabled: payuEnabled,
+                    payuMerchantKey: payuMerchantKey,
+                    payuMerchantSalt: payuMerchantSalt,
+                    payuMode: payuMode
                 })
                 .done(function(res) {
                     showToast("Credentials saved successfully!");
@@ -4226,6 +4519,71 @@
             }
         });
     </script>
+    <!-- Timeout Modal -->
+    <div class="modal fade" id="timeoutModal" tabindex="-1" aria-labelledby="timeoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border border-secondary" style="border-width: 1px !important;">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title fw-bold" id="timeoutModalLabel"><i class="fa-solid fa-hourglass-half text-info me-2"></i>Timeout User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-timeout-user">
+                    <input type="hidden" id="timeout-user-id">
+                    <div class="modal-body">
+                        <p>Set a temporary suspension duration for <span id="timeout-user-name" class="fw-bold text-warning">User</span>. They will be logged out and unable to log in until the timeout expires.</p>
+                        <div class="mb-3">
+                            <label class="form-label text-white-50">Duration</label>
+                            <select class="form-select bg-secondary text-white border-0" id="timeout-duration" required>
+                                <option value="15">15 Minutes</option>
+                                <option value="60">1 Hour</option>
+                                <option value="1440">24 Hours (1 Day)</option>
+                                <option value="4320">3 Days</option>
+                                <option value="10080">7 Days (1 Week)</option>
+                                <option value="0">Clear Timeout (Lift Suspension)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info px-4">Apply Timeout</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Timeout Modal -->
+    <div class="modal fade" id="bulkTimeoutModal" tabindex="-1" aria-labelledby="bulkTimeoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border border-secondary" style="border-width: 1px !important;">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title fw-bold" id="bulkTimeoutModalLabel"><i class="fa-solid fa-hourglass-half text-info me-2"></i>Bulk Timeout Users</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-bulk-timeout-users">
+                    <div class="modal-body">
+                        <p>Set a temporary suspension duration for the <span id="bulk-timeout-count" class="fw-bold text-warning">0</span> selected users.</p>
+                        <div class="mb-3">
+                            <label class="form-label text-white-50">Duration</label>
+                            <select class="form-select bg-secondary text-white border-0" id="bulk-timeout-duration" required>
+                                <option value="15">15 Minutes</option>
+                                <option value="60">1 Hour</option>
+                                <option value="1440">24 Hours (1 Day)</option>
+                                <option value="4320">3 Days</option>
+                                <option value="10080">7 Days (1 Week)</option>
+                                <option value="0">Clear Timeout (Lift Suspension)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info px-4">Apply Bulk Timeout</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 
