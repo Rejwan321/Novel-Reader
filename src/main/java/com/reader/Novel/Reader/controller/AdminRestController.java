@@ -12,6 +12,7 @@ import com.reader.Novel.Reader.repository.NotificationRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
 import com.reader.Novel.Reader.service.SseService;
+import com.reader.Novel.Reader.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,9 @@ public class AdminRestController {
 
     @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private PaymentService paymentService;
 
     private boolean isRestricted(HttpSession session) {
         if (novelService.isSecuredMode()) {
@@ -1960,6 +1964,10 @@ public class AdminRestController {
         creds.put("mailSender", systemSettingRepository.findById("mail.sender").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("mailRecipient", systemSettingRepository.findById("mail.recipient").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
         creds.put("appBaseUrl", systemSettingRepository.findById("app.base_url").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
+        creds.put("payuEnabled", systemSettingRepository.findById("payu.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(String.valueOf(paymentService.isPayUEnabled())));
+        creds.put("payuMerchantKey", systemSettingRepository.findById("payu.merchant.key").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMerchantKey()));
+        creds.put("payuMerchantSalt", systemSettingRepository.findById("payu.merchant.salt").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMerchantSalt()));
+        creds.put("payuMode", systemSettingRepository.findById("payu.mode").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMode()));
 
         return ResponseEntity.ok(creds);
     }
@@ -1980,6 +1988,10 @@ public class AdminRestController {
             @RequestParam(required = false) String mailSender,
             @RequestParam(required = false) String mailRecipient,
             @RequestParam(required = false) String appBaseUrl,
+            @RequestParam(required = false) String payuEnabled,
+            @RequestParam(required = false) String payuMerchantKey,
+            @RequestParam(required = false) String payuMerchantSalt,
+            @RequestParam(required = false) String payuMode,
             HttpSession session) {
         
         User loggedInUser = (User) session.getAttribute("user");
@@ -2004,6 +2016,10 @@ public class AdminRestController {
         if (mailSender != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.sender", mailSender.trim()));
         if (mailRecipient != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("mail.recipient", mailRecipient.trim()));
         if (appBaseUrl != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("app.base_url", appBaseUrl.trim()));
+        if (payuEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.enabled", payuEnabled.trim()));
+        if (payuMerchantKey != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.merchant.key", payuMerchantKey.trim()));
+        if (payuMerchantSalt != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.merchant.salt", payuMerchantSalt.trim()));
+        if (payuMode != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.mode", payuMode.trim()));
 
         return ResponseEntity.ok(Map.of("success", true));
     }
