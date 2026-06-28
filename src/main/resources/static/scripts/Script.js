@@ -32,6 +32,16 @@ $(document).ready(function() {
         showToast("Please sign in or register to access this page.", "info");
     }
 
+    // Check for PayU payment redirect parameters
+    if (urlParams.get('payment') === 'success') {
+        showToast("Payment successful! Snow Flakes added to your wallet.", "success");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('payment') === 'failure') {
+        var reason = urlParams.get('reason') || "Transaction declined/cancelled.";
+        showToast("Payment failed: " + reason, "error");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // Initialize search filter UI states from hidden inputs on page load
     var initType = $("#search-filter-type-val").val() || "ALL";
     var initGenre = $("#search-filter-genre-val").val() || "ALL";
@@ -987,28 +997,50 @@ $(document).ready(function() {
         purchaseModal.show();
     });
 
+    // Helper to dynamically build a form and redirect to PayU checkout page
+    function redirectToPayU(res) {
+        var form = document.createElement("form");
+        form.method = "POST";
+        form.action = res.actionUrl;
 
+        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3"];
+        fields.forEach(function(field) {
+            if (res[field] !== undefined) {
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = field;
+                input.value = res[field];
+                form.appendChild(input);
+            }
+        });
 
+        document.body.appendChild(form);
+        form.submit();
+    }
     $(document).on("click", ".btn-purchase-pack", function(e) {
         e.preventDefault();
         var btn = $(this);
         var amount = btn.data("amount");
-        var gateway = "mock";
+        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
 
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.payu) {
+                redirectToPayU(res);
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).text("Purchase");
             }
-            btn.prop("disabled", false).text("Purchase");
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
@@ -1069,25 +1101,29 @@ $(document).ready(function() {
             return;
         }
         
-        var gateway = "mock";
+        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Clear input
-            input.val('');
-            $("#custom-flakes-price-display").text("$0.00");
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.payu) {
+                redirectToPayU(res);
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Clear input
+                input.val('');
+                $("#custom-flakes-price-display").text("$0.00");
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
             }
-            btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
