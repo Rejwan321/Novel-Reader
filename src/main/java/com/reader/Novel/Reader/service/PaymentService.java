@@ -31,16 +31,35 @@ public class PaymentService {
     @Autowired
     private FlakePurchaseRepository flakePurchaseRepository;
 
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
     public boolean isPayUEnabled() {
-        return payuEnabled;
+        return systemSettingRepository.findById("payu.enabled")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .map(Boolean::parseBoolean)
+                .orElse(payuEnabled);
     }
 
     public String getPayUMerchantKey() {
-        return payuMerchantKey != null ? payuMerchantKey.trim() : "";
+        String key = systemSettingRepository.findById("payu.merchant.key")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(payuMerchantKey);
+        return key != null ? key.trim() : "";
+    }
+
+    public String getPayUMerchantSalt() {
+        String salt = systemSettingRepository.findById("payu.merchant.salt")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(payuMerchantSalt);
+        return salt != null ? salt.trim() : "";
     }
 
     public String getPayUMode() {
-        return payuMode != null ? payuMode.trim() : "test";
+        String mode = systemSettingRepository.findById("payu.mode")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(payuMode);
+        return mode != null ? mode.trim() : "test";
     }
 
     public String getPayUActionUrl() {
@@ -58,7 +77,7 @@ public class PaymentService {
                                       String firstname, String email, String udf1, 
                                       String udf2, String udf3) {
         String key = getPayUMerchantKey();
-        String salt = payuMerchantSalt != null ? payuMerchantSalt.trim() : "";
+        String salt = getPayUMerchantSalt();
         
         String amountStr = String.format(java.util.Locale.US, "%.2f", amount);
         
@@ -95,7 +114,7 @@ public class PaymentService {
         String status = params.get("status");
         String additionalCharges = params.get("additionalCharges");
         
-        String salt = payuMerchantSalt != null ? payuMerchantSalt.trim() : "";
+        String salt = getPayUMerchantSalt();
 
         // udf4 and udf5 are empty, so 8 pipes between status and udf3
         String hashSequence = status + "||||||||" + udf3 + "|" + udf2 + "|" + udf1 + "|" + 

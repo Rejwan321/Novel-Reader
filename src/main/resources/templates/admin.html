@@ -1220,6 +1220,37 @@
                             </div>
                         </div>
 
+                        <!-- PayU Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-success me-2"></i>PayU Payment Gateway Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cred-payu-enabled" checked>
+                                    <label class="form-check-label text-white-50" for="cred-payu-enabled">Enable PayU Gateway</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-payu-merchant-key" class="form-label-admin">Merchant Key (API Key)</label>
+                                <input type="text" class="form-input-admin" id="cred-payu-merchant-key" placeholder="e.g. EbzvKE">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-payu-merchant-salt" class="form-label-admin">Merchant Salt (API Salt)</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-payu-merchant-salt" placeholder="e.g. QmovYILTgz5XYKUeon3hEoS0v6onGrx4">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-payu-merchant-salt')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-payu-merchant-salt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-payu-mode" class="form-label-admin">PayU Environment Mode</label>
+                                <select class="form-input-admin" id="cred-payu-mode">
+                                    <option value="test">Sandbox (Test Mode)</option>
+                                    <option value="production">Production (Live Mode)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Mail Section -->
                         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
                             <h5 class="text-white mb-0"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
@@ -1652,6 +1683,10 @@
                 $("#cred-mail-sender").val(data.mailSender || "");
                 $("#cred-mail-recipient").val(data.mailRecipient || "");
                 $("#cred-app-base-url").val(data.appBaseUrl || "");
+                $("#cred-payu-enabled").prop("checked", data.payuEnabled !== "false");
+                $("#cred-payu-merchant-key").val(data.payuMerchantKey || "");
+                $("#cred-payu-merchant-salt").val(data.payuMerchantSalt || "");
+                $("#cred-payu-mode").val(data.payuMode || "test");
             })
             .fail(function(err) {
                 var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
@@ -1673,7 +1708,11 @@
                 mailPassword: $("#cred-mail-password").val(),
                 mailSender: $("#cred-mail-sender").val(),
                 mailRecipient: $("#cred-mail-recipient").val(),
-                appBaseUrl: $("#cred-app-base-url").val()
+                appBaseUrl: $("#cred-app-base-url").val(),
+                payuEnabled: $("#cred-payu-enabled").is(":checked") ? "true" : "false",
+                payuMerchantKey: $("#cred-payu-merchant-key").val(),
+                payuMerchantSalt: $("#cred-payu-merchant-salt").val(),
+                payuMode: $("#cred-payu-mode").val()
             };
             
             var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
@@ -1711,6 +1750,10 @@
                     $("#cred-mail-sender").val(creds.mailSender || "");
                     $("#cred-mail-recipient").val(creds.mailRecipient || "");
                     $("#cred-app-base-url").val(creds.appBaseUrl || "");
+                    $("#cred-payu-enabled").prop("checked", creds.payuEnabled !== "false");
+                    $("#cred-payu-merchant-key").val(creds.payuMerchantKey || "");
+                    $("#cred-payu-merchant-salt").val(creds.payuMerchantSalt || "");
+                    $("#cred-payu-mode").val(creds.payuMode || "test");
 
                     showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
                 } catch (err) {
@@ -4272,6 +4315,10 @@
                 var mailSender = $("#cred-mail-sender").val();
                 var mailRecipient = $("#cred-mail-recipient").val();
                 var appBaseUrl = $("#cred-app-base-url").val();
+                var payuEnabled = $("#cred-payu-enabled").is(":checked") ? "true" : "false";
+                var payuMerchantKey = $("#cred-payu-merchant-key").val();
+                var payuMerchantSalt = $("#cred-payu-merchant-salt").val();
+                var payuMode = $("#cred-payu-mode").val();
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
@@ -4286,7 +4333,11 @@
                     mailPassword: mailPassword,
                     mailSender: mailSender,
                     mailRecipient: mailRecipient,
-                    appBaseUrl: appBaseUrl
+                    appBaseUrl: appBaseUrl,
+                    payuEnabled: payuEnabled,
+                    payuMerchantKey: payuMerchantKey,
+                    payuMerchantSalt: payuMerchantSalt,
+                    payuMode: payuMode
                 })
                 .done(function(res) {
                     showToast("Credentials saved successfully!");
