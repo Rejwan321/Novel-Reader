@@ -7,6 +7,15 @@ import java.io.File;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private UserStatusInterceptor userStatusInterceptor;
+
+    @Override
+    public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry) {
+        registry.addInterceptor(userStatusInterceptor)
+                .excludePathPatterns("/static/**", "/css/**", "/js/**", "/scripts/**", "/uploads/**", "/favicon.ico");
+    }
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String userDir = System.getProperty("user.dir");

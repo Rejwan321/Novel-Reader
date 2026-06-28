@@ -7,6 +7,9 @@ import com.reader.Novel.Reader.model.FlakePurchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import com.reader.Novel.Reader.service.NovelService;
+
+import com.reader.Novel.Reader.service.PaymentService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +32,17 @@ public class NovelRestController {
 
     @Autowired
     private FlakePurchaseRepository flakePurchaseRepository;
+
+    @Autowired
+    private PaymentService paymentService;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
+    @Autowired
+    private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
+
+
 
     @GetMapping("/novels")
     public List<Novel> getNovels(
@@ -276,7 +290,10 @@ public class NovelRestController {
     }
 
     @PostMapping("/user/purchase-flakes")
-    public ResponseEntity<?> purchaseFlakes(@RequestParam Integer amount, HttpSession session) {
+    public ResponseEntity<?> purchaseFlakes(
+            @RequestParam Integer amount,
+            @RequestParam(required = false) String gateway,
+            HttpSession session) {
         if (isRestricted(session)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
         }
@@ -310,6 +327,60 @@ public class NovelRestController {
             price = amount * rate;
         }
 
+        // Determine active gateway
+        String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
+        if (activeGateway.isEmpty()) {
+            activeGateway = paymentService.isPayUEnabled() ? "payu" : "mock";
+        }
+
+        if ("payu".equals(activeGateway) && paymentService.isPayUEnabled()) {
+            String txnid = "txn_" + System.currentTimeMillis();
+            // Convert USD price to INR assuming 1 USD = 83 INR
+            double priceInInr = price * 83.0;
+            String productinfo = "Purchase " + amount + " Snow Flakes";
+            String firstname = user.getName() != null && !user.getName().trim().isEmpty() ? user.getName().trim() : "Reader";
+            String email = user.getEmail() != null && !user.getEmail().trim().isEmpty() ? user.getEmail().trim() : "reader@yukitales.com";
+            
+            // Build callback URLs
+            String dynamicBaseUrl = systemSettingRepository.findById("app.base_url")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(appBaseUrl);
+            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "http://localhost:8080";
+            if (cleanBaseUrl.endsWith("/")) {
+                cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
+            }
+            String surl = cleanBaseUrl + "/api/payment/payu/success";
+            String furl = cleanBaseUrl + "/api/payment/payu/failure";
+            
+            // Generate the checkout hash
+            String hash = paymentService.generatePaymentHash(
+                txnid, priceInInr, productinfo, firstname, email,
+                String.valueOf(user.getId()), String.valueOf(amount), String.valueOf(price)
+            );
+            
+            Map<String, Object> responseMap = new java.util.HashMap<>();
+            responseMap.put("success", true);
+            responseMap.put("payu", true);
+            responseMap.put("key", paymentService.getPayUMerchantKey());
+            responseMap.put("txnid", txnid);
+            responseMap.put("amount", String.format(java.util.Locale.US, "%.2f", priceInInr));
+            responseMap.put("productinfo", productinfo);
+            responseMap.put("firstname", firstname);
+            responseMap.put("email", email);
+            responseMap.put("phone", "9999999999");
+            responseMap.put("surl", surl);
+            responseMap.put("furl", furl);
+            responseMap.put("hash", hash);
+            responseMap.put("service_provider", "payu_paisa");
+            responseMap.put("actionUrl", paymentService.getPayUActionUrl());
+            responseMap.put("udf1", String.valueOf(user.getId()));
+            responseMap.put("udf2", String.valueOf(amount));
+            responseMap.put("udf3", String.valueOf(price));
+            
+            return ResponseEntity.ok(responseMap);
+        }
+
+        // Mock Checkout Fallback
         user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + amount);
         userService.updateUser(user);
         
