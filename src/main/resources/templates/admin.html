@@ -351,6 +351,24 @@
             background-color: rgba(241, 196, 15, 0.22) !important;
             border-color: #f1c40f !important;
         }
+        .btn-action-hide {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #bdc3c7 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        }
+        .btn-action-hide:hover {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            border-color: #bdc3c7 !important;
+        }
+        .btn-action-hidden {
+            background-color: rgba(231, 76, 60, 0.08) !important;
+            color: #e74c3c !important;
+            border: 1px solid rgba(231, 76, 60, 0.25) !important;
+        }
+        .btn-action-hidden:hover {
+            background-color: rgba(231, 76, 60, 0.18) !important;
+            border-color: #e74c3c !important;
+        }
         .genre-suggestion-item {
             padding: 10px 16px;
             cursor: pointer;
@@ -788,6 +806,13 @@
                                                      <i th:class="${n.id == featuredNovelId} ? 'fa-solid fa-star text-warning' : 'fa-regular fa-star'"></i>
                                                      <span th:text="${n.id == featuredNovelId} ? 'Featured' : 'Feature'">Feature</span>
                                                  </button>
+                                                <button type="button" class="btn btn-sm btn-action-premium btn-toggle-hide"
+                                                        th:classappend="${n.hidden} ? 'btn-action-hidden' : 'btn-action-hide'"
+                                                        th:data-id="${n.id}"
+                                                        th:title="${n.hidden} ? 'Unhide Story' : 'Hide Story'">
+                                                    <i th:class="${n.hidden} ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                                                    <span th:text="${n.hidden} ? 'Hidden' : 'Hide'">Hide</span>
+                                                </button>
                                                 <button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta"
                                                         th:data-id="${n.id}"
                                                         th:data-title="${n.title}"
@@ -1628,7 +1653,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='2.4')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.5')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -2668,6 +2693,9 @@
                     '<button type="button" class="btn btn-sm btn-action-premium btn-toggle-feature ' + featureBtnClass + '" data-id="' + story.id + '" title="' + (isFeatured ? 'Unfeature Story' : 'Feature Story') + '">' +
                     '<i class="' + starIconClass + '"></i> <span>' + featureBtnText + '</span>' +
                     '</button>' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-toggle-hide ' + (story.hidden ? 'btn-action-hidden' : 'btn-action-hide') + '" data-id="' + story.id + '" title="' + (story.hidden ? 'Unhide Story' : 'Hide Story') + '">' +
+                    '<i class="' + (story.hidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye') + '"></i> <span>' + (story.hidden ? 'Hidden' : 'Hide') + '</span>' +
+                    '</button>' +
                     '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta" ' +
                     'data-id="' + story.id + '" ' +
                     'data-title="' + escapeHtml(story.title) + '" ' +
@@ -2775,6 +2803,17 @@
                     
                     row.find(".btn-delete-story").attr("data-title", story.title);
                     row.find(".btn-manage-chapters").attr("data-title", story.title);
+
+                    var hideBtn = row.find(".btn-toggle-hide");
+                    if (hideBtn.length) {
+                        var isHidden = !!story.hidden;
+                        hideBtn.removeClass("btn-action-hidden btn-action-hide")
+                               .addClass(isHidden ? "btn-action-hidden" : "btn-action-hide");
+                        hideBtn.find("i").removeClass("fa-solid fa-eye-slash fa-solid fa-eye")
+                               .addClass(isHidden ? "fa-solid fa-eye-slash" : "fa-solid fa-eye");
+                        hideBtn.find("span").text(isHidden ? "Hidden" : "Hide");
+                        hideBtn.attr("title", isHidden ? "Unhide Story" : "Hide Story");
+                    }
                 }
             };
 
