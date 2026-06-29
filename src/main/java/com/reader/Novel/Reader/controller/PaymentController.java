@@ -39,8 +39,12 @@ public class PaymentController {
                 Long userId = Long.parseLong(params.get("udf1"));
                 Integer flakesAmount = Integer.parseInt(params.get("udf2"));
                 Double price = Double.parseDouble(params.get("udf3"));
+                String couponCode = params.get("udf4");
+                if (couponCode != null && couponCode.trim().isEmpty()) {
+                    couponCode = null;
+                }
 
-                paymentService.fulfillPayment(userId, flakesAmount, price);
+                paymentService.fulfillPayment(userId, flakesAmount, price, couponCode);
 
                 // Synchronize user session balance
                 User loggedInUser = (User) session.getAttribute("user");
