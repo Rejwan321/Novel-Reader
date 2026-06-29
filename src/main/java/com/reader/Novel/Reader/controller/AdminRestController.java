@@ -724,7 +724,8 @@ public class AdminRestController {
                 Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
                 Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
                 Map.entry("source", saved.getSource() != null ? saved.getSource() : ""),
-                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false)
+                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false),
+                Map.entry("hidden", saved.getHidden())
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -1044,7 +1045,8 @@ public class AdminRestController {
                 Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
                 Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
                 Map.entry("source", saved.getSource() != null ? saved.getSource() : ""),
-                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false)
+                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false),
+                Map.entry("hidden", saved.getHidden())
             ));
         } catch (Exception e) {
             // Log or ignore
@@ -1760,6 +1762,58 @@ public class AdminRestController {
             novelService.setFeaturedNovelId(id);
             return ResponseEntity.ok(Map.of("success", true, "featured", true, "message", "Story featured successfully!"));
         }
+    }
+
+    @PostMapping("/novels/{id}/hide")
+    public ResponseEntity<?> toggleHideNovel(
+            @PathVariable Long id,
+            HttpSession session) {
+
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+
+        if (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only administrators can hide stories."));
+        }
+
+        Novel novel = novelService.getNovelById(id);
+        if (novel == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Story not found."));
+        }
+
+        boolean currentHidden = novel.getHidden();
+        novel.setHidden(!currentHidden);
+        Novel saved = novelService.saveNovel(novel);
+
+        try {
+            sseService.sendGlobalEvent("story_updated", Map.ofEntries(
+                Map.entry("id", saved.getId()),
+                Map.entry("title", saved.getTitle()),
+                Map.entry("author", saved.getAuthor()),
+                Map.entry("description", saved.getDescription() != null ? saved.getDescription() : ""),
+                Map.entry("coverUrl", saved.getCoverUrl()),
+                Map.entry("type", saved.getType()),
+                Map.entry("genre", saved.getGenre()),
+                Map.entry("rating", saved.getRating() != null ? saved.getRating() : 0.0),
+                Map.entry("status", saved.getStatus()),
+                Map.entry("creatorId", saved.getCreatorId() != null ? saved.getCreatorId() : 0L),
+                Map.entry("year", saved.getYear() != null ? saved.getYear() : ""),
+                Map.entry("tags", saved.getTags() != null ? saved.getTags() : ""),
+                Map.entry("countryOfOrigin", saved.getCountryOfOrigin() != null ? saved.getCountryOfOrigin() : ""),
+                Map.entry("source", saved.getSource() != null ? saved.getSource() : ""),
+                Map.entry("editorSelection", saved.getEditorSelection() != null ? saved.getEditorSelection() : false),
+                Map.entry("hidden", saved.getHidden())
+            ));
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "hidden", saved.getHidden(), "message", saved.getHidden() ? "Story hidden successfully!" : "Story unhidden successfully!"));
     }
 
     private String getNovelFolderName(Novel novel) {
