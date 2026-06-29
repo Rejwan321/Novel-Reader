@@ -966,4 +966,78 @@ public class AuthRestController {
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Password linked successfully.", "user", user));
     }
+
+    private static class OtpInfo {
+        String code;
+        java.time.LocalDateTime expiry;
+
+        OtpInfo(String code, java.time.LocalDateTime expiry) {
+            this.code = code;
+            this.expiry = expiry;
+        }
+    }
+
+    private final java.util.Map<String, OtpInfo> otpCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @PostMapping("/forgot-password/request")
+    public ResponseEntity<?> requestForgotPassword(@RequestParam("email") String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
+        }
+        String cleanEmail = email.trim().toLowerCase();
+        Optional<User> userOpt = userService.getUserByEmail(cleanEmail);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No user found with this email address."));
+        }
+
+        // Generate 6 digit numeric OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+        otpCache.put(cleanEmail, new OtpInfo(otp, java.time.LocalDateTime.now().plusMinutes(10)));
+
+        String subject = "[Yuki Tales] Password Reset Verification Code";
+        String body = String.format(
+            "Hello,\n\n" +
+            "You requested to reset your password on Yuki Tales.\n" +
+            "Your verification code is: %s\n\n" +
+            "This code is valid for 10 minutes. If you did not request this, please ignore this email.\n\n" +
+            "Best regards,\n" +
+            "Yuki Tales Support",
+            otp
+        );
+
+        emailService.sendCustomEmailAsync(cleanEmail, subject, body);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Verification code sent successfully to " + email));
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<?> resetForgotPassword(
+            @RequestParam("email") String email,
+            @RequestParam("otp") String otp,
+            @RequestParam("newPassword") String newPassword) {
+
+        if (email == null || email.trim().isEmpty() ||
+            otp == null || otp.trim().isEmpty() ||
+            newPassword == null || newPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "All fields (email, otp, newPassword) are required."));
+        }
+
+        String cleanEmail = email.trim().toLowerCase();
+        OtpInfo info = otpCache.get(cleanEmail);
+        if (info == null || !info.code.equals(otp.trim()) || java.time.LocalDateTime.now().isAfter(info.expiry)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired verification code."));
+        }
+
+        Optional<User> userOpt = userService.getUserByEmail(cleanEmail);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        User user = userOpt.get();
+        String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(newPassword);
+        user.setPassword(hashedPassword);
+        userRepository.save(user);
+
+        otpCache.remove(cleanEmail);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Password reset successfully. You can now log in with your new password."));
+    }
 }
