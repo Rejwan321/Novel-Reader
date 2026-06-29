@@ -53,18 +53,6 @@ public class NovelService {
     @Autowired
     private com.reader.Novel.Reader.repository.NotificationRepository notificationRepository;
 
-    public boolean isSecuredMode() {
-        return systemSettingRepository.findById("secured_mode")
-                .map(setting -> "true".equalsIgnoreCase(setting.getSettingValue()))
-                .orElse(false);
-    }
-
-    @Transactional
-    public void toggleSecuredMode() {
-        boolean current = isSecuredMode();
-        com.reader.Novel.Reader.model.SystemSetting setting = new com.reader.Novel.Reader.model.SystemSetting("secured_mode", String.valueOf(!current));
-        systemSettingRepository.save(setting);
-    }
 
     public Optional<Rating> getUserRating(Long userId, Long novelId) {
         return ratingRepository.findByUserIdAndNovelId(userId, novelId);

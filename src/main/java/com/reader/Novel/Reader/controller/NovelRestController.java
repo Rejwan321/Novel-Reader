@@ -177,10 +177,6 @@ public class NovelRestController {
     }
 
     private boolean isRestricted(HttpSession session) {
-        if (novelService.isSecuredMode()) {
-            User loggedInUser = (User) session.getAttribute("user");
-            return loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type());
-        }
         return false;
     }
 

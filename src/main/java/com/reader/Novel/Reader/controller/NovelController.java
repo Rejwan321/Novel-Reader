@@ -37,13 +37,7 @@ public class NovelController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String editor,
             HttpSession session, Model model) {
         
-        if (novelService.isSecuredMode()) {
-            User loggedInUser = (User) session.getAttribute("user");
-            if (loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type())) {
-                model.addAttribute("novels", java.util.Collections.emptyList());
-                return "home";
-            }
-        }
+
         
         List<Novel> novels;
         if (search != null && !search.trim().isEmpty()) {
@@ -186,11 +180,7 @@ public class NovelController {
     @GetMapping("/novel/{id}")
     public String novelDetails(@PathVariable Long id, HttpSession session, Model model) {
         User loggedInUser = (User) session.getAttribute("user");
-        if (novelService.isSecuredMode()) {
-            if (loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type())) {
-                return "redirect:/";
-            }
-        }
+
         Novel novel = novelService.getNovelById(id);
         if (novel == null) {
             return "redirect:/";
@@ -235,11 +225,7 @@ public class NovelController {
     @GetMapping("/novel/{id}/read/{chapterNumber}")
     public String readChapter(@PathVariable Long id, @PathVariable Double chapterNumber, HttpSession session, Model model) {
         User loggedInUser = (User) session.getAttribute("user");
-        if (novelService.isSecuredMode()) {
-            if (loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type())) {
-                return "redirect:/";
-            }
-        }
+
         Novel novel = novelService.getNovelById(id);
         if (novel == null) {
             return "redirect:/";
@@ -329,10 +315,7 @@ public class NovelController {
         if (loggedInUser == null) {
             return "redirect:/?showLogin=true";
         }
-        if (novelService.isSecuredMode() && !"OWNER".equals(loggedInUser.getUser_type())) {
-            model.addAttribute("bookmarks", java.util.Collections.emptyList());
-            return "bookshelf";
-        }
+
         model.addAttribute("bookmarks", novelService.getBookmarksByUserId(loggedInUser.getId()));
         return "bookshelf";
     }
