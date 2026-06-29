@@ -870,8 +870,8 @@
                                     <input type="text" class="form-input-admin" id="user-fullname" required placeholder="e.g. John Doe">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label-admin">Email Address</label>
-                                    <input type="email" class="form-input-admin" id="user-email" required placeholder="e.g. john@example.com">
+                                    <label class="form-label-admin">Email Address / Username</label>
+                                    <input type="text" class="form-input-admin" id="user-email" required placeholder="e.g. john@example.com or john_doe">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-admin">Password</label>
@@ -1628,7 +1628,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='2.3')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.4')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
