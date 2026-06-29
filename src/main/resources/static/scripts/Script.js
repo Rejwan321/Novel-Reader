@@ -1105,7 +1105,7 @@ $(document).ready(function() {
         var btn = $(this);
         var amount = btn.data("amount");
         var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
-        var coupon = appliedCouponCode || "";
+        var coupon = appliedCouponCode || ($("#coupon-code-input").length ? $("#coupon-code-input").val().toUpperCase().trim() : "");
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
 
@@ -1191,7 +1191,7 @@ $(document).ready(function() {
         }
         
         var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
-        var coupon = appliedCouponCode || "";
+        var coupon = appliedCouponCode || ($("#coupon-code-input").length ? $("#coupon-code-input").val().toUpperCase().trim() : "");
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
