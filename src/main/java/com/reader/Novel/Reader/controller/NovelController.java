@@ -320,8 +320,7 @@ public class NovelController {
     public String bookshelf(HttpSession session, Model model) {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
-            model.addAttribute("bookmarks", java.util.Collections.emptyList());
-            return "bookshelf";
+            return "redirect:/?showLogin=true";
         }
         if (novelService.isSecuredMode() && !"OWNER".equals(loggedInUser.getUser_type())) {
             model.addAttribute("bookmarks", java.util.Collections.emptyList());
