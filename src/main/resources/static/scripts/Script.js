@@ -1077,13 +1077,16 @@ $(document).ready(function() {
         purchaseModal.show();
     });
 
+    var appliedCouponCode = null;
+    var couponDiscountPercent = 0;
+
     // Helper to dynamically build a form and redirect to PayU checkout page
     function redirectToPayU(res) {
         var form = document.createElement("form");
         form.method = "POST";
         form.action = res.actionUrl;
 
-        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3"];
+        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3", "udf4"];
         fields.forEach(function(field) {
             if (res[field] !== undefined) {
                 var input = document.createElement("input");
@@ -1102,10 +1105,11 @@ $(document).ready(function() {
         var btn = $(this);
         var amount = btn.data("amount");
         var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
+        var coupon = appliedCouponCode || "";
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
 
-        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
+        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
             if (res.payu) {
                 redirectToPayU(res);
@@ -1141,29 +1145,34 @@ $(document).ready(function() {
         }
         
         var packages = window.flakePackages || [];
+        var price = 0.0;
         if (packages.length === 0) {
             // Default rate fallback if packages list is empty
-            var price = amount * 0.01;
-            display.text("$" + price.toFixed(2));
-            return;
-        }
-        
-        // Sort ascending by amount
-        var sortedPacks = [...packages].sort(function(a, b) {
-            return a.amount - b.amount;
-        });
-        
-        // Find closest package that is <= amount
-        var applicablePack = sortedPacks[0];
-        for (var i = 0; i < sortedPacks.length; i++) {
-            if (sortedPacks[i].amount <= amount) {
-                applicablePack = sortedPacks[i];
+            price = amount * 0.01;
+        } else {
+            // Sort ascending by amount
+            var sortedPacks = [...packages].sort(function(a, b) {
+                return a.amount - b.amount;
+            });
+            
+            // Find closest package that is <= amount
+            var applicablePack = sortedPacks[0];
+            for (var i = 0; i < sortedPacks.length; i++) {
+                if (sortedPacks[i].amount <= amount) {
+                    applicablePack = sortedPacks[i];
+                }
             }
+            
+            var rate = applicablePack.price / applicablePack.amount;
+            price = amount * rate;
         }
-        
-        var rate = applicablePack.price / applicablePack.amount;
-        var price = amount * rate;
-        display.text("$" + price.toFixed(2));
+
+        if (appliedCouponCode && couponDiscountPercent > 0) {
+            var discounted = price * (1.0 - (couponDiscountPercent / 100.0));
+            display.html('<span class="text-decoration-line-through text-muted fs-6" style="margin-right: 5px;">$' + price.toFixed(2) + '</span>$' + discounted.toFixed(2));
+        } else {
+            display.text("$" + price.toFixed(2));
+        }
     }
 
     $(document).on("input change keyup", "#custom-flakes-input", function() {
@@ -1182,9 +1191,10 @@ $(document).ready(function() {
         }
         
         var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
+        var coupon = appliedCouponCode || "";
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         
-        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway })
+        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
             if (res.payu) {
                 redirectToPayU(res);
@@ -1212,6 +1222,51 @@ $(document).ready(function() {
         });
     });
 
+    // Apply Coupon Code Click Logic
+    $(document).on("click", "#btn-apply-coupon", function(e) {
+        e.preventDefault();
+        var code = $("#coupon-code-input").val().toUpperCase().trim();
+        var amount = parseInt($("#custom-flakes-input").val()) || 100;
+        var msgDiv = $("#coupon-validation-msg");
+
+        if (!code) {
+            msgDiv.show().removeClass("text-success").addClass("text-danger").text("Please enter a coupon code.");
+            return;
+        }
+
+        $.get("/api/user/validate-coupon", { code: code, amount: amount })
+        .done(function(res) {
+            if (res.valid) {
+                appliedCouponCode = res.code;
+                couponDiscountPercent = res.discountPercentage;
+                msgDiv.show().removeClass("text-danger").addClass("text-success")
+                    .text("Coupon '" + res.code + "' applied! " + res.discountPercentage + "% discount.");
+                updateCustomFlakesPrice();
+            }
+        })
+        .fail(function(err) {
+            appliedCouponCode = null;
+            couponDiscountPercent = 0;
+            var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Invalid coupon code.";
+            msgDiv.show().removeClass("text-success").addClass("text-danger").text(errMsg);
+            updateCustomFlakesPrice();
+        });
+    });
+
+    // Clear coupon selection on modal hidden
+    $(document).ready(function() {
+        var modalEl = document.getElementById('purchaseFlakesModal');
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                $("#coupon-code-input").val("");
+                $("#coupon-validation-msg").hide().text("");
+                appliedCouponCode = null;
+                couponDiscountPercent = 0;
+                $("#custom-flakes-price-display").text("$0.00");
+            });
+        }
+    });
+
     // Toggle feature/highlight novel
     $(document).on("click", ".btn-toggle-feature", function(e) {
         e.preventDefault();
@@ -1233,6 +1288,8 @@ $(document).ready(function() {
             btn.prop("disabled", false);
         });
     });
+
+
 
     // Autocomplete for Genres in Admin panel
     const ALL_GENRES = [

@@ -51,6 +51,11 @@ public class NovelController {
         } else {
             novels = novelService.getAllNovels();
         }
+
+        User loggedInUser = (User) session.getAttribute("user");
+        String userRole = loggedInUser != null ? loggedInUser.getUser_type() : "READER";
+        Long currentUserId = loggedInUser != null ? loggedInUser.getId() : -1L;
+
         
         if (type != null && !type.trim().isEmpty() && !"ALL".equalsIgnoreCase(type)) {
             novels = novels.stream()
@@ -190,6 +195,7 @@ public class NovelController {
         if (novel == null) {
             return "redirect:/";
         }
+
         model.addAttribute("novel", novel);
         
         User creator = null;
@@ -238,6 +244,7 @@ public class NovelController {
         if (novel == null) {
             return "redirect:/";
         }
+
         Chapter chapter = novelService.getChapterByNumber(id, chapterNumber);
         if (chapter == null) {
             return "redirect:/novel/" + id;

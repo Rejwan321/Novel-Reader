@@ -7,8 +7,10 @@ import com.reader.Novel.Reader.model.Purchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.model.Review;
 import com.reader.Novel.Reader.model.Notification;
+import com.reader.Novel.Reader.model.Coupon;
 import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
+import com.reader.Novel.Reader.repository.CouponRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
 import com.reader.Novel.Reader.service.SseService;
@@ -46,6 +48,9 @@ public class AdminRestController {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private CouponRepository couponRepository;
 
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
@@ -1762,6 +1767,8 @@ public class AdminRestController {
         }
     }
 
+
+
     private String getNovelFolderName(Novel novel) {
         if (novel == null) return "unknown";
         String folderName = novel.getTitle();
@@ -2170,5 +2177,97 @@ public class AdminRestController {
         }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Email dispatch initiated successfully for " + recipients.size() + " recipient(s)."));
+    }
+
+    // --- Coupon Management API ---
+    @GetMapping("/coupons")
+    public ResponseEntity<?> getAllCoupons(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+        return ResponseEntity.ok(couponRepository.findAllByOrderByIdAsc());
+    }
+
+    @PostMapping("/coupons")
+    public ResponseEntity<?> saveCoupon(
+            @RequestParam(required = false) Long id,
+            @RequestParam String code,
+            @RequestParam Double discountPercentage,
+            @RequestParam(required = false) String assignedUserEmail,
+            @RequestParam(required = false) Boolean active,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Coupon code is required."));
+        }
+        if (discountPercentage == null || discountPercentage < 0 || discountPercentage > 100) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Discount percentage must be between 0 and 100."));
+        }
+
+        String cleanCode = code.toUpperCase().trim();
+        String cleanEmail = (assignedUserEmail != null && !assignedUserEmail.trim().isEmpty()) ? assignedUserEmail.trim() : null;
+        boolean cleanActive = (active != null) ? active : true;
+
+        Coupon coupon;
+        if (id != null) {
+            coupon = couponRepository.findById(id).orElse(new Coupon());
+            // Check uniqueness if code is changed
+            if (!cleanCode.equals(coupon.getCode())) {
+                if (couponRepository.findByCodeIgnoreCase(cleanCode).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Coupon code already exists."));
+                }
+            }
+        } else {
+            if (couponRepository.findByCodeIgnoreCase(cleanCode).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Coupon code already exists."));
+            }
+            coupon = new Coupon();
+        }
+
+        coupon.setCode(cleanCode);
+        coupon.setDiscountPercentage(discountPercentage);
+        coupon.setAssignedUserEmail(cleanEmail);
+        coupon.setActive(cleanActive);
+
+        Coupon saved = couponRepository.save(coupon);
+        return ResponseEntity.ok(Map.of("success", true, "coupon", saved, "message", "Coupon saved successfully."));
+    }
+
+    @PostMapping("/coupons/{couponId}/toggle")
+    public ResponseEntity<?> toggleCoupon(@PathVariable Long couponId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        Coupon coupon = couponRepository.findById(couponId).orElse(null);
+        if (coupon == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coupon not found."));
+        }
+
+        coupon.setActive(!coupon.getActive());
+        Coupon saved = couponRepository.save(coupon);
+        return ResponseEntity.ok(Map.of("success", true, "active", saved.getActive(), "message", "Coupon state updated."));
+    }
+
+    @DeleteMapping("/coupons/{couponId}")
+    public ResponseEntity<?> deleteCoupon(@PathVariable Long couponId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        if (!couponRepository.existsById(couponId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coupon not found."));
+        }
+
+        couponRepository.deleteById(couponId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Coupon deleted successfully."));
     }
 }

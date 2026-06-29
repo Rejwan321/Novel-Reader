@@ -224,6 +224,9 @@ public class AuthRestController {
         }
 
         Optional<User> userOpt = userService.getUserByEmail(email.trim());
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByName(email.trim());
+        }
         if (userOpt.isEmpty() || !com.reader.Novel.Reader.util.PasswordUtils.checkPassword(password, userOpt.get().getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid email or password."));
         }
@@ -982,13 +985,19 @@ public class AuthRestController {
     @PostMapping("/forgot-password/request")
     public ResponseEntity<?> requestForgotPassword(@RequestParam("email") String email) {
         if (email == null || email.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
+            return ResponseEntity.badRequest().body(Map.of("error", "Email or username is required."));
         }
-        String cleanEmail = email.trim().toLowerCase();
-        Optional<User> userOpt = userService.getUserByEmail(cleanEmail);
+        String cleanInput = email.trim();
+        Optional<User> userOpt = userService.getUserByEmail(cleanInput);
         if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No user found with this email address."));
+            userOpt = userRepository.findByName(cleanInput);
         }
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No user found with this email or username."));
+        }
+
+        User user = userOpt.get();
+        String cleanEmail = user.getEmail().toLowerCase();
 
         // Generate 6 digit numeric OTP
         String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
@@ -1006,7 +1015,7 @@ public class AuthRestController {
         );
 
         emailService.sendCustomEmailAsync(cleanEmail, subject, body);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Verification code sent successfully to " + email));
+        return ResponseEntity.ok(Map.of("success", true, "message", "Verification code sent successfully to your registered email (" + cleanEmail + ")"));
     }
 
     @PostMapping("/forgot-password/reset")
