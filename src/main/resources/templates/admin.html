@@ -908,8 +908,7 @@
                                 <tr>
                                     <th><input type="checkbox" id="user-bulk-select-all" class="form-check-input-admin"></th>
                                     <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
+                                    <th>User Info</th>
                                     <th>Role Setting</th>
                                     <th>Snow Flakes</th>
                                     <th>Actions</th>
@@ -921,14 +920,15 @@
                                         <input type="checkbox" class="user-bulk-checkbox form-check-input-admin" th:value="${u.id}" th:if="${session.user.id != u.id}">
                                         <span th:if="${session.user.id == u.id}" class="text-muted small">-</span>
                                     </td>
-                                    <td th:text="${u.id}">1</td>
+                                    <td class="user-row-id-cell" th:text="${u.id}">1</td>
                                     <td class="text-white fw-bold">
-                                        <span th:text="${u.name}">Sakura Reader</span>
+                                        <span class="user-row-name-text" th:text="${u.name}">Sakura Reader</span>
                                         <span th:if="${u.banned}" class="badge bg-danger ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Banned</span>
                                         <span th:if="${u.timeoutUntil != null and u.timeoutUntil.isAfter(T(java.time.LocalDateTime).now())}" 
                                               class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Timeout</span>
+                                        <br>
+                                        <span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;" th:text="${u.email}">sakura@sakura.com</span>
                                     </td>
-                                    <td th:text="${u.email}">sakura@sakura.com</td>
                                     <td>
                                         <!-- Prevent changing self -->
                                         <select th:if="${session.user.id != u.id}" 
@@ -963,8 +963,9 @@
                                                     th:data-id="${u.id}"
                                                     th:data-name="${u.name}"
                                                     th:data-email="${u.email}"
-                                                    th:data-role="${u.user_type}">
-                                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                                    th:data-role="${u.user_type}"
+                                                    title="Edit User">
+                                                <i class="fa-solid fa-pen-to-square"></i>
                                             </button>
                                             <!-- Ban / Unban -->
                                             <button th:if="${session.user.id != u.id and !u.banned}" 
@@ -997,8 +998,9 @@
                                                     type="button" 
                                                     class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user"
                                                     th:data-id="${u.id}"
-                                                    th:data-name="${u.name}">
-                                                <i class="fa-solid fa-trash-can me-1"></i>Delete
+                                                    th:data-name="${u.name}"
+                                                    title="Delete User">
+                                                <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                             <span th:if="${session.user.id == u.id}" class="text-muted small">-</span>
                                         </div>
@@ -1626,7 +1628,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='2.2')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.3')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -2431,10 +2433,12 @@
                 var isSelf = currentUserSession && Number(user.id) === Number(currentUserSession.id);
                 var selectHtml = '';
                 var deleteBtnHtml = '';
+                var checkboxHtml = '';
 
                 if (isSelf) {
                     selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
                     deleteBtnHtml = '<span class="text-muted small">-</span>';
+                    checkboxHtml = '<td><span class="text-muted small">-</span></td>';
                 } else {
                     selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
                         '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
@@ -2442,15 +2446,19 @@
                         '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
                         '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
                         '</select>';
-                    deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '">' +
-                        '<i class="fa-solid fa-trash-can me-1"></i>Delete' +
+                    deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '" title="Delete User">' +
+                        '<i class="fa-solid fa-trash-can"></i>' +
                         '</button>';
+                    checkboxHtml = '<td><input type="checkbox" class="user-bulk-checkbox form-check-input-admin" value="' + user.id + '"></td>';
                 }
 
                 var rowHtml = '<tr id="admin-user-row-' + user.id + '" style="display: none;">' +
-                    '<td>' + user.id + '</td>' +
-                    '<td class="text-white fw-bold user-row-name">' + user.name + '</td>' +
-                    '<td class="user-row-email">' + user.email + '</td>' +
+                    checkboxHtml +
+                    '<td class="user-row-id-cell">' + user.id + '</td>' +
+                    '<td class="text-white fw-bold">' +
+                    '<span class="user-row-name-text">' + user.name + '</span>' +
+                    '<br><span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;">' + user.email + '</span>' +
+                    '</td>' +
                     '<td>' + selectHtml + '</td>' +
                     '<td>' +
                     '<div class="d-flex align-items-center gap-1">' +
@@ -2462,8 +2470,8 @@
                     '</td>' +
                     '<td>' +
                     '<div class="d-flex align-items-center gap-2">' +
-                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-email="' + user.email + '" data-role="' + user.user_type + '">' +
-                    '<i class="fa-solid fa-pen-to-square me-1"></i>Edit' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-email="' + user.email + '" data-role="' + user.user_type + '" title="Edit User">' +
+                    '<i class="fa-solid fa-pen-to-square"></i>' +
                     '</button>' +
                     deleteBtnHtml +
                     '</div>' +
@@ -2510,7 +2518,7 @@
             window.handleUserUpdatedRealtime = function(oldUserId, user) {
                 var row = $("#admin-user-row-" + oldUserId);
                 if (row.length) {
-                    row.find(".user-row-name").text(user.name);
+                    row.find(".user-row-name-text").text(user.name);
                     row.find(".user-row-email").text(user.email);
                     
                     var select = row.find(".user-role-select");
@@ -2552,7 +2560,7 @@
                         row.find(".user-role-select").attr("data-id", user.id).data("id", user.id);
                         row.find(".user-balance-input").attr("data-id", user.id).data("id", user.id);
                         row.find(".btn-update-balance").attr("data-id", user.id).data("id", user.id);
-                        row.find("td:first").text(user.id);
+                        row.find(".user-row-id-cell").text(user.id);
 
                         // Move the row to its new sorted position
                         row.detach();
