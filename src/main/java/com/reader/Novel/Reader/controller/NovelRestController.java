@@ -345,7 +345,13 @@ public class NovelRestController {
             String dynamicBaseUrl = systemSettingRepository.findById("app.base_url")
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse(appBaseUrl);
-            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "http://localhost:8080";
+            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "";
+            if (cleanBaseUrl.isEmpty() || "/".equals(cleanBaseUrl)) {
+                cleanBaseUrl = "http://localhost:8080";
+            }
+            if (!cleanBaseUrl.toLowerCase().startsWith("http://") && !cleanBaseUrl.toLowerCase().startsWith("https://")) {
+                cleanBaseUrl = "http://" + cleanBaseUrl;
+            }
             if (cleanBaseUrl.endsWith("/")) {
                 cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
             }
