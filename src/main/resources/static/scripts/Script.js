@@ -497,28 +497,106 @@ $(document).ready(function() {
 
     // --- AJAX Authentication Operations ---
 
-    // Login Form Submit
+    // Transition for forgot password
+    $(document).on("click", "#link-forgot-password", function(e) {
+        e.preventDefault();
+        $("#login-credentials-section").hide();
+        $("#login-forgot-request-section").fadeIn();
+    });
+
+    $(document).on("click", "#link-forgot-back-to-login", function(e) {
+        e.preventDefault();
+        $("#login-forgot-request-section").hide();
+        $("#login-credentials-section").fadeIn();
+    });
+
+    $(document).on("click", "#link-forgot-reset-back-to-login", function(e) {
+        e.preventDefault();
+        $("#login-forgot-reset-section").hide();
+        $("#login-credentials-section").fadeIn();
+    });
+
+    // Login Form Submit (handles standard login, forgot request, and forgot reset)
     $("#login-form-modal").submit(function(e) {
         e.preventDefault();
-        var email = $("#login-email").val();
-        var password = $("#login-password").val();
-        var rememberMe = $("#login-remember-me").is(":checked");
 
-        $.post("/api/auth/login", {
-            email: email,
-            password: password,
-            rememberMe: rememberMe
-        })
-        .done(function(res) {
-            showToast("Welcome back, " + res.user.name + "!");
-            setTimeout(function() {
-                location.reload();
-            }, 1200);
-        })
-        .fail(function(err) {
-            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Invalid login credentials.";
-            showToast(msg, "error");
-        });
+        if ($("#login-credentials-section").is(":visible")) {
+            var email = $("#login-email").val();
+            var password = $("#login-password").val();
+            var rememberMe = $("#login-remember-me").is(":checked");
+
+            if (!email || !email.trim() || !password) {
+                showToast("Email and password are required.", "warning");
+                return;
+            }
+
+            $.post("/api/auth/login", {
+                email: email,
+                password: password,
+                rememberMe: rememberMe
+            })
+            .done(function(res) {
+                showToast("Welcome back, " + res.user.name + "!");
+                setTimeout(function() {
+                    location.reload();
+                }, 1200);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Invalid login credentials.";
+                showToast(msg, "error");
+            });
+        } 
+        else if ($("#login-forgot-request-section").is(":visible")) {
+            var email = $("#forgot-email").val();
+            if (!email || !email.trim()) {
+                showToast("Email is required to request reset code.", "warning");
+                return;
+            }
+
+            showToast("Sending reset code...", "info");
+            $.post("/api/auth/forgot-password/request", {
+                email: email
+            })
+            .done(function(res) {
+                showToast(res.message);
+                $("#login-forgot-request-section").hide();
+                $("#login-forgot-reset-section").fadeIn();
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to send verification code.";
+                showToast(msg, "error");
+            });
+        } 
+        else if ($("#login-forgot-reset-section").is(":visible")) {
+            var email = $("#forgot-email").val();
+            var otp = $("#forgot-otp").val();
+            var newPassword = $("#forgot-new-password").val();
+
+            if (!otp || !otp.trim() || !newPassword) {
+                showToast("Verification code and new password are required.", "warning");
+                return;
+            }
+
+            showToast("Resetting password...", "info");
+            $.post("/api/auth/forgot-password/reset", {
+                email: email,
+                otp: otp,
+                newPassword: newPassword
+            })
+            .done(function(res) {
+                showToast(res.message);
+                setTimeout(function() {
+                    $("#login-forgot-reset-section").hide();
+                    $("#login-credentials-section").fadeIn();
+                    $("#login-email").val(email);
+                    $("#login-password").val("");
+                }, 1500);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to reset password.";
+                showToast(msg, "error");
+            });
+        }
     });
 
     // Signup Form Submit

@@ -118,54 +118,94 @@
 
         <div class="form-container login-container">
             <form class="form-con" id="login-form-modal" action="#">
-                <h1>Login</h1>
-                
-                <!-- Google Sign-in standard button (login view) -->
-                <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
-                     data-type="standard"
-                     data-shape="pill"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left"
-                     style="margin: 15px auto;">
+                <!-- Login Credentials Section -->
+                <div id="login-credentials-section" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                    <h1>Login</h1>
+                    
+                    <!-- Google Sign-in standard button (login view) -->
+                    <div th:if="${googleEnabled and googleClientId != null and !googleClientId.isEmpty()}" class="g_id_signin"
+                         data-type="standard"
+                         data-shape="pill"
+                         data-theme="outline"
+                         data-text="signin_with"
+                         data-size="large"
+                         data-logo_alignment="left"
+                         style="margin: 15px auto;">
+                    </div>
+
+                    <!-- Discord Sign-in button (login view) -->
+                    <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-btn">
+                        <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.9-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,73.1,0c.82.71,1.68,1.4,2.58,2a68.69,68.69,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,49.58,123.6,26.9,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+                        </svg>
+                        <span>Sign in with Discord</span>
+                    </a>
+                    
+                    <span>or use your account</span>
+                    <input class="insert" id="login-email" type="text" placeholder="Username / Email">
+                    <div class="password-wrapper">
+                        <input class="insert" id="login-password" type="password" placeholder="Password" style="margin: 0; padding-right: 40px;">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password', this)" tabindex="-1">
+                            <!-- Eye icon -->
+                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <!-- Eye-slash icon -->
+                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center w-100 mb-3 px-1" style="font-size: 13px; color: #8c8c9e; margin-top: 15px;">
+                        <label class="d-flex align-items-center gap-2 m-0" style="user-select: none; cursor: pointer;">
+                            <input type="checkbox" id="login-remember-me" style="margin: 0; width: auto; cursor: pointer;">
+                            Remember Me
+                        </label>
+                        <a href="#" id="link-forgot-password" class="social text-decoration-none m-0" style="color: #8c8c9e;">Forgot your password?</a>
+                    </div>
+                    <button class="log-button" type="submit">Login</button>
+                    <div class="mobile-auth-toggle">
+                        <span>Don't have an account? <a href="#" id="to-signup-btn">Sign Up</a></span>
+                    </div>
                 </div>
 
-                <!-- Discord Sign-in button (login view) -->
-                <a th:if="${discordEnabled}" href="/api/auth/discord/login" class="discord-btn">
-                    <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c.9-.65,1.76-1.34,2.58-2a75.58,75.58,0,0,0,73.1,0c.82.71,1.68,1.4,2.58,2a68.69,68.69,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129.87,49.58,123.6,26.9,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
-                    </svg>
-                    <span>Sign in with Discord</span>
-                </a>
-                
-                <span>or use your account</span>
-                <input class="insert" id="login-email" type="text" placeholder="Username / Email" required>
-                <div class="password-wrapper">
-                    <input class="insert" id="login-password" type="password" placeholder="Password" required style="margin: 0; padding-right: 40px;">
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password', this)" tabindex="-1">
-                        <!-- Eye icon -->
-                        <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <!-- Eye-slash icon -->
-                        <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                        </svg>
-                    </button>
+                <!-- Forgot Password Request Section -->
+                <div id="login-forgot-request-section" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                    <h1>Reset Password</h1>
+                    <span style="font-size: 14px; color: #a9a9b9; margin-bottom: 20px; text-align: center; line-height: 1.4;">
+                        Enter your registered email below to receive a password reset verification code.
+                    </span>
+                    <input class="insert" id="forgot-email" type="email" placeholder="Enter your email">
+                    <button class="log-button" type="submit" style="margin-top: 15px;">Send Reset Code</button>
+                    <a href="#" id="link-forgot-back-to-login" class="mt-3 text-violet" style="font-size: 13px; text-decoration: none;">Back to Login</a>
                 </div>
-                <div class="d-flex justify-content-between align-items-center w-100 mb-3 px-1" style="font-size: 13px; color: #8c8c9e; margin-top: 15px;">
-                    <label class="d-flex align-items-center gap-2 m-0" style="user-select: none; cursor: pointer;">
-                        <input type="checkbox" id="login-remember-me" style="margin: 0; width: auto; cursor: pointer;">
-                        Remember Me
-                    </label>
-                    <a href="#" class="social text-decoration-none m-0" style="color: #8c8c9e;">Forgot your password?</a>
-                </div>
-                <button class="log-button" type="submit">Login</button>
-                <div class="mobile-auth-toggle">
-                    <span>Don't have an account? <a href="#" id="to-signup-btn">Sign Up</a></span>
+
+                <!-- Forgot Password Reset Section -->
+                <div id="login-forgot-reset-section" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                    <h1>New Password</h1>
+                    <span style="font-size: 14px; color: #a9a9b9; margin-bottom: 20px; text-align: center; line-height: 1.4;">
+                        Enter the 6-digit code sent to your email and your new password.
+                    </span>
+                    <input class="insert" id="forgot-otp" type="text" placeholder="6-digit Verification Code" maxlength="6" style="text-align: center; font-size: 18px; letter-spacing: 2px;">
+                    <div class="password-wrapper" style="width: 100%;">
+                        <input class="insert" id="forgot-new-password" type="password" placeholder="New Password" style="margin: 0; padding-right: 40px;">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('forgot-new-password', this)" tabindex="-1">
+                            <!-- Eye icon -->
+                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <!-- Eye-slash icon -->
+                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="log-button" type="submit" style="margin-top: 15px;">Reset Password</button>
+                    <a href="#" id="link-forgot-reset-back-to-login" class="mt-3 text-violet" style="font-size: 13px; text-decoration: none;">Back to Login</a>
                 </div>
             </form>
         </div>
