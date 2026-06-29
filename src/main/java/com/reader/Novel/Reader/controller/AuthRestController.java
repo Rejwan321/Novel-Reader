@@ -193,11 +193,30 @@ public class AuthRestController {
         return ResponseEntity.ok(Map.of("success", true, "user", user));
     }
 
+    private String generateRememberMeToken(User user) {
+        String data = user.getId() + ":" + user.getPassword() + ":YukiTalesSecretRememberMeKey";
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return user.getId() + ":" + hexString.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @RequestParam String email,
             @RequestParam String password,
-            jakarta.servlet.http.HttpServletRequest request) {
+            @RequestParam(required = false) Boolean rememberMe,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
 
         if (email == null || email.trim().isEmpty() ||
             password == null || password.trim().isEmpty()) {
@@ -224,12 +243,30 @@ public class AuthRestController {
         }
         HttpSession session = request.getSession(true);
         session.setAttribute("user", user);
+
+        // If rememberMe is checked, set the cookie
+        if (Boolean.TRUE.equals(rememberMe)) {
+            String token = generateRememberMeToken(user);
+            if (token != null) {
+                jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("remember_me", token);
+                cookie.setMaxAge(30 * 24 * 60 * 60); // 30 days
+                cookie.setPath("/");
+                cookie.setHttpOnly(true);
+                cookie.setSecure(request.isSecure());
+                response.addCookie(cookie);
+            }
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "user", user));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpSession session) {
+    public ResponseEntity<?> logout(HttpSession session, jakarta.servlet.http.HttpServletResponse response) {
         session.invalidate();
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("remember_me", "");
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
