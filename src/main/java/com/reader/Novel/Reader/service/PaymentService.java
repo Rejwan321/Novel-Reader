@@ -75,16 +75,17 @@ public class PaymentService {
      */
     public String generatePaymentHash(String txnid, Double amount, String productinfo, 
                                       String firstname, String email, String udf1, 
-                                      String udf2, String udf3) {
+                                      String udf2, String udf3, String udf4) {
         String key = getPayUMerchantKey();
         String salt = getPayUMerchantSalt();
         
         String amountStr = String.format(java.util.Locale.US, "%.2f", amount);
+        String u4 = udf4 != null ? udf4.trim() : "";
         
-        // 8 pipes between udf3 and SALT to represent empty udf4, udf5, udf6, udf7, udf8, udf9, udf10
+        // 7 pipes after udf4 representing empty udf5, udf6, udf7, udf8, udf9, udf10
         String hashSequence = key + "|" + txnid + "|" + amountStr + "|" + productinfo + "|" + 
                               firstname + "|" + email + "|" + udf1 + "|" + udf2 + "|" + 
-                              udf3 + "||||||||" + salt;
+                              udf3 + "|" + u4 + "|||||||" + salt;
         
         System.out.println("PayU Hash Sequence to encrypt: " + hashSequence);
         return hashCal(hashSequence);
@@ -111,13 +112,15 @@ public class PaymentService {
         String udf1 = params.get("udf1");
         String udf2 = params.get("udf2");
         String udf3 = params.get("udf3");
+        String udf4 = params.get("udf4");
+        String u4 = udf4 != null ? udf4.trim() : "";
         String status = params.get("status");
         String additionalCharges = params.get("additionalCharges");
         
         String salt = getPayUMerchantSalt();
 
-        // udf4 and udf5 are empty, so 8 pipes between status and udf3
-        String hashSequence = status + "||||||||" + udf3 + "|" + udf2 + "|" + udf1 + "|" + 
+        // 7 pipes before u4 representing empty udf5 to udf10
+        String hashSequence = status + "|||||||" + u4 + "|" + udf3 + "|" + udf2 + "|" + udf1 + "|" + 
                               email + "|" + firstname + "|" + productinfo + "|" + amount + "|" + 
                               txnid + "|" + key;
 
@@ -136,7 +139,7 @@ public class PaymentService {
     /**
      * Credits flakes to the user and saves a FlakePurchase record.
      */
-    public void fulfillPayment(Long userId, Integer flakesAmount, Double price) {
+    public void fulfillPayment(Long userId, Integer flakesAmount, Double price, String couponCode) {
         User user = userService.getUserById(userId);
         if (user != null && user.getId() != null) {
             user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + flakesAmount);
@@ -146,10 +149,11 @@ public class PaymentService {
             flakePurchase.setUserId(user.getId());
             flakePurchase.setAmount(flakesAmount);
             flakePurchase.setPrice(price);
+            flakePurchase.setCouponCode(couponCode);
             flakePurchase.setPurchasedAt(LocalDateTime.now());
             flakePurchaseRepository.save(flakePurchase);
 
-            System.out.println("PayU payment fulfilled successfully for user: " + userId + ", amount: " + flakesAmount);
+            System.out.println("PayU payment fulfilled successfully for user: " + userId + ", amount: " + flakesAmount + ", coupon: " + couponCode);
         }
     }
 

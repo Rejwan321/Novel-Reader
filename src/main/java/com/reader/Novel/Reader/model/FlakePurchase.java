@@ -17,6 +17,7 @@ public class FlakePurchase {
     private Integer amount;
     private Double price;
     private LocalDateTime purchasedAt;
+    private String couponCode;
 
     public FlakePurchase() {}
 
@@ -25,5 +26,13 @@ public class FlakePurchase {
         this.amount = amount;
         this.price = price;
         this.purchasedAt = purchasedAt;
+    }
+
+    public FlakePurchase(Long userId, Integer amount, Double price, LocalDateTime purchasedAt, String couponCode) {
+        this.userId = userId;
+        this.amount = amount;
+        this.price = price;
+        this.purchasedAt = purchasedAt;
+        this.couponCode = couponCode;
     }
 }
