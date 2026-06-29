@@ -502,10 +502,12 @@ $(document).ready(function() {
         e.preventDefault();
         var email = $("#login-email").val();
         var password = $("#login-password").val();
+        var rememberMe = $("#login-remember-me").is(":checked");
 
         $.post("/api/auth/login", {
             email: email,
-            password: password
+            password: password,
+            rememberMe: rememberMe
         })
         .done(function(res) {
             showToast("Welcome back, " + res.user.name + "!");
