@@ -1289,27 +1289,7 @@ $(document).ready(function() {
         });
     });
 
-    // Toggle hide/unhide novel
-    $(document).on("click", ".btn-toggle-hide", function(e) {
-        e.preventDefault();
-        var btn = $(this);
-        var novelId = btn.data("id");
 
-        btn.prop("disabled", true);
-
-        $.post("/api/admin/novels/" + novelId + "/hide")
-        .done(function(res) {
-            showToast(res.message);
-            setTimeout(function() {
-                location.reload();
-            }, 800);
-        })
-        .fail(function(err) {
-            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to hide story.";
-            showToast(msg, "error");
-            btn.prop("disabled", false);
-        });
-    });
 
     // Autocomplete for Genres in Admin panel
     const ALL_GENRES = [

@@ -809,12 +809,6 @@
                                                          th:title="${n.id == featuredNovelId} ? 'Unfeature Story' : 'Feature Story'">
                                                      <i th:class="${n.id == featuredNovelId} ? 'fa-solid fa-star text-warning' : 'fa-regular fa-star'"></i>
                                                  </button>
-                                                <button type="button" class="btn btn-sm btn-action-premium btn-toggle-hide"
-                                                         th:classappend="${n.hidden} ? 'btn-action-hidden' : 'btn-action-hide'"
-                                                         th:data-id="${n.id}"
-                                                         th:title="${n.hidden} ? 'Unhide Story' : 'Hide Story'">
-                                                     <i th:class="${n.hidden} ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
-                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta"
                                                          th:data-id="${n.id}"
                                                          th:data-title="${n.title}"
@@ -1705,7 +1699,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='2.7')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.8')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -2792,9 +2786,7 @@
                     '<button type="button" class="btn btn-sm btn-action-premium btn-toggle-feature ' + featureBtnClass + '" data-id="' + story.id + '" title="' + (isFeatured ? 'Unfeature Story' : 'Feature Story') + '">' +
                     '<i class="' + starIconClass + '"></i>' +
                     '</button>' +
-                    '<button type="button" class="btn btn-sm btn-action-premium btn-toggle-hide ' + (story.hidden ? 'btn-action-hidden' : 'btn-action-hide') + '" data-id="' + story.id + '" title="' + (story.hidden ? 'Unhide Story' : 'Hide Story') + '">' +
-                    '<i class="' + (story.hidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye') + '"></i>' +
-                    '</button>' +
+
                     '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta" ' +
                     'data-id="' + story.id + '" ' +
                     'data-title="' + escapeHtml(story.title) + '" ' +
@@ -2903,15 +2895,7 @@
                     row.find(".btn-delete-story").attr("data-title", story.title);
                     row.find(".btn-manage-chapters").attr("data-title", story.title);
 
-                    var hideBtn = row.find(".btn-toggle-hide");
-                    if (hideBtn.length) {
-                        var isHidden = !!story.hidden;
-                        hideBtn.removeClass("btn-action-hidden btn-action-hide")
-                               .addClass(isHidden ? "btn-action-hidden" : "btn-action-hide");
-                        hideBtn.find("i").removeClass("fa-solid fa-eye-slash fa-solid fa-eye")
-                               .addClass(isHidden ? "fa-solid fa-eye-slash" : "fa-solid fa-eye");
-                        hideBtn.attr("title", isHidden ? "Unhide Story" : "Hide Story");
-                    }
+
                 }
             };
 

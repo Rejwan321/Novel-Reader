@@ -56,13 +56,6 @@ public class NovelController {
         String userRole = loggedInUser != null ? loggedInUser.getUser_type() : "READER";
         Long currentUserId = loggedInUser != null ? loggedInUser.getId() : -1L;
 
-        novels = novels.stream()
-            .filter(n -> !n.getHidden() || 
-                         "ADMIN".equals(userRole) || 
-                         "OWNER".equals(userRole) || 
-                         "PROOFREADER".equals(userRole) || 
-                         currentUserId.equals(n.getCreatorId()))
-            .toList();
         
         if (type != null && !type.trim().isEmpty() && !"ALL".equalsIgnoreCase(type)) {
             novels = novels.stream()
@@ -202,15 +195,7 @@ public class NovelController {
         if (novel == null) {
             return "redirect:/";
         }
-        if (novel.getHidden()) {
-            if (loggedInUser == null || 
-                (!"ADMIN".equals(loggedInUser.getUser_type()) && 
-                 !"OWNER".equals(loggedInUser.getUser_type()) && 
-                 !"PROOFREADER".equals(loggedInUser.getUser_type()) && 
-                 !loggedInUser.getId().equals(novel.getCreatorId()))) {
-                return "redirect:/";
-            }
-        }
+
         model.addAttribute("novel", novel);
         
         User creator = null;
@@ -259,15 +244,7 @@ public class NovelController {
         if (novel == null) {
             return "redirect:/";
         }
-        if (novel.getHidden()) {
-            if (loggedInUser == null || 
-                (!"ADMIN".equals(loggedInUser.getUser_type()) && 
-                 !"OWNER".equals(loggedInUser.getUser_type()) && 
-                 !"PROOFREADER".equals(loggedInUser.getUser_type()) && 
-                 !loggedInUser.getId().equals(novel.getCreatorId()))) {
-                return "redirect:/";
-            }
-        }
+
         Chapter chapter = novelService.getChapterByNumber(id, chapterNumber);
         if (chapter == null) {
             return "redirect:/novel/" + id;
