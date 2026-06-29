@@ -7,8 +7,10 @@ import com.reader.Novel.Reader.model.Purchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.model.Review;
 import com.reader.Novel.Reader.model.Notification;
+import com.reader.Novel.Reader.model.Coupon;
 import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
+import com.reader.Novel.Reader.repository.CouponRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
 import com.reader.Novel.Reader.service.SseService;
@@ -46,6 +48,9 @@ public class AdminRestController {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private CouponRepository couponRepository;
 
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
@@ -1762,44 +1767,71 @@ public class AdminRestController {
         }
     }
 
+
+
+    private String getNovelFolderName(Novel novel) {
+        if (novel == null) return "unknown";
+        String folderName = novel.getTitle();
+        if (folderName == null || folderName.trim().isEmpty()) {
+            folderName = "story_" + novel.getId();
+        } else {
+            folderName = folderName.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+        }
+        return folderName;
+    }
+
+    private String getChapterFolderName(Chapter chapter) {
+        if (chapter == null) return "chapter_unknown";
+        String folderName = "Chapter " + chapter.getChapterNumber();
+        if (chapter.getTitle() != null && !chapter.getTitle().trim().isEmpty()) {
+            folderName += " - " + chapter.getTitle();
+        }
+        return folderName.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+    }
+
     private void syncNovelFoldersAndFiles(Novel novel) {
         if (novel == null || novel.getId() == null) return;
         
         String userDir = System.getProperty("user.dir");
-        Path srcMainDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", "stories", "story_" + novel.getId());
-        Path targetDir = Paths.get(userDir, "target", "classes", "static", "uploads", "stories", "story_" + novel.getId());
-        Path rootBackupDir = Paths.get(userDir, "uploads", "stories", "story_" + novel.getId());
+        String novelFolder = getNovelFolderName(novel);
+        
+        Path srcMainDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", novelFolder);
+        Path targetDir = Paths.get(userDir, "target", "classes", "static", "uploads", novelFolder);
+        Path rootBackupDir = Paths.get(userDir, "uploads", novelFolder);
         
         try {
-            // Create subdirectories
-            Files.createDirectories(srcMainDir.resolve("media"));
-            Files.createDirectories(srcMainDir.resolve("text"));
+            // Create cover picture directories
+            Files.createDirectories(srcMainDir.resolve("cover picture"));
+            Files.createDirectories(targetDir.resolve("cover picture"));
+            Files.createDirectories(rootBackupDir.resolve("cover picture"));
             
-            Files.createDirectories(targetDir.resolve("media"));
-            Files.createDirectories(targetDir.resolve("text"));
-            
-            Files.createDirectories(rootBackupDir.resolve("media"));
-            Files.createDirectories(rootBackupDir.resolve("text"));
-            
-            // Sync description
+            // Sync description to the root of the novel folder
             String desc = novel.getDescription() != null ? novel.getDescription() : "";
-            Files.writeString(srcMainDir.resolve("text").resolve("description.txt"), desc);
-            Files.writeString(targetDir.resolve("text").resolve("description.txt"), desc);
-            Files.writeString(rootBackupDir.resolve("text").resolve("description.txt"), desc);
+            Files.writeString(srcMainDir.resolve("description.txt"), desc);
+            Files.writeString(targetDir.resolve("description.txt"), desc);
+            Files.writeString(rootBackupDir.resolve("description.txt"), desc);
             
             // Sync cover image if local upload
             String coverUrl = novel.getCoverUrl();
-            if (coverUrl != null && coverUrl.startsWith("/uploads/") && !coverUrl.contains("/stories/")) {
+            if (coverUrl != null && coverUrl.startsWith("/uploads/") && !coverUrl.contains("/cover picture/")) {
                 String filename = coverUrl.substring(coverUrl.lastIndexOf("/") + 1);
+                String sourcePath = coverUrl.substring("/uploads/".length());
+                
+                Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", sourcePath);
+                Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", sourcePath);
+                Path rootFile = Paths.get(userDir, "uploads", sourcePath);
+                
+                // Fallback to root uploads/ if not found in subfolder
+                if (!Files.exists(rootFile)) {
+                    srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
+                    targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
+                    rootFile = Paths.get(userDir, "uploads", filename);
+                }
+                
                 String destFilename = "cover_" + filename;
-                
-                Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
-                Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
-                Path rootFile = Paths.get(userDir, "uploads", filename);
-                
-                Path destSrcFile = srcMainDir.resolve("media").resolve(destFilename);
-                Path destTargetFile = targetDir.resolve("media").resolve(destFilename);
-                Path destRootFile = rootBackupDir.resolve("media").resolve(destFilename);
+                Path destSrcFile = srcMainDir.resolve("cover picture").resolve(destFilename);
+                Path destTargetFile = targetDir.resolve("cover picture").resolve(destFilename);
+                Path destRootFile = rootBackupDir.resolve("cover picture").resolve(destFilename);
                 
                 if (Files.exists(srcFile)) {
                     Files.copy(srcFile, destSrcFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -1811,7 +1843,9 @@ public class AdminRestController {
                     Files.copy(rootFile, destRootFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
                 
-                novel.setCoverUrl("/uploads/stories/story_" + novel.getId() + "/media/" + destFilename);
+                // Set the coverUrl URL pointing to the new cover picture folder
+                String webUrlPath = "/uploads/" + novelFolder + "/cover picture/" + destFilename;
+                novel.setCoverUrl(webUrlPath);
                 novelService.saveNovel(novel);
             }
         } catch (IOException e) {
@@ -1827,19 +1861,85 @@ public class AdminRestController {
         syncNovelFoldersAndFiles(novel);
         
         String userDir = System.getProperty("user.dir");
-        Path srcTextDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", "stories", "story_" + novel.getId(), "text");
-        Path targetTextDir = Paths.get(userDir, "target", "classes", "static", "uploads", "stories", "story_" + novel.getId(), "text");
-        Path rootTextDir = Paths.get(userDir, "uploads", "stories", "story_" + novel.getId(), "text");
+        String novelFolder = getNovelFolderName(novel);
+        String chapterFolder = getChapterFolderName(chapter);
         
-        String chapFilename = "chapter_" + chapter.getChapterNumber() + ".txt";
-        String content = chapter.getContent() != null ? chapter.getContent() : "";
+        Path srcTextDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", novelFolder, chapterFolder);
+        Path targetTextDir = Paths.get(userDir, "target", "classes", "static", "uploads", novelFolder, chapterFolder);
+        Path rootTextDir = Paths.get(userDir, "uploads", novelFolder, chapterFolder);
         
         try {
+            Files.createDirectories(srcTextDir);
+            Files.createDirectories(targetTextDir);
+            Files.createDirectories(rootTextDir);
+            
+            // Sync chapter content images if any
+            String content = chapter.getContent() != null ? chapter.getContent() : "";
+            boolean contentChanged = false;
+            
+            // Scan for matches of pattern "/uploads/...img"
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/uploads/([^\\s\"'>]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(content);
+            StringBuilder sb = new StringBuilder();
+            while (matcher.find()) {
+                String sourcePath = matcher.group(1);
+                // Make sure we don't match a path that is already in the target format
+                String targetIndicator = novelFolder + "/" + chapterFolder + "/";
+                if (!sourcePath.contains(targetIndicator)) {
+                    String filename = sourcePath.substring(sourcePath.lastIndexOf("/") + 1);
+                    
+                    Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", sourcePath);
+                    Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", sourcePath);
+                    Path rootFile = Paths.get(userDir, "uploads", sourcePath);
+                    
+                    // Fallback to root uploads/ if not found in subfolder
+                    if (!Files.exists(rootFile)) {
+                        srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
+                        targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
+                        rootFile = Paths.get(userDir, "uploads", filename);
+                    }
+                    
+                    Path destSrcFile = srcTextDir.resolve(filename);
+                    Path destTargetFile = targetTextDir.resolve(filename);
+                    Path destRootFile = rootTextDir.resolve(filename);
+                    
+                    if (Files.exists(srcFile)) {
+                        Files.copy(srcFile, destSrcFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    if (Files.exists(targetFile)) {
+                        Files.copy(targetFile, destTargetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    if (Files.exists(rootFile)) {
+                        Files.copy(rootFile, destRootFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    
+                    String newUrl = "/uploads/" + novelFolder + "/" + chapterFolder + "/" + filename;
+                    matcher.appendReplacement(sb, newUrl);
+                    contentChanged = true;
+                } else {
+                    matcher.appendReplacement(sb, matcher.group(0));
+                }
+            }
+            matcher.appendTail(sb);
+            
+            if (contentChanged) {
+                content = sb.toString();
+                chapter.setContent(content);
+                novelService.saveChapter(chapter);
+            }
+            
+            String chapFilename = "chapter_" + chapter.getChapterNumber() + ".txt";
             Files.writeString(srcTextDir.resolve(chapFilename), content);
             Files.writeString(targetTextDir.resolve(chapFilename), content);
             Files.writeString(rootTextDir.resolve(chapFilename), content);
+            
+            // Save another file content.txt inside the folder as requested by the user
+            Files.writeString(srcTextDir.resolve("content.txt"), content);
+            Files.writeString(targetTextDir.resolve("content.txt"), content);
+            Files.writeString(rootTextDir.resolve("content.txt"), content);
+            
         } catch (IOException e) {
-            System.err.println("Error synchronizing chapter text file: " + e.getMessage());
+            System.err.println("Error synchronizing chapter files: " + e.getMessage());
         }
     }
 
@@ -2077,5 +2177,97 @@ public class AdminRestController {
         }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Email dispatch initiated successfully for " + recipients.size() + " recipient(s)."));
+    }
+
+    // --- Coupon Management API ---
+    @GetMapping("/coupons")
+    public ResponseEntity<?> getAllCoupons(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+        return ResponseEntity.ok(couponRepository.findAllByOrderByIdAsc());
+    }
+
+    @PostMapping("/coupons")
+    public ResponseEntity<?> saveCoupon(
+            @RequestParam(required = false) Long id,
+            @RequestParam String code,
+            @RequestParam Double discountPercentage,
+            @RequestParam(required = false) String assignedUserEmail,
+            @RequestParam(required = false) Boolean active,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Coupon code is required."));
+        }
+        if (discountPercentage == null || discountPercentage < 0 || discountPercentage > 100) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Discount percentage must be between 0 and 100."));
+        }
+
+        String cleanCode = code.toUpperCase().trim();
+        String cleanEmail = (assignedUserEmail != null && !assignedUserEmail.trim().isEmpty()) ? assignedUserEmail.trim() : null;
+        boolean cleanActive = (active != null) ? active : true;
+
+        Coupon coupon;
+        if (id != null) {
+            coupon = couponRepository.findById(id).orElse(new Coupon());
+            // Check uniqueness if code is changed
+            if (!cleanCode.equals(coupon.getCode())) {
+                if (couponRepository.findByCodeIgnoreCase(cleanCode).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Coupon code already exists."));
+                }
+            }
+        } else {
+            if (couponRepository.findByCodeIgnoreCase(cleanCode).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Coupon code already exists."));
+            }
+            coupon = new Coupon();
+        }
+
+        coupon.setCode(cleanCode);
+        coupon.setDiscountPercentage(discountPercentage);
+        coupon.setAssignedUserEmail(cleanEmail);
+        coupon.setActive(cleanActive);
+
+        Coupon saved = couponRepository.save(coupon);
+        return ResponseEntity.ok(Map.of("success", true, "coupon", saved, "message", "Coupon saved successfully."));
+    }
+
+    @PostMapping("/coupons/{couponId}/toggle")
+    public ResponseEntity<?> toggleCoupon(@PathVariable Long couponId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        Coupon coupon = couponRepository.findById(couponId).orElse(null);
+        if (coupon == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coupon not found."));
+        }
+
+        coupon.setActive(!coupon.getActive());
+        Coupon saved = couponRepository.save(coupon);
+        return ResponseEntity.ok(Map.of("success", true, "active", saved.getActive(), "message", "Coupon state updated."));
+    }
+
+    @DeleteMapping("/coupons/{couponId}")
+    public ResponseEntity<?> deleteCoupon(@PathVariable Long couponId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        if (!couponRepository.existsById(couponId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coupon not found."));
+        }
+
+        couponRepository.deleteById(couponId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Coupon deleted successfully."));
     }
 }
