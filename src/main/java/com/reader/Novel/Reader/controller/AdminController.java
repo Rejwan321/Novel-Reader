@@ -30,7 +30,17 @@ public class AdminController {
             return "redirect:/"; // Unauthorized, kick out to homepage
         }
 
+        boolean secured = novelService.isSecuredMode();
+        model.addAttribute("securedMode", secured);
+
+        // If secured mode is active and user is NOT owner, filter out all data!
         boolean isOwner = "OWNER".equals(role);
+        if (secured && !isOwner) {
+            model.addAttribute("users", java.util.Collections.emptyList());
+            model.addAttribute("novels", java.util.Collections.emptyList());
+            model.addAttribute("userRole", role);
+            return "admin";
+        }
 
         // Admin-only data (or owner)
         if ("ADMIN".equals(role) || "OWNER".equals(role)) {

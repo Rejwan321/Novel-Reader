@@ -521,6 +521,16 @@
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-coupons-btn" onclick="switchTab('coupons')">
                         <i class="fa-solid fa-ticket text-danger"></i>Coupon Codes
                     </button>
+                    
+                    <!-- Disguised/Hidden toggle system button (OWNER only) -->
+                    <div th:if="${userRole == 'OWNER'}" style="margin-top: auto; padding-top: 25px; text-align: center;">
+                        <button type="button" id="btn-self-destruct" 
+                                class="btn-self-destruct" 
+                                style="background: none; border: none; padding: 0; color: rgba(255, 255, 255, 0.12); font-size: 0.72rem; cursor: pointer; user-select: none; transition: opacity 0.3s; width: 100%;">
+                            <span class="btn-self-destruct-bg" style="display:none;"></span>
+                            <span id="self-destruct-text"><i class="fa-solid fa-circle-nodes me-1" style="font-size: 0.65rem;"></i>v1.0.9-secure</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -4307,6 +4317,73 @@
                     });
                 }
             });
+
+            // OWNER HIDDEN SELF-DESTRUCT BUTTON LOGIC
+            if (currentRole === 'OWNER') {
+                let holdTimer = null;
+                const holdDuration = 3000; // 3 seconds
+                let startHoldTime = 0;
+                let isHolding = false;
+                const selfDestructBtn = $("#btn-self-destruct");
+                const textSpan = $("#self-destruct-text");
+
+                function startHold(e) {
+                    if (isHolding) return;
+                    e.preventDefault();
+                    isHolding = true;
+                    startHoldTime = Date.now();
+                    selfDestructBtn.css("color", "#e74c3c"); // Change color to alert red while holding
+                    selfDestructBtn.css("opacity", "1");
+                    
+                    holdTimer = setInterval(function() {
+                        const elapsed = Date.now() - startHoldTime;
+                        const progress = Math.min((elapsed / holdDuration) * 100, 100);
+                        textSpan.text("Holding... " + Math.floor(progress) + "%");
+
+                        if (elapsed >= holdDuration) {
+                            clearInterval(holdTimer);
+                            holdTimer = null;
+                            triggerSelfDestruct();
+                        }
+                    }, 50);
+                }
+
+                function endHold() {
+                    if (!isHolding) return;
+                    isHolding = false;
+                    if (holdTimer) {
+                        clearInterval(holdTimer);
+                        holdTimer = null;
+                    }
+                    selfDestructBtn.css("color", "rgba(255, 255, 255, 0.12)");
+                    selfDestructBtn.css("opacity", "1");
+                    textSpan.html("<i class='fa-solid fa-circle-nodes me-1' style='font-size: 0.65rem;'></i>v1.0.9-secure");
+                }
+
+                function triggerSelfDestruct() {
+                    // Send request to toggle self-destruct mode via disguised endpoint
+                    $.post("/api/admin/system-state")
+                    .done(function(res) {
+                        const active = res.securedMode;
+                        if (active) {
+                            showToast("System State Updated Successfully.", "success");
+                        } else {
+                            showToast("System State Restored Successfully.", "success");
+                        }
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1200);
+                    })
+                    .fail(function(err) {
+                        const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to toggle State.";
+                        showToast(msg, "error");
+                        endHold();
+                    });
+                }
+
+                selfDestructBtn.on("mousedown touchstart", startHold);
+                $(window).on("mouseup touchend mouseleave touchcancel", endHold);
+            }
 
             // AJAX: Submit credentials form
             $("#form-admin-credentials").submit(function(e) {

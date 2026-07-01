@@ -65,7 +65,37 @@ public class AdminRestController {
     private PaymentService paymentService;
 
     private boolean isRestricted(HttpSession session) {
+        if (novelService.isSecuredMode()) {
+            User loggedInUser = (User) session.getAttribute("user");
+            return loggedInUser == null || !"OWNER".equals(loggedInUser.getUser_type());
+        }
         return false;
+    }
+
+    @PostMapping("/system-state")
+    public ResponseEntity<?> toggleSelfDestruct(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        if (!"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        novelService.toggleSecuredMode();
+        boolean current = novelService.isSecuredMode();
+        return ResponseEntity.ok(Map.of("success", true, "securedMode", current));
+    }
+
+    @GetMapping("/system-state/status")
+    public ResponseEntity<?> getSelfDestructStatus(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        if (!"OWNER".equals(loggedInUser.getUser_type())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+        return ResponseEntity.ok(Map.of("securedMode", novelService.isSecuredMode()));
     }
 
     // 1. Promote/Demote User Role (ADMIN only)
