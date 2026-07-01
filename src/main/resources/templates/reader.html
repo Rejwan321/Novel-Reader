@@ -548,20 +548,19 @@
                 
                 var date = new Date(comment.createdAt);
                 var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
-                var canDelete = (currentUserId && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
+                var canDelete = (currentUserId !== null && currentUserId !== undefined && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
                 var deleteBtnHtml = canDelete ? 
                     '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
                 
-                var canEdit = (currentUserId && currentUserId === author.id);
+                var canEdit = (currentUserId !== null && currentUserId !== undefined && currentUserId === author.id);
                 var editBtnHtml = canEdit ? 
                     '<button class="comment-action-btn btn-edit-comment-action" data-id="' + comment.id + '" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : '';
                 
                 var reportBtnHtml = 
                     '<button class="comment-action-btn btn-report-comment-action" data-id="' + comment.id + '" title="Report NSFW"><i class="fa-solid fa-circle-exclamation text-danger"></i> Report</button>';
 
-                var liked = comment.likedUserIds && comment.likedUserIds.indexOf(currentUserId) !== -1;
-                var disliked = comment.dislikedUserIds && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
+                var liked = comment.likedUserIds && currentUserId !== null && currentUserId !== undefined && comment.likedUserIds.indexOf(currentUserId) !== -1;
+                var disliked = comment.dislikedUserIds && currentUserId !== null && currentUserId !== undefined && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
                 
                 var likeClass = liked ? 'btn-liked' : '';
                 var dislikeClass = disliked ? 'btn-disliked' : '';
@@ -779,7 +778,7 @@
             // Toggle reply form
             $(document).on('click', '.btn-reply-comment-action', function(e) {
                 e.preventDefault();
-                if (!currentUserId) {
+                if (currentUserId === null || currentUserId === undefined) {
                     alert("Please login to post replies.");
                     return;
                 }
@@ -853,7 +852,7 @@
             // Like comment handler
             $(document).on('click', '.btn-like-comment-action', function(e) {
                 e.preventDefault();
-                if (!currentUserId) {
+                if (currentUserId === null || currentUserId === undefined) {
                     alert("Please login to like comments.");
                     return;
                 }
@@ -890,7 +889,7 @@
             // Dislike comment handler
             $(document).on('click', '.btn-dislike-comment-action', function(e) {
                 e.preventDefault();
-                if (!currentUserId) {
+                if (currentUserId === null || currentUserId === undefined) {
                     alert("Please login to dislike comments.");
                     return;
                 }
