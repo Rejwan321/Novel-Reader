@@ -127,13 +127,13 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify an owner account."));
         }
 
-        // Prevent self-demotion
-        if (loggedInUser.getId().equals(userToModify.getId())) {
+        // Prevent self-demotion (unless you are the OWNER)
+        if (loggedInUser.getId().equals(userToModify.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot demote yourself."));
         }
 
-        // Block assigning the OWNER role
-        if ("OWNER".equals(role)) {
+        // Block assigning the OWNER role (unless you are the OWNER)
+        if ("OWNER".equals(role) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot assign the owner role."));
         }
 
@@ -293,8 +293,8 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify an owner account."));
         }
 
-        // Prevent OWNER from demoting themselves or any OWNER demotion
-        if ("OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(role)) {
+        // Prevent OWNER from demoting themselves or any OWNER demotion (unless logged in user is OWNER)
+        if ("OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(role) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot demote an owner."));
         }
 
@@ -303,8 +303,8 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot demote yourself."));
         }
 
-        // Block assigning the OWNER role to non-owner accounts
-        if ("OWNER".equals(role) && !"OWNER".equals(userToModify.getUser_type())) {
+        // Block assigning the OWNER role to non-owner accounts (unless logged in user is OWNER)
+        if ("OWNER".equals(role) && !"OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot assign the owner role."));
         }
 
@@ -384,8 +384,8 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot delete an owner account."));
         }
 
-        // Prevent self-deletion
-        if (loggedInUser.getId().equals(userToDelete.getId())) {
+        // Prevent self-deletion (unless OWNER decides to)
+        if (loggedInUser.getId().equals(userToDelete.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot delete yourself."));
         }
 
@@ -427,7 +427,7 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot ban an owner account."));
         }
 
-        if (loggedInUser.getId().equals(userToBan.getId())) {
+        if (loggedInUser.getId().equals(userToBan.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot ban yourself."));
         }
 
@@ -494,7 +494,7 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot timeout an owner account."));
         }
 
-        if (loggedInUser.getId().equals(userToTimeout.getId())) {
+        if (loggedInUser.getId().equals(userToTimeout.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot timeout yourself."));
         }
 
@@ -533,7 +533,7 @@ public class AdminRestController {
 
         int count = 0;
         for (Long id : ids) {
-            if (loggedInUser.getId().equals(id)) continue; // skip self
+            if (loggedInUser.getId().equals(id) && !"OWNER".equals(loggedInUser.getUser_type())) continue; // skip self
             User u = userService.getUserById(id);
             if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
                 userService.deleteUser(id);
@@ -572,7 +572,7 @@ public class AdminRestController {
 
         int count = 0;
         for (Long id : ids) {
-            if (loggedInUser.getId().equals(id)) continue; // skip self
+            if (loggedInUser.getId().equals(id) && !"OWNER".equals(loggedInUser.getUser_type())) continue; // skip self
             User u = userService.getUserById(id);
             if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
                 u.setBanned(true);
@@ -649,7 +649,7 @@ public class AdminRestController {
         int count = 0;
         for (Object rawId : rawIds) {
             Long id = Long.parseLong(rawId.toString());
-            if (loggedInUser.getId().equals(id)) continue; // skip self
+            if (loggedInUser.getId().equals(id) && !"OWNER".equals(loggedInUser.getUser_type())) continue; // skip self
             User u = userService.getUserById(id);
             if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
                 if (durationMinutes <= 0) {
