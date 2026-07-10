@@ -448,7 +448,38 @@ public class NovelRestController {
         // Determine active gateway
         String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
         if (activeGateway.isEmpty()) {
-            activeGateway = paymentService.isPayUEnabled() ? "payu" : "mock";
+            activeGateway = paymentService.isRazorpayEnabled() ? "razorpay" : (paymentService.isPayUEnabled() ? "payu" : "mock");
+        }
+
+        if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
+            String txnid = "txn_" + System.currentTimeMillis();
+            // Convert USD price to INR assuming 1 USD = 83 INR
+            double priceInInr = price * 83.0;
+            
+            try {
+                String orderId = paymentService.createRazorpayOrder(priceInInr, txnid);
+                
+                Map<String, Object> responseMap = new java.util.HashMap<>();
+                responseMap.put("success", true);
+                responseMap.put("razorpay", true);
+                responseMap.put("keyId", paymentService.getRazorpayKeyId());
+                responseMap.put("orderId", orderId);
+                responseMap.put("amount", (int) Math.round(priceInInr * 100.0)); // in paise
+                responseMap.put("currency", "INR");
+                responseMap.put("name", "Yuki Tales");
+                responseMap.put("description", "Purchase " + amount + " Snow Flakes");
+                responseMap.put("prefillName", user.getName() != null ? user.getName() : "Reader");
+                responseMap.put("prefillEmail", user.getEmail() != null ? user.getEmail() : "reader@yukitales.com");
+                
+                responseMap.put("udf1", String.valueOf(user.getId()));
+                responseMap.put("udf2", String.valueOf(amount));
+                responseMap.put("udf3", String.valueOf(price));
+                responseMap.put("udf4", cleanCoupon != null ? cleanCoupon : "");
+                
+                return ResponseEntity.ok(responseMap);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Razorpay Order creation failed: " + e.getMessage()));
+            }
         }
 
         if ("payu".equals(activeGateway) && paymentService.isPayUEnabled()) {

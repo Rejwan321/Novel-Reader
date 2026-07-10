@@ -1100,6 +1100,72 @@ $(document).ready(function() {
         document.body.appendChild(form);
         form.submit();
     }
+
+    // Helper to open Razorpay overlay checkout form
+    function openRazorpayCheckout(res, btn, inputField) {
+        var options = {
+            "key": res.keyId,
+            "amount": res.amount,
+            "currency": res.currency,
+            "name": res.name,
+            "description": res.description,
+            "order_id": res.orderId,
+            "handler": function (response){
+                btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Verifying...');
+                $.post("/api/payment/razorpay/verify", {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    udf1: res.udf1,
+                    udf2: res.udf2,
+                    udf3: res.udf3,
+                    udf4: res.udf4
+                }).done(function(verifyRes) {
+                    showToast("Payment successful! " + res.description + " credited.");
+                    $("#navbar-user-balance").text(verifyRes.newBalance);
+                    
+                    if (inputField) {
+                        inputField.val('');
+                        $("#custom-flakes-price-display").text("$0.00");
+                    }
+                    
+                    var modalEl = document.getElementById('purchaseFlakesModal');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) {
+                        modal.hide();
+                    }
+                }).fail(function(verifyErr) {
+                    var msg = verifyErr.responseJSON && verifyErr.responseJSON.error ? verifyErr.responseJSON.error : "Signature verification failed.";
+                    showToast(msg, "error");
+                }).always(function() {
+                    if (inputField) {
+                        btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+                    } else {
+                        btn.prop("disabled", false).text("Purchase");
+                    }
+                });
+            },
+            "prefill": {
+                "name": res.prefillName,
+                "email": res.prefillEmail,
+                "contact": "9999999999"
+            },
+            "theme": {
+                "color": "#1a1538"
+            },
+            "modal": {
+                "ondismiss": function() {
+                    if (inputField) {
+                        btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+                    } else {
+                        btn.prop("disabled", false).text("Purchase");
+                    }
+                }
+            }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.open();
+    }
     $(document).on("click", ".btn-purchase-pack", function(e) {
         e.preventDefault();
         var btn = $(this);
@@ -1113,6 +1179,8 @@ $(document).ready(function() {
         .done(function(res) {
             if (res.payu) {
                 redirectToPayU(res);
+            } else if (res.razorpay) {
+                openRazorpayCheckout(res, btn, null);
             } else {
                 showToast(res.message);
                 $("#navbar-user-balance").text(res.newBalance);
@@ -1198,6 +1266,8 @@ $(document).ready(function() {
         .done(function(res) {
             if (res.payu) {
                 redirectToPayU(res);
+            } else if (res.razorpay) {
+                openRazorpayCheckout(res, btn, input);
             } else {
                 showToast(res.message);
                 $("#navbar-user-balance").text(res.newBalance);

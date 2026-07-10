@@ -1183,6 +1183,37 @@
                             </div>
                         </div>
 
+                        <!-- Razorpay Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-info me-2"></i>Razorpay Payment Gateway Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cred-razorpay-enabled" checked>
+                                    <label class="form-check-label text-white-50" for="cred-razorpay-enabled">Enable Razorpay Gateway</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-razorpay-key-id" class="form-label-admin">Key ID</label>
+                                <input type="text" class="form-input-admin" id="cred-razorpay-key-id" placeholder="e.g. rzp_test_...">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-razorpay-key-secret" class="form-label-admin">Key Secret</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-razorpay-key-secret" placeholder="e.g. secret-key">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-razorpay-key-secret')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-razorpay-key-secret"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-razorpay-mode" class="form-label-admin">Razorpay Environment Mode</label>
+                                <select class="form-input-admin" id="cred-razorpay-mode">
+                                    <option value="test">Sandbox (Test Mode)</option>
+                                    <option value="production">Production (Live Mode)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Mail Section -->
                         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
                             <h5 class="text-white mb-0"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
@@ -1605,6 +1636,10 @@
                 $("#cred-payu-merchant-key").val(data.payuMerchantKey || "");
                 $("#cred-payu-merchant-salt").val(data.payuMerchantSalt || "");
                 $("#cred-payu-mode").val(data.payuMode || "test");
+                $("#cred-razorpay-enabled").prop("checked", data.razorpayEnabled !== "false");
+                $("#cred-razorpay-key-id").val(data.razorpayKeyId || "");
+                $("#cred-razorpay-key-secret").val(data.razorpayKeySecret || "");
+                $("#cred-razorpay-mode").val(data.razorpayMode || "test");
             })
             .fail(function(err) {
                 var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
@@ -1675,7 +1710,11 @@
                 payuEnabled: $("#cred-payu-enabled").is(":checked") ? "true" : "false",
                 payuMerchantKey: $("#cred-payu-merchant-key").val(),
                 payuMerchantSalt: $("#cred-payu-merchant-salt").val(),
-                payuMode: $("#cred-payu-mode").val()
+                payuMode: $("#cred-payu-mode").val(),
+                razorpayEnabled: $("#cred-razorpay-enabled").is(":checked") ? "true" : "false",
+                razorpayKeyId: $("#cred-razorpay-key-id").val(),
+                razorpayKeySecret: $("#cred-razorpay-key-secret").val(),
+                razorpayMode: $("#cred-razorpay-mode").val()
             };
             
             var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
@@ -1717,6 +1756,10 @@
                     $("#cred-payu-merchant-key").val(creds.payuMerchantKey || "");
                     $("#cred-payu-merchant-salt").val(creds.payuMerchantSalt || "");
                     $("#cred-payu-mode").val(creds.payuMode || "test");
+                    $("#cred-razorpay-enabled").prop("checked", creds.razorpayEnabled !== "false");
+                    $("#cred-razorpay-key-id").val(creds.razorpayKeyId || "");
+                    $("#cred-razorpay-key-secret").val(creds.razorpayKeySecret || "");
+                    $("#cred-razorpay-mode").val(creds.razorpayMode || "test");
 
                     showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
                 } catch (err) {
@@ -4066,6 +4109,10 @@
                 var payuMerchantKey = $("#cred-payu-merchant-key").val();
                 var payuMerchantSalt = $("#cred-payu-merchant-salt").val();
                 var payuMode = $("#cred-payu-mode").val();
+                var razorpayEnabled = $("#cred-razorpay-enabled").is(":checked") ? "true" : "false";
+                var razorpayKeyId = $("#cred-razorpay-key-id").val();
+                var razorpayKeySecret = $("#cred-razorpay-key-secret").val();
+                var razorpayMode = $("#cred-razorpay-mode").val();
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
@@ -4084,7 +4131,11 @@
                     payuEnabled: payuEnabled,
                     payuMerchantKey: payuMerchantKey,
                     payuMerchantSalt: payuMerchantSalt,
-                    payuMode: payuMode
+                    payuMode: payuMode,
+                    razorpayEnabled: razorpayEnabled,
+                    razorpayKeyId: razorpayKeyId,
+                    razorpayKeySecret: razorpayKeySecret,
+                    razorpayMode: razorpayMode
                 })
                 .done(function(res) {
                     showToast("Credentials saved successfully!");

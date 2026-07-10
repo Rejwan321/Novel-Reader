@@ -2068,6 +2068,10 @@ public class AdminRestController {
         creds.put("payuMerchantKey", systemSettingRepository.findById("payu.merchant.key").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMerchantKey()));
         creds.put("payuMerchantSalt", systemSettingRepository.findById("payu.merchant.salt").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMerchantSalt()));
         creds.put("payuMode", systemSettingRepository.findById("payu.mode").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMode()));
+        creds.put("razorpayEnabled", systemSettingRepository.findById("razorpay.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(String.valueOf(paymentService.isRazorpayEnabled())));
+        creds.put("razorpayKeyId", systemSettingRepository.findById("razorpay.key.id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayKeyId()));
+        creds.put("razorpayKeySecret", systemSettingRepository.findById("razorpay.key.secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayKeySecret()));
+        creds.put("razorpayMode", systemSettingRepository.findById("razorpay.mode").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayMode()));
 
         return ResponseEntity.ok(creds);
     }
@@ -2092,6 +2096,10 @@ public class AdminRestController {
             @RequestParam(required = false) String payuMerchantKey,
             @RequestParam(required = false) String payuMerchantSalt,
             @RequestParam(required = false) String payuMode,
+            @RequestParam(required = false) String razorpayEnabled,
+            @RequestParam(required = false) String razorpayKeyId,
+            @RequestParam(required = false) String razorpayKeySecret,
+            @RequestParam(required = false) String razorpayMode,
             HttpSession session) {
         
         User loggedInUser = (User) session.getAttribute("user");
@@ -2120,6 +2128,10 @@ public class AdminRestController {
         if (payuMerchantKey != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.merchant.key", payuMerchantKey.trim()));
         if (payuMerchantSalt != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.merchant.salt", payuMerchantSalt.trim()));
         if (payuMode != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.mode", payuMode.trim()));
+        if (razorpayEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.enabled", razorpayEnabled.trim()));
+        if (razorpayKeyId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.key.id", razorpayKeyId.trim()));
+        if (razorpayKeySecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.key.secret", razorpayKeySecret.trim()));
+        if (razorpayMode != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.mode", razorpayMode.trim()));
 
         return ResponseEntity.ok(Map.of("success", true));
     }
