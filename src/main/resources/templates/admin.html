@@ -106,6 +106,19 @@
             margin-bottom: 6px;
         }
 
+        .theme-preset-card {
+            transition: all 0.3s;
+        }
+        .theme-preset-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.03) !important;
+        }
+        .theme-preset-card.active {
+            border-color: var(--theme-primary) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 0 12px rgba(94, 99, 182, 0.3);
+        }
+
         /* Premium Table Styles for approachable look */
         .table-premium tbody tr {
             transition: background-color 0.25s, transform 0.2s;
@@ -433,6 +446,10 @@
                     
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-coupons-btn" onclick="switchTab('coupons')">
                         <i class="fa-solid fa-ticket text-danger"></i>Coupon Codes
+                    </button>
+
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-ui-btn" onclick="switchTab('ui')">
+                        <i class="fa-solid fa-palette text-warning"></i>UI Customization
                     </button>
                     
                     <!-- Disguised/Hidden toggle system button (OWNER only) -->
@@ -1546,8 +1563,133 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
+                <!-- UI Customization Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-ui" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1">
+                                <i class="fa-solid fa-palette text-warning me-2"></i>UI Customization
+                            </h2>
+                            <p class="text-muted small mb-0">Select presets or fully customize the templates, colors, and typography of the reading platform.</p>
+                        </div>
+                    </div>
 
+                    <form id="ui-customization-form" onsubmit="saveUiSettings(event)">
+                        <!-- UI Template Presets -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label-admin">Layout Template Preset</label>
+                                <select id="ui-template-select" class="form-select-admin w-100" style="padding: 10px 14px; font-size: 0.95rem;">
+                                    <option value="modern">Modern & Premium (Rounded cards, soft borders)</option>
+                                    <option value="classic">Classic & Novelistic (Sharp content layout, thin borders)</option>
+                                    <option value="minimalist">Minimalist & Sleek (Monochrome high-contrast borders, clean flat edges)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label-admin">Primary Font Family</label>
+                                <select id="ui-font-select" class="form-select-admin w-100" style="padding: 10px 14px; font-size: 0.95rem;">
+                                    <option value="Poppins">Poppins (Standard Sans-Serif)</option>
+                                    <option value="Outfit">Outfit (Geometric & Elegant)</option>
+                                    <option value="Inter">Inter (Premium Technical)</option>
+                                    <option value="Lora">Lora (Elegant Serif for reading)</option>
+                                    <option value="Georgia">Georgia (Classic Bookish Serif)</option>
+                                    <option value="Roboto">Roboto (Clean Minimalist)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Theme Selection -->
+                        <div class="mb-4">
+                            <label class="form-label-admin mb-2 d-block">Color Theme Accent Preset</label>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-midnight" onclick="selectThemePreset('midnight')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-moon text-primary fa-lg mb-2" style="color: #a2a7db !important;"></i>
+                                        <span class="d-block text-white fw-bold small">Royal Violet (Default)</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Classic premium purple accents</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-ocean" onclick="selectThemePreset('ocean')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-water text-info fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Ocean Blue</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Vibrant ocean blue highlights</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-cyberpunk" onclick="selectThemePreset('cyberpunk')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-bolt text-danger fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Cyberpunk Dark</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Neon pink & cyan highlights</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-forest" onclick="selectThemePreset('forest')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-tree text-success fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Forest Dark</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Organic emerald green accents</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-sakura" onclick="selectThemePreset('sakura')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-seedling text-pink fa-lg mb-2" style="color: #ff85a2;"></i>
+                                        <span class="d-block text-white fw-bold small">Sakura Blossom</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Soft cherry blossom pink</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-custom" onclick="selectThemePreset('custom')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-sliders text-warning fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Custom Palette</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Fully personalized colors</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Colors Options (Hidden unless 'custom' is active) -->
+                        <div id="custom-color-controls" class="card bg-dark bg-opacity-50 border-0 p-3 mb-4 rounded-3" style="display: none; border: 1px dashed rgba(255, 255, 255, 0.1) !important;">
+                            <h4 class="h6 fw-bold text-warning mb-3"><i class="fa-solid fa-palette me-2"></i>Personalized Color Codes</h4>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Primary Accent Color</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="color" id="ui-color-primary-picker" class="form-control form-control-color border-0 bg-transparent" style="width: 45px; height: 38px; cursor: pointer;" oninput="$('#ui-color-primary-text').val(this.value)">
+                                        <input type="text" id="ui-color-primary-text" class="form-input-admin text-uppercase" placeholder="#5e63b6" oninput="$('#ui-color-primary-picker').val(this.value)">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Page Background Color</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="color" id="ui-color-bg-picker" class="form-control form-control-color border-0 bg-transparent" style="width: 45px; height: 38px; cursor: pointer;" oninput="$('#ui-color-bg-text').val(this.value)">
+                                        <input type="text" id="ui-color-bg-text" class="form-input-admin text-uppercase" placeholder="#0f0f1a" oninput="$('#ui-color-bg-picker').val(this.value)">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Card Background Color</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="color" id="ui-color-card-picker" class="form-control form-control-color border-0 bg-transparent" style="width: 45px; height: 38px; cursor: pointer;" oninput="$('#ui-color-card-text').val(this.value)">
+                                        <input type="text" id="ui-color-card-text" class="form-input-admin text-uppercase" placeholder="#181829" oninput="$('#ui-color-card-picker').val(this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top border-secondary">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="resetUiToDefault()">
+                                <i class="fa-solid fa-arrow-rotate-left me-2"></i>Reset to Default
+                            </button>
+                            <button type="submit" class="btn btn-success px-5">
+                                <i class="fa-solid fa-circle-check me-2"></i>Save & Apply Theme
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
                 </div>
             </div>
         </div>
@@ -1584,13 +1726,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail' || tab === 'coupons')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail' || tab === 'coupons' || tab === 'ui')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail' || tab === 'coupons') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail' || tab === 'coupons' || tab === 'ui') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials', 'sendmail', 'coupons'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials', 'sendmail', 'coupons', 'ui'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -1613,6 +1755,8 @@
                 loadCredentials();
             } else if (tab === 'coupons') {
                 loadCoupons();
+            } else if (tab === 'ui') {
+                loadUiSettings();
             }
         }
 
@@ -1837,6 +1981,98 @@
             downloadAnchor.click();
             downloadAnchor.remove();
             showToast("Google settings exported successfully!");
+        };
+
+        window.loadUiSettings = function() {
+            $.get("/api/admin/ui")
+            .done(function(data) {
+                $("#ui-template-select").val(data.uiTemplate || "modern");
+                $("#ui-font-select").val(data.uiFontPrimary || "Poppins");
+                
+                // Color pickers & inputs
+                $("#ui-color-primary-picker").val(data.uiColorPrimary || "#5e63b6");
+                $("#ui-color-primary-text").val(data.uiColorPrimary || "#5e63b6");
+                
+                $("#ui-color-bg-picker").val(data.uiColorBg || "#0f0f1a");
+                $("#ui-color-bg-text").val(data.uiColorBg || "#0f0f1a");
+                
+                $("#ui-color-card-picker").val(data.uiColorCard || "#181829");
+                $("#ui-color-card-text").val(data.uiColorCard || "#181829");
+                
+                // Set active theme preset card
+                selectThemePreset(data.uiTheme || "midnight");
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load UI customization settings.";
+                showToast(msg, "error");
+            });
+        };
+
+        window.selectThemePreset = function(theme) {
+            $(".theme-preset-card").removeClass("active");
+            $("#theme-preset-" + theme).addClass("active");
+            
+            // Store theme name on form data attribute
+            $("#ui-customization-form").data("selected-theme", theme);
+            
+            if (theme === "custom") {
+                $("#custom-color-controls").slideDown();
+            } else {
+                $("#custom-color-controls").slideUp();
+            }
+        };
+
+        window.saveUiSettings = function(event) {
+            if (event) event.preventDefault();
+            
+            var template = $("#ui-template-select").val();
+            var font = $("#ui-font-select").val();
+            var theme = $("#ui-customization-form").data("selected-theme") || "midnight";
+            
+            var primary = $("#ui-color-primary-text").val();
+            var bg = $("#ui-color-bg-text").val();
+            var card = $("#ui-color-card-text").val();
+            
+            $.post("/api/admin/ui", {
+                uiTemplate: template,
+                uiTheme: theme,
+                uiColorPrimary: primary,
+                uiColorBg: bg,
+                uiColorCard: card,
+                uiFontPrimary: font
+            })
+            .done(function() {
+                showToast("UI customization settings saved and applied successfully!", "success");
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to save UI customization settings.";
+                showToast(msg, "error");
+            });
+        };
+
+        window.resetUiToDefault = function() {
+            if (confirm("Are you sure you want to reset all UI customization settings to default?")) {
+                $.post("/api/admin/ui", {
+                    uiTemplate: "modern",
+                    uiTheme: "midnight",
+                    uiColorPrimary: "#5e63b6",
+                    uiColorBg: "#0f0f1a",
+                    uiColorCard: "#181829",
+                    uiFontPrimary: "Poppins"
+                })
+                .done(function() {
+                    showToast("UI customization reset to default!", "success");
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                })
+                .fail(function(err) {
+                    showToast("Failed to reset UI customizer.", "error");
+                });
+            }
         };
 
         window.exportMailSettings = function() {
@@ -4391,9 +4627,9 @@
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail' || activeTab === 'coupons')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail' || activeTab === 'coupons' || activeTab === 'ui')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail' || activeTab === 'coupons') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail' || activeTab === 'coupons' || activeTab === 'ui') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);

@@ -12,6 +12,114 @@
 <body>
 <div th:fragment="navbar">
 
+    <!-- Dynamic Custom UI System Styles -->
+    <style id="dynamic-ui-styles" th:inline="css">
+        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap');
+        
+        :root {
+            /* Theme overrides */
+            [# th:if="${uiTheme == 'cyberpunk'}"]
+                --theme-primary: #ff007f !important;
+                --bg-dark: #0a0a12 !important;
+                --card-bg: #121225 !important;
+                --theme-dgreen: #e0006f !important;
+                --theme-fgreen: #ff66b2 !important;
+                --theme-blue: #00ffff !important;
+                --theme-yellow: #00ff66 !important;
+            [/]
+            [# th:if="${uiTheme == 'midnight'}"]
+                --theme-primary: #5e63b6 !important;
+                --bg-dark: #0f0f1a !important;
+                --card-bg: #181829 !important;
+                --theme-dgreen: #474b94 !important;
+                --theme-fgreen: #a2a7db !important;
+                --theme-blue: #6db5e8 !important;
+                --theme-yellow: #f0d737 !important;
+            [/]
+            [# th:if="${uiTheme == 'ocean'}"]
+                --theme-primary: #3b82f6 !important;
+                --bg-dark: #0b0f19 !important;
+                --card-bg: #151e30 !important;
+                --theme-dgreen: #2563eb !important;
+                --theme-fgreen: #60a5fa !important;
+                --theme-blue: #06b6d4 !important;
+                --theme-yellow: #f59e0b !important;
+            [/]
+            [# th:if="${uiTheme == 'forest'}"]
+                --theme-primary: #10b981 !important;
+                --bg-dark: #0b0f0b !important;
+                --card-bg: #141f14 !important;
+                --theme-dgreen: #047857 !important;
+                --theme-fgreen: #34d399 !important;
+                --theme-blue: #06b6d4 !important;
+                --theme-yellow: #eab308 !important;
+            [/]
+            [# th:if="${uiTheme == 'sakura'}"]
+                --theme-primary: #f472b6 !important;
+                --bg-dark: #1c0d12 !important;
+                --card-bg: #2c161d !important;
+                --theme-dgreen: #db2777 !important;
+                --theme-fgreen: #f9a8d4 !important;
+                --theme-blue: #38bdf8 !important;
+                --theme-yellow: #f59e0b !important;
+            [/]
+            [# th:if="${uiTheme == 'custom'}"]
+                --theme-primary: [(${uiColorPrimary})] !important;
+                --bg-dark: [(${uiColorBg})] !important;
+                --card-bg: [(${uiColorCard})] !important;
+                --theme-dgreen: [(${uiColorPrimary})]d0 !important;
+                --theme-fgreen: [(${uiColorPrimary})]80 !important;
+            [/]
+
+            /* Font Overrides */
+            [# th:if="${uiFontPrimary == 'Poppins'}"]
+                --font-poppins: 'Poppins', sans-serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Outfit'}"]
+                --font-poppins: 'Outfit', sans-serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Inter'}"]
+                --font-poppins: 'Inter', sans-serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Lora'}"]
+                --font-poppins: 'Lora', serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Georgia'}"]
+                --font-poppins: 'Georgia', serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Roboto'}"]
+                --font-poppins: 'Roboto', sans-serif !important;
+            [/]
+            
+            /* Always map outfit variable to secondary fonts */
+            --font-outfit: var(--font-poppins) !important;
+        }
+
+        body {
+            font-family: var(--font-poppins) !important;
+            background-color: var(--bg-dark) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Template Border Radius Rules */
+        [# th:if="${uiTemplate == 'classic'}"]
+            .admin-card, .card, .btn, .form-input-admin, .form-select-admin {
+                border-radius: 4px !important;
+            }
+        [/]
+        [# th:if="${uiTemplate == 'minimalist'}"]
+            .admin-card, .card, .btn, .form-input-admin, .form-select-admin {
+                border-radius: 0px !important;
+                border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            }
+        [/]
+        [# th:if="${uiTemplate == 'modern'}"]
+            .admin-card, .card {
+                border-radius: 16px !important;
+            }
+        [/]
+    </style>
+
 <div class="sticky-top" style="z-index: 1040;">
 <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">

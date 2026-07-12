@@ -51,4 +51,46 @@ public class GlobalModelAttributeAdvice {
                 .map(Boolean::parseBoolean)
                 .orElse(true);
     }
+
+    @ModelAttribute("uiTemplate")
+    public String addUiTemplate() {
+        return systemSettingRepository.findById("ui.template")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("modern");
+    }
+
+    @ModelAttribute("uiTheme")
+    public String addUiTheme() {
+        return systemSettingRepository.findById("ui.theme")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("midnight");
+    }
+
+    @ModelAttribute("uiColorPrimary")
+    public String addUiColorPrimary() {
+        return systemSettingRepository.findById("ui.color.primary")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("#5e63b6");
+    }
+
+    @ModelAttribute("uiColorBg")
+    public String addUiColorBg() {
+        return systemSettingRepository.findById("ui.color.bg")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("#0f0f1a");
+    }
+
+    @ModelAttribute("uiColorCard")
+    public String addUiColorCard() {
+        return systemSettingRepository.findById("ui.color.card")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("#181829");
+    }
+
+    @ModelAttribute("uiFontPrimary")
+    public String addUiFontPrimary() {
+        return systemSettingRepository.findById("ui.font.primary")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse("Poppins");
+    }
 }

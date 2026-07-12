@@ -2136,6 +2136,59 @@ public class AdminRestController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    // GET UI settings
+    @GetMapping("/ui")
+    public ResponseEntity<?> getUiSettings(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        java.util.Map<String, String> settings = new java.util.HashMap<>();
+        settings.put("uiTemplate", systemSettingRepository.findById("ui.template").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("modern"));
+        settings.put("uiTheme", systemSettingRepository.findById("ui.theme").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("midnight"));
+        settings.put("uiColorPrimary", systemSettingRepository.findById("ui.color.primary").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("#5e63b6"));
+        settings.put("uiColorBg", systemSettingRepository.findById("ui.color.bg").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("#0f0f1a"));
+        settings.put("uiColorCard", systemSettingRepository.findById("ui.color.card").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("#181829"));
+        settings.put("uiFontPrimary", systemSettingRepository.findById("ui.font.primary").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("Poppins"));
+
+        return ResponseEntity.ok(settings);
+    }
+
+    // POST UI settings
+    @PostMapping("/ui")
+    public ResponseEntity<?> saveUiSettings(
+            @RequestParam(required = false) String uiTemplate,
+            @RequestParam(required = false) String uiTheme,
+            @RequestParam(required = false) String uiColorPrimary,
+            @RequestParam(required = false) String uiColorBg,
+            @RequestParam(required = false) String uiColorCard,
+            @RequestParam(required = false) String uiFontPrimary,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        if (uiTemplate != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.template", uiTemplate.trim()));
+        if (uiTheme != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.theme", uiTheme.trim()));
+        if (uiColorPrimary != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.color.primary", uiColorPrimary.trim()));
+        if (uiColorBg != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.color.bg", uiColorBg.trim()));
+        if (uiColorCard != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.color.card", uiColorCard.trim()));
+        if (uiFontPrimary != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.font.primary", uiFontPrimary.trim()));
+
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
     // POST /sendmail admin email dispatch
     @PostMapping("/sendmail")
     public ResponseEntity<?> sendAdminEmail(
