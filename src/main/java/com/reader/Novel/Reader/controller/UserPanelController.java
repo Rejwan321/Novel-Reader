@@ -139,6 +139,10 @@ public class UserPanelController {
             @RequestParam(required = false) Boolean subscribedToMentions,
             @RequestParam(required = false) String updatesEmail,
             @RequestParam(required = false) String profilePictureUrl,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String bio,
+            @RequestParam(required = false) String currentPassword,
+            @RequestParam(required = false) String newPassword,
             HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
@@ -148,6 +152,27 @@ public class UserPanelController {
         User user = userRepository.findById(loggedInUser.getId()).orElse(null);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        if (name != null && !name.trim().isEmpty()) {
+            user.setName(name.trim());
+        }
+        if (bio != null) {
+            user.setBio(bio.trim());
+        }
+
+        // Change password security check
+        if (newPassword != null && !newPassword.trim().isEmpty()) {
+            if (currentPassword == null || currentPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Current password is required to change password."));
+            }
+            if (!com.reader.Novel.Reader.util.PasswordUtils.checkPassword(currentPassword, user.getPassword())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Current password is incorrect."));
+            }
+            if (newPassword.trim().length() < 6) {
+                return ResponseEntity.badRequest().body(Map.of("error", "New password must be at least 6 characters."));
+            }
+            user.setPassword(com.reader.Novel.Reader.util.PasswordUtils.hashPassword(newPassword.trim()));
         }
 
         if (subscribedToUpdates != null) {

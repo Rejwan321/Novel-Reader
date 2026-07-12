@@ -264,12 +264,32 @@
                                     </div>
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label text-muted">Account Name</label>
-                                    <input type="text" class="form-control user-input" th:value="${currentUser.name}" readonly disabled>
+                                    <label class="form-label text-muted" for="settings-name">Display Name</label>
+                                    <input type="text" class="form-control user-input" id="settings-name" th:value="${currentUser.name}" placeholder="Enter display name" required>
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label class="form-label text-muted">Account Email</label>
-                                    <input type="text" class="form-control user-input" th:value="${currentUser.email}" readonly disabled>
+                                    <input type="text" class="form-control user-input" th:value="${currentUser.email}" readonly disabled style="opacity: 0.5; cursor: not-allowed;">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-muted" for="settings-bio">About Me (Bio)</label>
+                                    <textarea class="form-control user-input" id="settings-bio" rows="2" placeholder="Tell us about yourself..." th:text="${currentUser.bio}"></textarea>
+                                </div>
+
+                                <div class="col-12 mt-4 pt-2 border-top border-secondary">
+                                    <h3 class="h6 fw-bold text-white mb-3 font-outfit">Change Password</h3>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label text-muted" for="settings-current-password">Current Password</label>
+                                    <input type="password" class="form-control user-input" id="settings-current-password" placeholder="Enter current password">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label text-muted" for="settings-new-password">New Password</label>
+                                    <input type="password" class="form-control user-input" id="settings-new-password" placeholder="Min. 6 characters">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label text-muted" for="settings-confirm-password">Confirm New Password</label>
+                                    <input type="password" class="form-control user-input" id="settings-confirm-password" placeholder="Confirm new password">
                                 </div>
 
                                 <div class="col-12 mt-4">
@@ -624,6 +644,25 @@
                 var btn = $('#btn-save-settings');
                 btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Saving...');
 
+                var name = $('#settings-name').val();
+                var bio = $('#settings-bio').val();
+                var currentPassword = $('#settings-current-password').val();
+                var newPassword = $('#settings-new-password').val();
+                var confirmPassword = $('#settings-confirm-password').val();
+
+                if (newPassword && newPassword.trim() !== '') {
+                    if (newPassword !== confirmPassword) {
+                        showToast("New passwords do not match.", "error");
+                        btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
+                        return;
+                    }
+                    if (newPassword.length < 6) {
+                        showToast("New password must be at least 6 characters.", "error");
+                        btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
+                        return;
+                    }
+                }
+
                 var subscribedToUpdates = $('#settings-updates-checkbox').is(':checked');
                 var subscribedToMentions = $('#settings-mentions-checkbox').is(':checked');
                 var updatesEmail = $('#settings-updates-email').val();
@@ -632,10 +671,16 @@
                 var dataPayload = {
                     subscribedToUpdates: subscribedToUpdates,
                     subscribedToMentions: subscribedToMentions,
-                    updatesEmail: updatesEmail
+                    updatesEmail: updatesEmail,
+                    name: name,
+                    bio: bio
                 };
                 if (profilePictureUrl !== undefined) {
                     dataPayload.profilePictureUrl = profilePictureUrl;
+                }
+                if (newPassword && newPassword.trim() !== '') {
+                    dataPayload.currentPassword = currentPassword;
+                    dataPayload.newPassword = newPassword;
                 }
 
                 $.post('/api/user/settings', dataPayload)

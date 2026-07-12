@@ -288,9 +288,9 @@ $(document).ready(function() {
         $("#search-form").submit();
     });
 
-    // Real-time search dropdown suggestions on typing 1+ characters
+    // Real-time search dropdown suggestions on typing 1+ characters or focus
     var searchTimeout = null;
-    $(".search-bar .input").on("input", function() {
+    $(".search-bar .input").on("focus input", function() {
         var query = $(this).val().trim();
         var dropdown = $("#search-results-dropdown");
         
@@ -419,17 +419,18 @@ $(document).ready(function() {
                             hasItems = true;
                             var label = typeLabels[key] || key;
                             html += '<div class="search-group-header">' + label + '</div>';
+                            html += '<div class="search-results-card-container">';
                             list.slice(0, 5).forEach(function(item) {
-                                var ratingText = item.rating ? ' (★ ' + parseFloat(item.rating).toFixed(1) + ')' : '';
-                                var meta = (item.status || "ONGOING") + ratingText;
-                                html += '<a href="/novel/' + item.id + '" class="search-result-item">' +
-                                        '  <img src="' + (item.coverUrl || '/uploads/default-cover.jpg') + '" class="search-result-img" alt="">' +
-                                        '  <div class="search-result-info">' +
-                                        '    <div class="search-result-title">' + item.title + '</div>' +
-                                        '    <div class="search-result-meta">' + meta + '</div>' +
+                                html += '<a href="/novel/' + item.id + '" class="search-result-card">' +
+                                        '  <div class="search-result-card-img-wrapper">' +
+                                        '    <img src="' + (item.coverUrl || '/uploads/default-cover.jpg') + '" class="search-result-card-img" alt="">' +
+                                        '  </div>' +
+                                        '  <div class="search-result-card-info">' +
+                                        '    <div class="search-result-card-title">' + item.title + '</div>' +
                                         '  </div>' +
                                         '</a>';
                             });
+                            html += '</div>';
                         }
                     });
                     
@@ -461,6 +462,63 @@ $(document).ready(function() {
             }, 250);
         } else {
             dropdown.addClass("d-none").empty();
+        }
+    });
+
+    $(".search-bar .input").on("keydown", function(e) {
+        var dropdown = $("#search-results-dropdown");
+        if (dropdown.hasClass("d-none")) return;
+
+        var items = dropdown.find(".search-result-card, .search-badge-item, .search-action-item, .search-results-footer");
+        if (items.length === 0) return;
+
+        var activeIndex = -1;
+        items.each(function(index, el) {
+            if ($(el).hasClass("highlighted-item")) {
+                activeIndex = index;
+            }
+        });
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            items.removeClass("highlighted-item");
+            var nextIndex = (activeIndex + 1) % items.length;
+            var nextItem = $(items[nextIndex]);
+            nextItem.addClass("highlighted-item");
+            
+            // Scroll into view
+            var container = dropdown[0];
+            var elem = nextItem[0];
+            if (elem.offsetTop < container.scrollTop) {
+                container.scrollTop = elem.offsetTop;
+            } else if (elem.offsetTop + elem.offsetHeight > container.scrollTop + container.clientHeight) {
+                container.scrollTop = elem.offsetTop + elem.offsetHeight - container.clientHeight;
+            }
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            items.removeClass("highlighted-item");
+            var prevIndex = (activeIndex - 1 + items.length) % items.length;
+            var prevItem = $(items[prevIndex]);
+            prevItem.addClass("highlighted-item");
+            
+            // Scroll into view
+            var container = dropdown[0];
+            var elem = prevItem[0];
+            if (elem.offsetTop < container.scrollTop) {
+                container.scrollTop = elem.offsetTop;
+            } else if (elem.offsetTop + elem.offsetHeight > container.scrollTop + container.clientHeight) {
+                container.scrollTop = elem.offsetTop + elem.offsetHeight - container.clientHeight;
+            }
+        } else if (e.key === "Enter") {
+            if (activeIndex !== -1) {
+                e.preventDefault();
+                var href = $(items[activeIndex]).attr("href");
+                if (href && href !== "#") {
+                    window.location.href = href;
+                } else {
+                    $(items[activeIndex])[0].click();
+                }
+            }
         }
     });
 

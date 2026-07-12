@@ -34,6 +34,10 @@ public class User {
     @Column(columnDefinition = "CLOB")
     private String profilePictureUrl;
 
+    @Lob
+    @Column(columnDefinition = "CLOB")
+    private String bio;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_used_coupons", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "coupon_code")
@@ -132,6 +136,9 @@ public class User {
 
     public String getProfilePictureUrl() { return profilePictureUrl; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
     @Override
     public String toString() {
