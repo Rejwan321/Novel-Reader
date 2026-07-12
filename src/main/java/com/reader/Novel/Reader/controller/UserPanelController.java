@@ -138,7 +138,6 @@ public class UserPanelController {
             @RequestParam(required = false) Boolean subscribedToUpdates,
             @RequestParam(required = false) Boolean subscribedToMentions,
             @RequestParam(required = false) String updatesEmail,
-            @RequestParam(required = false) String profilePictureUrl,
             HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
@@ -158,9 +157,6 @@ public class UserPanelController {
         }
         if (updatesEmail != null) {
             user.setUpdatesEmail(updatesEmail.trim());
-        }
-        if (profilePictureUrl != null) {
-            user.setProfilePictureUrl(profilePictureUrl.trim());
         }
 
         userRepository.save(user);

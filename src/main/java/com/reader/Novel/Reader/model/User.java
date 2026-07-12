@@ -30,10 +30,6 @@ public class User {
     private Boolean banned = false;
     private java.time.LocalDateTime timeoutUntil;
 
-    @Lob
-    @Column(columnDefinition = "CLOB")
-    private String profilePictureUrl;
-
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_used_coupons", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "coupon_code")
@@ -129,9 +125,6 @@ public class User {
     public void setUsedCoupons(java.util.Set<String> usedCoupons) {
         this.usedCoupons = usedCoupons;
     }
-
-    public String getProfilePictureUrl() { return profilePictureUrl; }
-    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 
     @Override
     public String toString() {
