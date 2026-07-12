@@ -329,7 +329,8 @@
                             <i class="fa-solid fa-snowflake ms-2" style="color: #00e5ff;"></i>
                         </span>
                         <button class="btn btn-profile-dropdown dropdown-toggle position-relative" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-user-circle me-1"></i>
+                            <img th:if="${session.user.profilePictureUrl != null and session.user.profilePictureUrl != ''}" th:src="${session.user.profilePictureUrl}" class="rounded-circle me-1" style="width: 24px; height: 24px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.2);">
+                            <i th:if="${session.user.profilePictureUrl == null or session.user.profilePictureUrl == ''}" class="fa fa-user-circle me-1"></i>
                             <span th:if="${session.user.user_type == 'OWNER'}">Owner Panel</span>
                             <span th:if="${session.user.user_type == 'ADMIN'}">Admin Panel</span>
                             <span th:if="${session.user.user_type == 'EDITOR'}">Translator Panel</span>
