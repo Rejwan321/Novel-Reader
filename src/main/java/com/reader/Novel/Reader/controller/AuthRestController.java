@@ -144,6 +144,7 @@ public class AuthRestController {
             String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(tempPassword);
             user = new User(null, tempName, tempEmail, hashedPassword, tempRole);
             userService.addUser(user);
+            emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
         }
 
         // Secure Session Management: Prevent session fixation
@@ -187,6 +188,7 @@ public class AuthRestController {
         String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password);
         User user = new User(null, name.trim(), email.trim(), hashedPassword, role);
         userService.addUser(user);
+        emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
         
         // Auto-login after signup
         session.setAttribute("user", user);
@@ -358,9 +360,13 @@ public class AuthRestController {
                 user.setLoginType("GOOGLE");
             }
 
+            boolean isNewUser = !userOpt.isPresent();
             user.setSubscribedToUpdates(true);
             user.setUpdatesEmail(email);
             userService.addUser(user);
+            if (isNewUser) {
+                emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
+            }
 
             if (Boolean.TRUE.equals(user.getBanned())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account has been banned."));
@@ -564,6 +570,7 @@ public class AuthRestController {
                 user.setSubscribedToUpdates(true);
                 user.setUpdatesEmail(email);
                 userService.addUser(user);
+                emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
             }
 
             if (Boolean.TRUE.equals(user.getBanned())) {
