@@ -55,11 +55,18 @@ public class AuthRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
         }
 
-        Optional<User> existing = userService.getUserByEmail(email.trim());
+        Optional<User> existing = userRepository.findByEmailIgnoreCase(email.trim());
         if (existing.isPresent()) {
             User u = existing.get();
             if (!"GOOGLE".equals(u.getLoginType())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
+            }
+        }
+
+        Optional<User> existingName = userRepository.findFirstByNameIgnoreCase(name.trim());
+        if (existingName.isPresent()) {
+            if (existing.isEmpty() || !existing.get().getId().equals(existingName.get().getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already taken."));
             }
         }
 
@@ -172,9 +179,14 @@ public class AuthRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
         }
 
-        Optional<User> existing = userService.getUserByEmail(email.trim());
+        Optional<User> existing = userRepository.findByEmailIgnoreCase(email.trim());
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
+        }
+
+        Optional<User> existingName = userRepository.findFirstByNameIgnoreCase(name.trim());
+        if (existingName.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already taken."));
         }
 
         // Validate selected role
@@ -222,15 +234,15 @@ public class AuthRestController {
 
         if (email == null || email.trim().isEmpty() ||
             password == null || password.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required."));
+            return ResponseEntity.badRequest().body(Map.of("error", "Username/Email and password are required."));
         }
 
-        Optional<User> userOpt = userService.getUserByEmail(email.trim());
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email.trim());
         if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByName(email.trim());
+            userOpt = userRepository.findFirstByNameIgnoreCase(email.trim());
         }
         if (userOpt.isEmpty() || !com.reader.Novel.Reader.util.PasswordUtils.checkPassword(password, userOpt.get().getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid email or password."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid username/email or password."));
         }
 
         User user = userOpt.get();
@@ -995,9 +1007,9 @@ public class AuthRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email or username is required."));
         }
         String cleanInput = email.trim();
-        Optional<User> userOpt = userService.getUserByEmail(cleanInput);
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(cleanInput);
         if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByName(cleanInput);
+            userOpt = userRepository.findFirstByNameIgnoreCase(cleanInput);
         }
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No user found with this email or username."));
