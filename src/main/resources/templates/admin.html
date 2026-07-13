@@ -877,17 +877,23 @@
                                         <span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;" th:text="${u.email}">sakura@sakura.com</span>
                                     </td>
                                     <td>
-                                        <!-- Prevent changing self -->
-                                        <select th:if="${session.user.id != u.id}" 
-                                                class="form-select-admin user-role-select" 
-                                                th:data-id="${u.id}"
-                                                th:data-original="${u.user_type}">
-                                            <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
-                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Translator</option>
-                                            <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
-                                            <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
-                                        </select>
-                                        <span th:if="${session.user.id == u.id}" class="badge bg-secondary">Current Admin</span>
+                                         <!-- Prevent changing self or owners -->
+                                         <div th:if="${session.user.id == u.id}">
+                                             <span th:if="${u.user_type == 'OWNER'}" class="badge bg-violet" style="background: #bd53ed !important; color: white;">Current Owner</span>
+                                             <span th:if="${u.user_type != 'OWNER'}" class="badge bg-secondary">Current Admin</span>
+                                         </div>
+                                         <div th:if="${session.user.id != u.id}">
+                                             <span th:if="${u.user_type == 'OWNER'}" class="badge bg-violet" style="background: #bd53ed !important; color: white; opacity: 0.85;">Owner</span>
+                                             <select th:if="${u.user_type != 'OWNER'}" 
+                                                     class="form-select-admin user-role-select" 
+                                                     th:data-id="${u.id}"
+                                                     th:data-original="${u.user_type}">
+                                                 <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
+                                                 <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Translator</option>
+                                                 <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
+                                                 <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
+                                             </select>
+                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-1">
@@ -2651,16 +2657,24 @@
                 var checkboxHtml = '';
 
                 if (isSelf) {
-                    selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
+                    if (user.user_type === 'OWNER') {
+                        selectHtml = '<span class="badge bg-violet" style="background: #bd53ed !important; color: white;">Current Owner</span>';
+                    } else {
+                        selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
+                    }
                     deleteBtnHtml = '<span class="text-muted small">-</span>';
                     checkboxHtml = '<td><span class="text-muted small">-</span></td>';
                 } else {
-                    selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
-                        '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
-                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Translator</option>' +
-                        '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
-                        '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
-                        '</select>';
+                    if (user.user_type === 'OWNER') {
+                        selectHtml = '<span class="badge bg-violet" style="background: #bd53ed !important; color: white; opacity: 0.85;">Owner</span>';
+                    } else {
+                        selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
+                            '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
+                            '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Translator</option>' +
+                            '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
+                            '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
+                            '</select>';
+                    }
                     deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '" title="Delete User">' +
                         '<i class="fa-solid fa-trash-can"></i>' +
                         '</button>';
