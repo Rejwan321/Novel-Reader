@@ -153,22 +153,38 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', username = 'sakura', email = 'sakura@yukitales.com', password = ? WHERE id = 0", sakuraHashed);
             }
 
-            // Ensure admin exists with ID 1
-            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1");
-            String adminHashed = PasswordUtils.hashPassword("admin");
-            if (admins.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', 'admin@yukitales.com', ?, 'ADMIN', 100)", adminHashed);
-            } else {
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'ADMIN', name = 'System Admin', username = 'admin', email = 'admin@yukitales.com', password = ? WHERE id = 1", adminHashed);
-            }
+            // Cleanup: delete all users except owner (ID 0)
+            java.util.List<java.util.Map<String, Object>> otherUsers = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id != 0");
+            for (java.util.Map<String, Object> uMap : otherUsers) {
+                Long targetId = ((Number) uMap.get("id")).longValue();
+                
+                // 1. Delete bookmarks
+                jdbcTemplate.update("DELETE FROM bookmarks WHERE user_id = ?", targetId);
 
-            // Ensure editor exists with ID 3
-            java.util.List<java.util.Map<String, Object>> editorsList = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 3");
-            String editorHashed = PasswordUtils.hashPassword("editor");
-            if (editorsList.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (3, 'System Translator', 'editor', 'editor@yukitales.com', ?, 'EDITOR', 100)", editorHashed);
-            } else {
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', username = 'editor', email = 'editor@yukitales.com', password = ? WHERE id = 3", editorHashed);
+                // 2. Delete ratings
+                jdbcTemplate.update("DELETE FROM ratings WHERE user_id = ?", targetId);
+
+                // 3. Delete notifications
+                jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", targetId);
+
+                // 4. Delete comments
+                jdbcTemplate.update("DELETE FROM comments WHERE user_id = ?", targetId);
+
+                // 5. Delete purchases
+                jdbcTemplate.update("DELETE FROM purchases WHERE user_id = ?", targetId);
+
+                // 6. Delete flake purchases
+                jdbcTemplate.update("DELETE FROM flake_purchases WHERE user_id = ?", targetId);
+
+                // 7. Delete reviews
+                jdbcTemplate.update("DELETE FROM reviews WHERE user_id = ?", targetId);
+
+                // 8. Delete coupon records
+                jdbcTemplate.update("DELETE FROM user_used_coupons WHERE user_id = ?", targetId);
+
+                // 9. Delete user record
+                jdbcTemplate.update("DELETE FROM reader_internal WHERE id = ?", targetId);
+                System.out.println("Deleted user ID " + targetId + " to leave only owner.");
             }
 
             // Create the view named READER for H2 console users
@@ -183,12 +199,12 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY = TRUE");
         }
 
-        Long editorId = 3L;
+        Long ownerId = 0L;
 
-        // Migrate/update creatorId for all existing novels to match the new roles
+        // Migrate/update creatorId for all existing novels to match the owner
         for (Novel n : novelRepository.findAll()) {
             boolean updated = false;
-            Long targetCreatorId = editorId;
+            Long targetCreatorId = ownerId;
             if (n.getCreatorId() == null || !n.getCreatorId().equals(targetCreatorId)) {
                 n.setCreatorId(targetCreatorId);
                 updated = true;

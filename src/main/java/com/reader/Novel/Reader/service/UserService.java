@@ -126,7 +126,20 @@ public class UserService {
         // 5. Delete purchases
         purchaseRepository.deleteByUserId(userId);
 
-        // 6. Delete user record
+        // 6. Delete flake purchases, reviews, and coupon records
+        entityManager.createNativeQuery("DELETE FROM flake_purchases WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM reviews WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM user_used_coupons WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // 7. Delete user record
         userRepository.deleteById(userId);
         resetAutoIncrement();
     }
