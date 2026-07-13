@@ -239,6 +239,9 @@ public class AuthRestController {
 
         Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email.trim());
         if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUsernameIgnoreCase(email.trim());
+        }
+        if (userOpt.isEmpty()) {
             userOpt = userRepository.findFirstByNameIgnoreCase(email.trim());
         }
         if (userOpt.isEmpty() || !com.reader.Novel.Reader.util.PasswordUtils.checkPassword(password, userOpt.get().getPassword())) {
@@ -1008,6 +1011,9 @@ public class AuthRestController {
         }
         String cleanInput = email.trim();
         Optional<User> userOpt = userRepository.findByEmailIgnoreCase(cleanInput);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUsernameIgnoreCase(cleanInput);
+        }
         if (userOpt.isEmpty()) {
             userOpt = userRepository.findFirstByNameIgnoreCase(cleanInput);
         }

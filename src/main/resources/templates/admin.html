@@ -808,17 +808,21 @@
                         <h3 class="h5 fw-bold text-white mb-4" id="title-add-user"><i class="fa-solid fa-user-plus text-success me-2"></i>Create New User Account</h3>
                         <form id="form-add-user" data-mode="create" data-edit-id="">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label-admin">User ID (Auto-generated on creation)</label>
                                     <input type="number" class="form-input-admin" id="user-id" placeholder="Auto-generated" readonly>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label-admin">Full Name</label>
                                     <input type="text" class="form-input-admin" id="user-fullname" required placeholder="e.g. John Doe">
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Username</label>
+                                    <input type="text" class="form-input-admin" id="user-username" required placeholder="e.g. johndoe">
+                                </div>
                                 <div class="col-md-6">
-                                    <label class="form-label-admin">Email Address / Username</label>
-                                    <input type="text" class="form-input-admin" id="user-email" required placeholder="e.g. john@example.com or john_doe">
+                                    <label class="form-label-admin">Email Address</label>
+                                    <input type="email" class="form-input-admin" id="user-email" required placeholder="e.g. john@example.com">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-admin">Password</label>
@@ -874,6 +878,8 @@
                                         <span th:if="${u.timeoutUntil != null and u.timeoutUntil.isAfter(T(java.time.LocalDateTime).now())}" 
                                               class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Timeout</span>
                                         <br>
+                                        <span class="text-muted fw-normal user-row-username" style="font-size: 0.8rem;" th:text="${u.username != null ? '@' + u.username : ''}">@sakura</span>
+                                        <span th:if="${u.username != null and u.email != null}" class="text-muted fw-normal" style="font-size: 0.8rem; margin: 0 4px;">|</span>
                                         <span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;" th:text="${u.email}">sakura@sakura.com</span>
                                     </td>
                                     <td>
@@ -915,6 +921,7 @@
                                                     class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger"
                                                     th:data-id="${u.id}"
                                                     th:data-name="${u.name}"
+                                                    th:data-username="${u.username}"
                                                     th:data-email="${u.email}"
                                                     th:data-role="${u.user_type}"
                                                     title="Edit User">
@@ -2686,7 +2693,9 @@
                     '<td class="user-row-id-cell">' + user.id + '</td>' +
                     '<td class="text-white fw-bold">' +
                     '<span class="user-row-name-text">' + user.name + '</span>' +
-                    '<br><span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;">' + user.email + '</span>' +
+                    '<br><span class="text-muted fw-normal user-row-username" style="font-size: 0.8rem;">' + (user.username ? '@' + user.username : '') + '</span>' +
+                    (user.username && user.email ? '<span class="text-muted fw-normal" style="font-size: 0.8rem; margin: 0 4px;">|</span>' : '') +
+                    '<span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;">' + user.email + '</span>' +
                     '</td>' +
                     '<td>' + selectHtml + '</td>' +
                     '<td>' +
@@ -2699,7 +2708,7 @@
                     '</td>' +
                     '<td>' +
                     '<div class="d-flex align-items-center gap-2">' +
-                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-email="' + user.email + '" data-role="' + user.user_type + '" title="Edit User">' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-username="' + user.username + '" data-email="' + user.email + '" data-role="' + user.user_type + '" title="Edit User">' +
                     '<i class="fa-solid fa-pen-to-square"></i>' +
                     '</button>' +
                     deleteBtnHtml +
@@ -3129,12 +3138,14 @@
                 var btn = $(this);
                 var id = btn.data("id");
                 var name = btn.data("name");
+                var username = btn.data("username");
                 var email = btn.data("email");
                 var role = btn.data("role");
 
                 // Populate form fields
                 $("#user-id").val(id).prop("readonly", false).attr("placeholder", "Enter new ID");
                 $("#user-fullname").val(name);
+                $("#user-username").val(username || "");
                 $("#user-email").val(email);
                 $("#user-role-assign").val(role);
                 $("#user-password").val("").prop("required", false).attr("placeholder", "Leave blank to keep current password");
@@ -3182,6 +3193,7 @@
                 var editId = form.attr("data-edit-id");
 
                 var name = $("#user-fullname").val();
+                var username = $("#user-username").val();
                 var email = $("#user-email").val();
                 var password = $("#user-password").val();
                 var role = $("#user-role-assign").val();
@@ -3192,6 +3204,7 @@
 
                 $.post(endpoint, {
                     name: name,
+                    username: username,
                     email: email,
                     password: password,
                     role: role,

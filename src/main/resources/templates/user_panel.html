@@ -263,14 +263,18 @@
                                         <div class="form-text text-muted font-size-xs mt-2" style="font-size: 0.75rem;">Recommended: Square image, max 2MB.</div>
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label text-muted" for="settings-name">Display Name</label>
-                                    <input type="text" class="form-control user-input" id="settings-name" th:value="${currentUser.name}" placeholder="Enter display name" required>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label text-muted">Account Email</label>
-                                    <input type="text" class="form-control user-input" th:value="${currentUser.email}" readonly disabled style="opacity: 0.5; cursor: not-allowed;">
-                                </div>
+                                <div class="col-12 col-md-4">
+                                     <label class="form-label text-muted" for="settings-name">Display Name</label>
+                                     <input type="text" class="form-control user-input" id="settings-name" th:value="${currentUser.name}" placeholder="Enter display name" required>
+                                 </div>
+                                 <div class="col-12 col-md-4">
+                                     <label class="form-label text-muted" for="settings-username">Username</label>
+                                     <input type="text" class="form-control user-input" id="settings-username" th:value="${currentUser.username}" placeholder="Enter username" required>
+                                 </div>
+                                 <div class="col-12 col-md-4">
+                                     <label class="form-label text-muted" for="settings-email">Account Email</label>
+                                     <input type="text" class="form-control user-input" id="settings-email" th:value="${currentUser.email}" placeholder="Enter email address" required>
+                                 </div>
                                 <div class="col-12">
                                     <label class="form-label text-muted" for="settings-bio">About Me (Bio)</label>
                                     <textarea class="form-control user-input" id="settings-bio" rows="2" placeholder="Tell us about yourself..." th:text="${currentUser.bio}"></textarea>
@@ -660,6 +664,8 @@
                 btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Saving...');
 
                 var name = $('#settings-name').val();
+                var username = $('#settings-username').val();
+                var email = $('#settings-email').val();
                 var bio = $('#settings-bio').val();
                 var currentPassword = $('#settings-current-password').val();
                 var newPassword = $('#settings-new-password').val();
@@ -688,6 +694,8 @@
                     subscribedToMentions: subscribedToMentions,
                     updatesEmail: updatesEmail,
                     name: name,
+                    username: username,
+                    email: email,
                     bio: bio
                 };
                 if (profilePictureUrl !== undefined) {

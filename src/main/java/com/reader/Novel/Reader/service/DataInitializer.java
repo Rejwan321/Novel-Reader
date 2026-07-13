@@ -109,50 +109,72 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('email_migration_done', 'true')");
                 System.out.println("One-time email subscription migration executed successfully.");
             }
+
+            // One-time username column migration
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
+            java.util.List<java.util.Map<String, Object>> usernameMigrated = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'username_migration_done'");
+            if (usernameMigrated.isEmpty()) {
+                java.util.List<java.util.Map<String, Object>> allUsers = jdbcTemplate.queryForList("SELECT id, email FROM reader_internal");
+                java.util.Set<String> takenUsernames = new java.util.HashSet<>();
+                for (java.util.Map<String, Object> uMap : allUsers) {
+                    Long id = ((Number) uMap.get("id")).longValue();
+                    String currentEmail = (String) uMap.get("email");
+                    if (currentEmail == null || currentEmail.trim().isEmpty()) {
+                        continue;
+                    }
+                    String baseUsername;
+                    String finalEmail = currentEmail;
+                    if (!currentEmail.contains("@")) {
+                        baseUsername = currentEmail.trim();
+                        finalEmail = baseUsername.toLowerCase() + "@yukitales.com";
+                    } else {
+                        baseUsername = currentEmail.split("@")[0].trim();
+                    }
+                    
+                    String targetUsername = baseUsername;
+                    int suffix = 0;
+                    while (takenUsernames.contains(targetUsername.toLowerCase())) {
+                        targetUsername = baseUsername + suffix;
+                        suffix++;
+                    }
+                    takenUsernames.add(targetUsername.toLowerCase());
+                    jdbcTemplate.update("UPDATE reader_internal SET username = ?, email = ? WHERE id = ?", targetUsername, finalEmail, id);
+                }
+                jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('username_migration_done', 'true')");
+                System.out.println("One-time username database migration completed successfully.");
+            }
             
             // Ensure owner exists with ID 0
-            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");
+            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 0");
             String sakuraHashed = PasswordUtils.hashPassword("sakura");
             if (owners.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', ?, 'OWNER', 100)", sakuraHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', 'sakura@yukitales.com', ?, 'OWNER', 100)", sakuraHashed);
             } else {
-                Long currentOwnerId = ((Number) owners.get(0).get("id")).longValue();
-                if (currentOwnerId != 0L) {
-                    jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = ?", currentOwnerId);
-                }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', password = ? WHERE email = 'sakura'", sakuraHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', username = 'sakura', email = 'sakura@yukitales.com', password = ? WHERE id = 0", sakuraHashed);
             }
 
             // Ensure admin exists with ID 1
-            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'admin'");
+            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1");
             String adminHashed = PasswordUtils.hashPassword("admin");
             if (admins.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', ?, 'ADMIN', 100)", adminHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', 'admin@yukitales.com', ?, 'ADMIN', 100)", adminHashed);
             } else {
-                Long currentAdminId = ((Number) admins.get(0).get("id")).longValue();
-                if (currentAdminId != 1L) {
-                    jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = ?", currentAdminId);
-                }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'ADMIN', name = 'System Admin', password = ? WHERE email = 'admin'", adminHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'ADMIN', name = 'System Admin', username = 'admin', email = 'admin@yukitales.com', password = ? WHERE id = 1", adminHashed);
             }
 
             // Ensure editor exists with ID 3
-            java.util.List<java.util.Map<String, Object>> editorsList = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'editor'");
+            java.util.List<java.util.Map<String, Object>> editorsList = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 3");
             String editorHashed = PasswordUtils.hashPassword("editor");
             if (editorsList.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (3, 'System Translator', 'editor', ?, 'EDITOR', 100)", editorHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (3, 'System Translator', 'editor', 'editor@yukitales.com', ?, 'EDITOR', 100)", editorHashed);
             } else {
-                Long currentEditorId = ((Number) editorsList.get(0).get("id")).longValue();
-                if (currentEditorId != 3L) {
-                    jdbcTemplate.update("UPDATE reader_internal SET id = 3 WHERE id = ?", currentEditorId);
-                }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', password = ? WHERE email = 'editor'", editorHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', username = 'editor', email = 'editor@yukitales.com', password = ? WHERE id = 3", editorHashed);
             }
 
             // Create the view named READER for H2 console users
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
             jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
-            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
+            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, username, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
 
             // Create the H2 database user admin/admin with admin privileges
             jdbcTemplate.execute("CREATE USER IF NOT EXISTS admin PASSWORD 'admin'");

@@ -38,6 +38,9 @@ public class AdminRestController {
     private UserService userService;
 
     @Autowired
+    private com.reader.Novel.Reader.repository.UserRepository userRepository;
+
+    @Autowired
     private NovelService novelService;
 
     @Autowired
@@ -158,6 +161,7 @@ public class AdminRestController {
     @PostMapping("/users/add")
     public ResponseEntity<?> createUser(
             @RequestParam String name,
+            @RequestParam(required = false) String username,
             @RequestParam String email,
             @RequestParam String password,
             @RequestParam String role,
@@ -187,6 +191,12 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
         }
 
+        if (username != null && !username.trim().isEmpty()) {
+            if (userRepository.findByUsernameIgnoreCase(username.trim()).isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already taken."));
+            }
+        }
+
         // Block assigning the OWNER role
         if ("OWNER".equals(role)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot assign the owner role."));
@@ -198,6 +208,9 @@ public class AdminRestController {
         }
 
         User user = new User(null, name.trim(), email.trim(), com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password), role);
+        if (username != null && !username.trim().isEmpty()) {
+            user.setUsername(username.trim());
+        }
         userService.addUser(user);
 
         try {
@@ -265,6 +278,7 @@ public class AdminRestController {
     public ResponseEntity<?> editUser(
             @PathVariable Long id,
             @RequestParam String name,
+            @RequestParam(required = false) String username,
             @RequestParam String email,
             @RequestParam(required = false) String password,
             @RequestParam String role,
@@ -319,6 +333,13 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered by another user."));
         }
 
+        if (username != null && !username.trim().isEmpty()) {
+            java.util.Optional<User> existingUsername = userRepository.findByUsernameIgnoreCase(username.trim());
+            if (existingUsername.isPresent() && !existingUsername.get().getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already registered by another user."));
+            }
+        }
+
         // Handle primary key ID update if a new ID is provided and different from the current ID
         if (newUserId != null && !newUserId.equals(id)) {
             User existingUserWithNewId = userService.getUserById(newUserId);
@@ -339,6 +360,9 @@ public class AdminRestController {
         }
 
         userToModify.setName(name.trim());
+        if (username != null && !username.trim().isEmpty()) {
+            userToModify.setUsername(username.trim());
+        }
         userToModify.setEmail(email.trim());
         userToModify.setUser_type(role);
         if (password != null && !password.trim().isEmpty()) {
