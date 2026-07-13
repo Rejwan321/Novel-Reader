@@ -367,8 +367,13 @@
                                                  data-logo_alignment="left">
                                             </div>
                                         </div>
-                                        <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="text-success small fw-bold">
-                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="d-flex align-items-center justify-content-end gap-2">
+                                            <span class="text-success small fw-bold">
+                                                <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-2" style="font-size: 0.72rem; line-height: 1.2;" onclick="unlinkProvider('GOOGLE')">
+                                                <i class="fa-solid fa-unlink me-1"></i>Unlink
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -395,8 +400,13 @@
                                                 <i class="fa-brands fa-discord me-1"></i>Link Discord
                                             </a>
                                         </div>
-                                        <div th:if="${#strings.contains(currentUser.loginType, 'DISCORD')}" class="text-success small fw-bold">
-                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'DISCORD')}" class="d-flex align-items-center justify-content-end gap-2">
+                                            <span class="text-success small fw-bold">
+                                                <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-2" style="font-size: 0.72rem; line-height: 1.2;" onclick="unlinkProvider('DISCORD')">
+                                                <i class="fa-solid fa-unlink me-1"></i>Unlink
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -420,8 +430,13 @@
                                     <button th:if="${!#strings.contains(currentUser.loginType, 'LOCAL')}" type="button" class="btn btn-sm btn-outline-info px-3" data-bs-toggle="modal" data-bs-target="#linkPasswordModal">
                                         <i class="fa-solid fa-key me-1"></i>Link Password
                                     </button>
-                                    <div th:if="${#strings.contains(currentUser.loginType, 'LOCAL')}" class="text-success small fw-bold">
-                                        <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                    <div th:if="${#strings.contains(currentUser.loginType, 'LOCAL')}" class="d-flex align-items-center justify-content-end gap-2">
+                                        <span class="text-success small fw-bold">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-2" style="font-size: 0.72rem; line-height: 1.2;" onclick="unlinkProvider('LOCAL')">
+                                            <i class="fa-solid fa-unlink me-1"></i>Unlink
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -695,6 +710,23 @@
                     btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
                 });
             });
+            window.unlinkProvider = function(provider) {
+                var providerName = provider === 'LOCAL' ? 'Password' : (provider.charAt(0) + provider.slice(1).toLowerCase());
+                if (!confirm("Are you sure you want to unlink " + providerName + " login from your account? This action cannot be undone.")) {
+                    return;
+                }
+                
+                $.post("/api/auth/unlink", { provider: provider })
+                .done(function(res) {
+                    showToast(providerName + " unlinked successfully!", "success");
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                })
+                .fail(function(err) {
+                    showToast("Unlinking failed: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                });
+            };
 
             // Active Tab Query Param Check
             var urlParams = new URLSearchParams(window.location.search);

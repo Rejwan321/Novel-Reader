@@ -1056,4 +1056,53 @@ public class AuthRestController {
         otpCache.remove(cleanEmail);
         return ResponseEntity.ok(Map.of("success", true, "message", "Password reset successfully. You can now log in with your new password."));
     }
+
+    @PostMapping("/unlink")
+    public ResponseEntity<?> unlinkProvider(@RequestParam String provider, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login first."));
+        }
+
+        User user = userRepository.findById(loggedInUser.getId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        String loginType = user.getLoginType();
+        if (loginType == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No login methods found."));
+        }
+
+        String target = provider.toUpperCase().trim();
+        if (!"GOOGLE".equals(target) && !"DISCORD".equals(target) && !"LOCAL".equals(target)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid authentication provider."));
+        }
+
+        // Split login methods to check count
+        java.util.List<String> methods = new java.util.ArrayList<>(
+            java.util.Arrays.asList(loginType.split(","))
+        );
+
+        if (!methods.contains(target)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "This authentication provider is not linked."));
+        }
+
+        if (methods.size() <= 1) {
+            return ResponseEntity.badRequest().body(Map.of("error", "You cannot unlink your only remaining login method."));
+        }
+
+        methods.remove(target);
+        String newLoginType = String.join(",", methods);
+
+        user.setLoginType(newLoginType);
+        if ("LOCAL".equals(target)) {
+            user.setPassword(null);
+        }
+
+        userRepository.save(user);
+        session.setAttribute("user", user);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", provider + " unlinked successfully.", "loginType", newLoginType));
+    }
 }

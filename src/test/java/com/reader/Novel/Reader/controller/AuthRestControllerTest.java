@@ -525,4 +525,98 @@ public class AuthRestControllerTest {
             assertEquals("LOCAL,DISCORD", updatedUser.getLoginType());
         }
     }
+
+    @Test
+    public void testUnlinkNotLoggedIn() throws Exception {
+        mockMvc.perform(post("/api/auth/unlink")
+                .param("provider", "GOOGLE"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testUnlinkProviderNotLinked() throws Exception {
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setPassword("password");
+        user.setUser_type("READER");
+        user.setLoginType("LOCAL");
+        user = userRepository.save(user);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("user", user);
+
+        mockMvc.perform(post("/api/auth/unlink")
+                .session(session)
+                .param("provider", "GOOGLE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("This authentication provider is not linked."));
+    }
+
+    @Test
+    public void testUnlinkOnlyRemainingMethodFails() throws Exception {
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setPassword("password");
+        user.setUser_type("READER");
+        user.setLoginType("LOCAL");
+        user = userRepository.save(user);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("user", user);
+
+        mockMvc.perform(post("/api/auth/unlink")
+                .session(session)
+                .param("provider", "LOCAL"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("You cannot unlink your only remaining login method."));
+    }
+
+    @Test
+    public void testUnlinkSuccess() throws Exception {
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setPassword("password");
+        user.setUser_type("READER");
+        user.setLoginType("LOCAL,GOOGLE");
+        user = userRepository.save(user);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("user", user);
+
+        mockMvc.perform(post("/api/auth/unlink")
+                .session(session)
+                .param("provider", "GOOGLE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertEquals("LOCAL", updatedUser.getLoginType());
+    }
+
+    @Test
+    public void testUnlinkLocalPasswordClearsPassword() throws Exception {
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setPassword("password_hash");
+        user.setUser_type("READER");
+        user.setLoginType("LOCAL,GOOGLE");
+        user = userRepository.save(user);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("user", user);
+
+        mockMvc.perform(post("/api/auth/unlink")
+                .session(session)
+                .param("provider", "LOCAL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertEquals("GOOGLE", updatedUser.getLoginType());
+        assertNull(updatedUser.getPassword());
+    }
 }
