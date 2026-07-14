@@ -1163,8 +1163,6 @@ $(document).ready(function() {
     function openRazorpayCheckout(res, btn, inputField) {
         var options = {
             "key": res.keyId,
-            "amount": res.amount,
-            "currency": res.currency,
             "name": res.name,
             "description": res.description,
             "order_id": res.orderId,
@@ -1222,6 +1220,10 @@ $(document).ready(function() {
             }
         };
         var rzp1 = new Razorpay(options);
+        rzp1.on('payment.failed', function (response) {
+            console.error("Razorpay Payment Failed Detail:", response.error);
+            showToast("Payment failed: " + response.error.description, "error");
+        });
         rzp1.open();
     }
     $(document).on("click", ".btn-purchase-pack", function(e) {
