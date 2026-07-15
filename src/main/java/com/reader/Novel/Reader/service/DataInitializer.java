@@ -144,22 +144,6 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println("One-time username database migration completed successfully.");
             }
             
-            // Cleanup: remove duplicate user records with ID > 1 to prevent NonUniqueResultException
-            jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-            try {
-                jdbcTemplate.update("DELETE FROM bookmarks WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM ratings WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM notifications WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM comments WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM purchases WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM flake_purchases WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM reviews WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM user_used_coupons WHERE user_id > 1");
-                jdbcTemplate.update("DELETE FROM reader_internal WHERE id > 1");
-            } finally {
-                jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
-            }
-
             // Ensure owner exists with ID 0
             java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 0");
             String sakuraHashed = PasswordUtils.hashPassword("sakura");
