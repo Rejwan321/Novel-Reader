@@ -148,9 +148,18 @@ public class DataInitializer implements CommandLineRunner {
             java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 0");
             String sakuraHashed = PasswordUtils.hashPassword("sakura");
             if (owners.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', 'sakura@yukitales.com', ?, 'OWNER', 100)", sakuraHashed);
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (0, 'Sakura Sakura', 'sakura', 'sakura@yukitales.com', ?, 'OWNER', 100)", sakuraHashed);
             } else {
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', username = 'sakura', email = 'sakura@yukitales.com', password = ? WHERE id = 0", sakuraHashed);
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'Sakura Sakura', username = 'sakura', email = 'sakura@yukitales.com', password = ? WHERE id = 0", sakuraHashed);
+            }
+
+            // Ensure admin exists with ID 1
+            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1");
+            String adminHashed = PasswordUtils.hashPassword("admin");
+            if (admins.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (1, 'Admin Admin', 'admin', 'admin@yukitales.com', ?, 'ADMIN', 100)", adminHashed);
+            } else {
+                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'ADMIN', name = 'Admin Admin', username = 'admin', email = 'admin@yukitales.com', password = ? WHERE id = 1", adminHashed);
             }
 
 
