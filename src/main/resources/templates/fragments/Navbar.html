@@ -401,7 +401,7 @@
                         </label>
                     </div>
 
-                    <div class="form-check form-check-inline" id="gateway-option-mock-container">
+                    <div class="form-check form-check-inline" id="gateway-option-mock-container" th:if="${session.user != null and (session.user.user_type == 'OWNER' or session.user.user_type == 'ADMIN')}">
                         <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-mock" value="mock">
                         <label class="form-check-label text-white" for="gateway-mock" style="cursor: pointer;">
                             <i class="fa-solid fa-flask text-warning me-1"></i>Mock Checkout (Free Testing)

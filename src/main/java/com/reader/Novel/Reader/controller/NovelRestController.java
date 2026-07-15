@@ -451,6 +451,13 @@ public class NovelRestController {
             activeGateway = paymentService.isRazorpayEnabled() ? "razorpay" : (paymentService.isPayUEnabled() ? "payu" : "mock");
         }
 
+        if ("mock".equals(activeGateway)) {
+            String role = user.getUser_type();
+            if (!"OWNER".equals(role) && !"ADMIN".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Mock checkout is restricted to Owner and Admin accounts only."));
+            }
+        }
+
         if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
             String txnid = "txn_" + System.currentTimeMillis();
             // Convert USD price to INR assuming 1 USD = 83 INR
