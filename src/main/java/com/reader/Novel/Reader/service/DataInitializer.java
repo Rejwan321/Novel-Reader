@@ -153,39 +153,7 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', username = 'sakura', email = 'sakura@yukitales.com', password = ? WHERE id = 0", sakuraHashed);
             }
 
-            // Cleanup: delete all users except owner (ID 0)
-            java.util.List<java.util.Map<String, Object>> otherUsers = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id != 0");
-            for (java.util.Map<String, Object> uMap : otherUsers) {
-                Long targetId = ((Number) uMap.get("id")).longValue();
-                
-                // 1. Delete bookmarks
-                jdbcTemplate.update("DELETE FROM bookmarks WHERE user_id = ?", targetId);
 
-                // 2. Delete ratings
-                jdbcTemplate.update("DELETE FROM ratings WHERE user_id = ?", targetId);
-
-                // 3. Delete notifications
-                jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", targetId);
-
-                // 4. Delete comments
-                jdbcTemplate.update("DELETE FROM comments WHERE user_id = ?", targetId);
-
-                // 5. Delete purchases
-                jdbcTemplate.update("DELETE FROM purchases WHERE user_id = ?", targetId);
-
-                // 6. Delete flake purchases
-                jdbcTemplate.update("DELETE FROM flake_purchases WHERE user_id = ?", targetId);
-
-                // 7. Delete reviews
-                jdbcTemplate.update("DELETE FROM reviews WHERE user_id = ?", targetId);
-
-                // 8. Delete coupon records
-                jdbcTemplate.update("DELETE FROM user_used_coupons WHERE user_id = ?", targetId);
-
-                // 9. Delete user record
-                jdbcTemplate.update("DELETE FROM reader_internal WHERE id = ?", targetId);
-                System.out.println("Deleted user ID " + targetId + " to leave only owner.");
-            }
 
             // Create the view named READER for H2 console users
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
