@@ -52,6 +52,54 @@ public class DataInitializer implements CommandLineRunner {
         try {
             jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS DECRYPT_PASSWORD FOR 'com.reader.Novel.Reader.util.PasswordUtils.decryptForH2'");
             
+            // Ensure username column exists
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
+
+            // De-duplicate users (by email and username)
+            java.util.List<java.util.Map<String, Object>> allUsers = jdbcTemplate.queryForList("SELECT id, email, username FROM reader_internal ORDER BY id ASC");
+            java.util.Set<String> seenEmails = new java.util.HashSet<>();
+            java.util.Set<String> seenUsernames = new java.util.HashSet<>();
+            for (java.util.Map<String, Object> uMap : allUsers) {
+                Long id = ((Number) uMap.get("id")).longValue();
+                String email = (String) uMap.get("email");
+                String username = (String) uMap.get("username");
+                
+                boolean duplicate = false;
+                if (email != null) {
+                    String emailClean = email.trim().toLowerCase();
+                    if (seenEmails.contains(emailClean)) {
+                        duplicate = true;
+                    } else {
+                        seenEmails.add(emailClean);
+                    }
+                }
+                if (username != null) {
+                    String usernameClean = username.trim().toLowerCase();
+                    if (seenUsernames.contains(usernameClean)) {
+                        duplicate = true;
+                    } else {
+                        seenUsernames.add(usernameClean);
+                    }
+                }
+                
+                if (duplicate) {
+                    System.out.println("Deleting duplicate user ID " + id + " (email: " + email + ", username: " + username + ")");
+                    jdbcTemplate.update("DELETE FROM bookmarks WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM ratings WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM comments WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM purchases WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM flake_purchases WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM reviews WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM user_used_coupons WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM reader_internal WHERE id = ?", id);
+                }
+            }
+
+            // Apply unique constraints to prevent future duplicates
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD CONSTRAINT IF NOT EXISTS UC_email UNIQUE(email)");
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD CONSTRAINT IF NOT EXISTS UC_username UNIQUE(username)");
+            
             // Ensure comments table has reports_count column
             jdbcTemplate.execute("ALTER TABLE comments ADD COLUMN IF NOT EXISTS reports_count INT DEFAULT 0 NOT NULL");
 
@@ -114,9 +162,9 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
             java.util.List<java.util.Map<String, Object>> usernameMigrated = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'username_migration_done'");
             if (usernameMigrated.isEmpty()) {
-                java.util.List<java.util.Map<String, Object>> allUsers = jdbcTemplate.queryForList("SELECT id, email FROM reader_internal");
+                java.util.List<java.util.Map<String, Object>> migrationUsers = jdbcTemplate.queryForList("SELECT id, email FROM reader_internal");
                 java.util.Set<String> takenUsernames = new java.util.HashSet<>();
-                for (java.util.Map<String, Object> uMap : allUsers) {
+                for (java.util.Map<String, Object> uMap : migrationUsers) {
                     Long id = ((Number) uMap.get("id")).longValue();
                     String currentEmail = (String) uMap.get("email");
                     if (currentEmail == null || currentEmail.trim().isEmpty()) {
