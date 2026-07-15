@@ -182,7 +182,6 @@ public class DataInitializer implements CommandLineRunner {
 
             // One-time username column migration
             jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
-            jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
             java.util.List<java.util.Map<String, Object>> usernameMigrated = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'username_migration_done'");
             if (usernameMigrated.isEmpty()) {
                 java.util.List<java.util.Map<String, Object>> migrationUsers = jdbcTemplate.queryForList("SELECT id, email FROM reader_internal");

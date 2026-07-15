@@ -22,8 +22,6 @@ public class User {
 
     @Column(unique = true)
     private String email;
-    @Column(unique = true)
-    private String phone;
     private String password;
     private String user_type;
     private Integer balance = 100;
@@ -148,9 +146,6 @@ public class User {
 
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
 
     @Override
     public String toString() {

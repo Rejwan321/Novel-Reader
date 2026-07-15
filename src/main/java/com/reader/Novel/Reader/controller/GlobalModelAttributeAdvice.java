@@ -93,42 +93,4 @@ public class GlobalModelAttributeAdvice {
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse("Poppins");
     }
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.enabled:false}")
-    private boolean firebaseEnabled;
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.api-key:}")
-    private String firebaseApiKey;
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.auth-domain:}")
-    private String firebaseAuthDomain;
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.project-id:}")
-    private String firebaseProjectId;
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.storage-bucket:}")
-    private String firebaseStorageBucket;
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.messaging-sender-id:}")
-    private String firebaseMessagingSenderId;
-
-    @org.springframework.beans.factory.annotation.Value("${firebase.app-id:}")
-    private String firebaseAppId;
-
-    @ModelAttribute("firebaseEnabled")
-    public boolean addFirebaseEnabled() {
-        return firebaseEnabled;
-    }
-
-    @ModelAttribute("firebaseConfig")
-    public java.util.Map<String, String> addFirebaseConfig() {
-        return java.util.Map.of(
-            "apiKey", firebaseApiKey != null ? firebaseApiKey : "",
-            "authDomain", firebaseAuthDomain != null ? firebaseAuthDomain : "",
-            "projectId", firebaseProjectId != null ? firebaseProjectId : "",
-            "storageBucket", firebaseStorageBucket != null ? firebaseStorageBucket : "",
-            "messagingSenderId", firebaseMessagingSenderId != null ? firebaseMessagingSenderId : "",
-            "appId", firebaseAppId != null ? firebaseAppId : ""
-        );
-    }
 }
