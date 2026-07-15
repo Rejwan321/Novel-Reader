@@ -121,14 +121,36 @@ public class DataInitializer implements CommandLineRunner {
             // Delete legacy users
             jdbcTemplate.execute("DELETE FROM reader_internal WHERE email IN ('sakura@sakura.com', 'editor@yuki.com')");
 
+            // Restore owner/admin if they were moved to ID 1000/1001
+            java.util.List<java.util.Map<String, Object>> movedOwner = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1000 AND username = 'sakura'");
+            if (!movedOwner.isEmpty()) {
+                jdbcTemplate.update("UPDATE bookmarks SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE purchases SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE ratings SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE comments SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE notifications SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = 1000");
+            }
+            
+            java.util.List<java.util.Map<String, Object>> movedAdmin = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1001 AND username = 'admin'");
+            if (!movedAdmin.isEmpty()) {
+                jdbcTemplate.update("UPDATE bookmarks SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE purchases SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE ratings SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE comments SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE notifications SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = 1001");
+            }
+
             // Safe migration of any regular users occupying system IDs (0, 1, 3)
             for (Long sysId : new Long[]{0L, 1L, 3L}) {
                 String sysEmail = sysId == 0L ? "sakura" : (sysId == 1L ? "admin" : "editor");
+                String sysFullEmail = sysId == 0L ? "sakura@yukitales.com" : (sysId == 1L ? "admin@yukitales.com" : "editor@yukitales.com");
                 java.util.List<java.util.Map<String, Object>> conflictingUsers = jdbcTemplate.queryForList(
                     "SELECT id, email FROM reader_internal WHERE id = ?", sysId);
                 if (!conflictingUsers.isEmpty()) {
                     String email = (String) conflictingUsers.get(0).get("email");
-                    if (!sysEmail.equals(email)) {
+                    if (!sysEmail.equalsIgnoreCase(email) && !sysFullEmail.equalsIgnoreCase(email)) {
                         // Conflicting regular user! Move them to a high ID
                         Long newId = 1000L + sysId;
                         while (!jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = ?", newId).isEmpty()) {
