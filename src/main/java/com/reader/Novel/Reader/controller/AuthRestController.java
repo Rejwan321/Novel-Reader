@@ -407,6 +407,78 @@ public class AuthRestController {
         }
     }
 
+    @PostMapping("/phone/verify")
+    public ResponseEntity<?> verifyPhoneToken(
+            @RequestParam("token") String token,
+            HttpSession session,
+            jakarta.servlet.http.HttpServletRequest request) {
+        if (token == null || token.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Token is required."));
+        }
+
+        try {
+            com.google.firebase.auth.FirebaseToken decodedToken = 
+                    com.google.firebase.auth.FirebaseAuth.getInstance().verifyIdToken(token);
+            
+            String phoneNumber = (String) decodedToken.getClaims().get("phone_number");
+            if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Phone number not found in token."));
+            }
+
+            Optional<User> userOpt = userRepository.findByPhone(phoneNumber);
+            User user;
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                String cleanPhone = phoneNumber.replaceAll("[^0-9]", "");
+                String username = "phone_" + (cleanPhone.length() > 6 ? cleanPhone.substring(cleanPhone.length() - 6) : cleanPhone);
+                
+                int count = 1;
+                String finalUsername = username;
+                while (userRepository.findByUsernameIgnoreCase(finalUsername).isPresent()) {
+                    finalUsername = username + count;
+                    count++;
+                }
+                
+                String randomPassword = java.util.UUID.randomUUID().toString();
+                String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(randomPassword);
+                
+                user = new User();
+                user.setName("Phone User");
+                user.setUsername(finalUsername);
+                user.setPhone(phoneNumber);
+                user.setEmail(finalUsername + "@phone.yukitales.com");
+                user.setPassword(hashedPassword);
+                user.setUser_type("READER");
+                user.setLoginType("PHONE");
+                user.setBalance(100);
+            }
+
+            if (Boolean.TRUE.equals(user.getBanned())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account has been banned."));
+            }
+            if (user.getTimeoutUntil() != null && user.getTimeoutUntil().isAfter(java.time.LocalDateTime.now())) {
+                long minutesLeft = java.time.Duration.between(java.time.LocalDateTime.now(), user.getTimeoutUntil()).toMinutes() + 1;
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account is temporarily timed out. Try again in " + minutesLeft + " minutes."));
+            }
+
+            userRepository.save(user);
+
+            HttpSession oldSession = request.getSession(false);
+            if (oldSession != null) {
+                oldSession.invalidate();
+            }
+            HttpSession newSession = request.getSession(true);
+            newSession.setAttribute("user", user);
+
+            return ResponseEntity.ok(Map.of("success", true, "user", user));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Firebase verification failed: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/discord/login")
     public void discordLogin(
             jakarta.servlet.http.HttpServletRequest request, 
