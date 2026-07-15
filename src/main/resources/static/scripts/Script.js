@@ -1233,7 +1233,8 @@ $(document).ready(function() {
         e.preventDefault();
         var btn = $(this);
         var amount = btn.data("amount");
-        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
+        var gatewayVal = $("input[name='paymentGateway']:checked").val();
+        var gateway = (gatewayVal !== undefined) ? gatewayVal : "";
         var coupon = appliedCouponCode || ($("#coupon-code-input").length ? $("#coupon-code-input").val().toUpperCase().trim() : "");
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
@@ -1321,7 +1322,8 @@ $(document).ready(function() {
             return;
         }
         
-        var gateway = $("input[name='paymentGateway']:checked").val() || "mock";
+        var gatewayVal = $("input[name='paymentGateway']:checked").val();
+        var gateway = (gatewayVal !== undefined) ? gatewayVal : "";
         var coupon = appliedCouponCode || ($("#coupon-code-input").length ? $("#coupon-code-input").val().toUpperCase().trim() : "");
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         

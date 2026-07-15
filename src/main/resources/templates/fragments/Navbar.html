@@ -585,6 +585,7 @@ $(document).ready(function() {
 
     // Fetch payment gateways configuration when purchase flakes modal is shown
     $('#purchaseFlakesModal').on('show.bs.modal', function () {
+        var userRole = [[${session.user != null ? session.user.user_type : ''}]];
         $.get("/api/payment/config")
             .done(function(config) {
                 var showSelector = false;
@@ -616,12 +617,10 @@ $(document).ready(function() {
                     $("#gateway-mock").prop("checked", true);
                 }
 
-                if (showSelector) {
-                    $("#gateway-option-mock-container").show();
+                var isPrivileged = (userRole === 'OWNER' || userRole === 'ADMIN');
+                if (showSelector && isPrivileged) {
                     $("#payment-gateway-selector-container").removeClass("d-none");
                 } else {
-                    $("#gateway-option-mock-container").show();
-                    $("#gateway-mock").prop("checked", true);
                     $("#payment-gateway-selector-container").addClass("d-none");
                 }
             })
