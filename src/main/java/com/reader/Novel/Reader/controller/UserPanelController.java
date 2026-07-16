@@ -138,6 +138,13 @@ public class UserPanelController {
             @RequestParam(required = false) Boolean subscribedToUpdates,
             @RequestParam(required = false) Boolean subscribedToMentions,
             @RequestParam(required = false) String updatesEmail,
+            @RequestParam(required = false) String profilePictureUrl,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String bio,
+            @RequestParam(required = false) String currentPassword,
+            @RequestParam(required = false) String newPassword,
             HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
@@ -149,6 +156,49 @@ public class UserPanelController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
         }
 
+        if (name != null && !name.trim().isEmpty()) {
+            user.setName(name.trim());
+        }
+        if (username != null && !username.trim().isEmpty()) {
+            String cleanUsername = username.trim();
+            if (!cleanUsername.matches("^[a-zA-Z0-9_.-]+$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username can only contain letters, numbers, dots, dashes, and underscores."));
+            }
+            Optional<User> existingUsername = userRepository.findByUsernameIgnoreCase(cleanUsername);
+            if (existingUsername.isPresent() && !existingUsername.get().getId().equals(user.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username is already taken."));
+            }
+            user.setUsername(cleanUsername);
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            String cleanEmail = email.trim();
+            if (!cleanEmail.contains("@") || !cleanEmail.contains(".")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Please enter a valid email address."));
+            }
+            Optional<User> existingEmail = userRepository.findByEmailIgnoreCase(cleanEmail);
+            if (existingEmail.isPresent() && !existingEmail.get().getId().equals(user.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email is already taken."));
+            }
+            user.setEmail(cleanEmail);
+        }
+        if (bio != null) {
+            user.setBio(bio.trim());
+        }
+
+        // Change password security check
+        if (newPassword != null && !newPassword.trim().isEmpty()) {
+            if (currentPassword == null || currentPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Current password is required to change password."));
+            }
+            if (!com.reader.Novel.Reader.util.PasswordUtils.checkPassword(currentPassword, user.getPassword())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Current password is incorrect."));
+            }
+            if (newPassword.trim().length() < 6) {
+                return ResponseEntity.badRequest().body(Map.of("error", "New password must be at least 6 characters."));
+            }
+            user.setPassword(com.reader.Novel.Reader.util.PasswordUtils.hashPassword(newPassword.trim()));
+        }
+
         if (subscribedToUpdates != null) {
             user.setSubscribedToUpdates(subscribedToUpdates);
         }
@@ -157,6 +207,9 @@ public class UserPanelController {
         }
         if (updatesEmail != null) {
             user.setUpdatesEmail(updatesEmail.trim());
+        }
+        if (profilePictureUrl != null) {
+            user.setProfilePictureUrl(profilePictureUrl.trim());
         }
 
         userRepository.save(user);

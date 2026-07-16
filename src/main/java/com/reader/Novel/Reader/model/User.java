@@ -17,6 +17,10 @@ public class User {
     private Long id;
 
     private String name;
+    @Column(unique = true)
+    private String username;
+
+    @Column(unique = true)
     private String email;
     private String password;
     private String user_type;
@@ -29,6 +33,19 @@ public class User {
 
     private Boolean banned = false;
     private java.time.LocalDateTime timeoutUntil;
+
+    @Lob
+    @Column(columnDefinition = "CLOB")
+    private String profilePictureUrl;
+
+    @Lob
+    @Column(columnDefinition = "CLOB")
+    private String bio;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_used_coupons", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "coupon_code")
+    private java.util.Set<String> usedCoupons = new java.util.HashSet<>();
 
     public User() {
 
@@ -59,6 +76,9 @@ public class User {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -109,6 +129,23 @@ public class User {
 
     public java.time.LocalDateTime getTimeoutUntil() { return timeoutUntil; }
     public void setTimeoutUntil(java.time.LocalDateTime timeoutUntil) { this.timeoutUntil = timeoutUntil; }
+
+    public java.util.Set<String> getUsedCoupons() {
+        if (usedCoupons == null) {
+            usedCoupons = new java.util.HashSet<>();
+        }
+        return usedCoupons;
+    }
+
+    public void setUsedCoupons(java.util.Set<String> usedCoupons) {
+        this.usedCoupons = usedCoupons;
+    }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
     @Override
     public String toString() {

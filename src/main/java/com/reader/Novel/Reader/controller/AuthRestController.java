@@ -55,11 +55,18 @@ public class AuthRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
         }
 
-        Optional<User> existing = userService.getUserByEmail(email.trim());
+        Optional<User> existing = userRepository.findByEmailIgnoreCase(email.trim());
         if (existing.isPresent()) {
             User u = existing.get();
             if (!"GOOGLE".equals(u.getLoginType())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
+            }
+        }
+
+        Optional<User> existingName = userRepository.findFirstByNameIgnoreCase(name.trim());
+        if (existingName.isPresent()) {
+            if (existing.isEmpty() || !existing.get().getId().equals(existingName.get().getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already taken."));
             }
         }
 
@@ -144,6 +151,7 @@ public class AuthRestController {
             String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(tempPassword);
             user = new User(null, tempName, tempEmail, hashedPassword, tempRole);
             userService.addUser(user);
+            emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
         }
 
         // Secure Session Management: Prevent session fixation
@@ -171,9 +179,14 @@ public class AuthRestController {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
         }
 
-        Optional<User> existing = userService.getUserByEmail(email.trim());
+        Optional<User> existing = userRepository.findByEmailIgnoreCase(email.trim());
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
+        }
+
+        Optional<User> existingName = userRepository.findFirstByNameIgnoreCase(name.trim());
+        if (existingName.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already taken."));
         }
 
         // Validate selected role
@@ -187,26 +200,52 @@ public class AuthRestController {
         String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password);
         User user = new User(null, name.trim(), email.trim(), hashedPassword, role);
         userService.addUser(user);
+        emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
         
         // Auto-login after signup
         session.setAttribute("user", user);
         return ResponseEntity.ok(Map.of("success", true, "user", user));
     }
 
+    private String generateRememberMeToken(User user) {
+        String data = user.getId() + ":" + user.getPassword() + ":YukiTalesSecretRememberMeKey";
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return user.getId() + ":" + hexString.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @RequestParam String email,
             @RequestParam String password,
-            jakarta.servlet.http.HttpServletRequest request) {
+            @RequestParam(required = false) Boolean rememberMe,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
 
         if (email == null || email.trim().isEmpty() ||
             password == null || password.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required."));
+            return ResponseEntity.badRequest().body(Map.of("error", "Username/Email and password are required."));
         }
 
-        Optional<User> userOpt = userService.getUserByEmail(email.trim());
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email.trim());
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUsernameIgnoreCase(email.trim());
+        }
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findFirstByNameIgnoreCase(email.trim());
+        }
         if (userOpt.isEmpty() || !com.reader.Novel.Reader.util.PasswordUtils.checkPassword(password, userOpt.get().getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid email or password."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid username/email or password."));
         }
 
         User user = userOpt.get();
@@ -224,12 +263,30 @@ public class AuthRestController {
         }
         HttpSession session = request.getSession(true);
         session.setAttribute("user", user);
+
+        // If rememberMe is checked, set the cookie
+        if (Boolean.TRUE.equals(rememberMe)) {
+            String token = generateRememberMeToken(user);
+            if (token != null) {
+                jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("remember_me", token);
+                cookie.setMaxAge(30 * 24 * 60 * 60); // 30 days
+                cookie.setPath("/");
+                cookie.setHttpOnly(true);
+                cookie.setSecure(request.isSecure());
+                response.addCookie(cookie);
+            }
+        }
+
         return ResponseEntity.ok(Map.of("success", true, "user", user));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpSession session) {
+    public ResponseEntity<?> logout(HttpSession session, jakarta.servlet.http.HttpServletResponse response) {
         session.invalidate();
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("remember_me", "");
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
@@ -318,9 +375,13 @@ public class AuthRestController {
                 user.setLoginType("GOOGLE");
             }
 
+            boolean isNewUser = !userOpt.isPresent();
             user.setSubscribedToUpdates(true);
             user.setUpdatesEmail(email);
             userService.addUser(user);
+            if (isNewUser) {
+                emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
+            }
 
             if (Boolean.TRUE.equals(user.getBanned())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account has been banned."));
@@ -524,6 +585,7 @@ public class AuthRestController {
                 user.setSubscribedToUpdates(true);
                 user.setUpdatesEmail(email);
                 userService.addUser(user);
+                emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
             }
 
             if (Boolean.TRUE.equals(user.getBanned())) {
@@ -881,15 +943,20 @@ public class AuthRestController {
                 }
             }
 
+            // Update source user's email to a unique dummy value to avoid constraint conflict before deletion
+            sourceUser.setEmail("merged_" + java.util.UUID.randomUUID().toString() + "_" + sourceUser.getEmail());
+            userRepository.saveAndFlush(sourceUser);
+
             // Delete source user to clear email
             userRepository.delete(sourceUser);
+            userRepository.flush();
 
             // Update target user loginType and email
             targetUser.setEmail(email);
             if (!targetUser.getLoginType().contains("GOOGLE")) {
                 targetUser.setLoginType(targetUser.getLoginType() + ",GOOGLE");
             }
-            userRepository.save(targetUser);
+            userRepository.saveAndFlush(targetUser);
 
             session.setAttribute("user", targetUser);
             return ResponseEntity.ok(Map.of("success", true, "message", "Accounts merged successfully.", "user", targetUser));
@@ -928,5 +995,137 @@ public class AuthRestController {
         session.setAttribute("user", user);
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Password linked successfully.", "user", user));
+    }
+
+    private static class OtpInfo {
+        String code;
+        java.time.LocalDateTime expiry;
+
+        OtpInfo(String code, java.time.LocalDateTime expiry) {
+            this.code = code;
+            this.expiry = expiry;
+        }
+    }
+
+    private final java.util.Map<String, OtpInfo> otpCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @PostMapping("/forgot-password/request")
+    public ResponseEntity<?> requestForgotPassword(@RequestParam("email") String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email or username is required."));
+        }
+        String cleanInput = email.trim();
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(cleanInput);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUsernameIgnoreCase(cleanInput);
+        }
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findFirstByNameIgnoreCase(cleanInput);
+        }
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "No user found with this email or username."));
+        }
+
+        User user = userOpt.get();
+        String cleanEmail = user.getEmail().toLowerCase();
+
+        // Generate 6 digit numeric OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+        otpCache.put(cleanEmail, new OtpInfo(otp, java.time.LocalDateTime.now().plusMinutes(10)));
+
+        String subject = "[Yuki Tales] Password Reset Verification Code";
+        String body = String.format(
+            "Hello,\n\n" +
+            "You requested to reset your password on Yuki Tales.\n" +
+            "Your verification code is: %s\n\n" +
+            "This code is valid for 10 minutes. If you did not request this, please ignore this email.\n\n" +
+            "Best regards,\n" +
+            "Yuki Tales Support",
+            otp
+        );
+
+        emailService.sendCustomEmailAsync(cleanEmail, subject, body);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Verification code sent successfully to your registered email (" + cleanEmail + ")"));
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<?> resetForgotPassword(
+            @RequestParam("email") String email,
+            @RequestParam("otp") String otp,
+            @RequestParam("newPassword") String newPassword) {
+
+        if (email == null || email.trim().isEmpty() ||
+            otp == null || otp.trim().isEmpty() ||
+            newPassword == null || newPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "All fields (email, otp, newPassword) are required."));
+        }
+
+        String cleanEmail = email.trim().toLowerCase();
+        OtpInfo info = otpCache.get(cleanEmail);
+        if (info == null || !info.code.equals(otp.trim()) || java.time.LocalDateTime.now().isAfter(info.expiry)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired verification code."));
+        }
+
+        Optional<User> userOpt = userService.getUserByEmail(cleanEmail);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        User user = userOpt.get();
+        String hashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(newPassword);
+        user.setPassword(hashedPassword);
+        userRepository.save(user);
+
+        otpCache.remove(cleanEmail);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Password reset successfully. You can now log in with your new password."));
+    }
+
+    @PostMapping("/unlink")
+    public ResponseEntity<?> unlinkProvider(@RequestParam String provider, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login first."));
+        }
+
+        User user = userRepository.findById(loggedInUser.getId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
+        }
+
+        String loginType = user.getLoginType();
+        if (loginType == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No login methods found."));
+        }
+
+        String target = provider.toUpperCase().trim();
+        if (!"GOOGLE".equals(target) && !"DISCORD".equals(target) && !"LOCAL".equals(target)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid authentication provider."));
+        }
+
+        // Split login methods to check count
+        java.util.List<String> methods = new java.util.ArrayList<>(
+            java.util.Arrays.asList(loginType.split(","))
+        );
+
+        if (!methods.contains(target)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "This authentication provider is not linked."));
+        }
+
+        if (methods.size() <= 1) {
+            return ResponseEntity.badRequest().body(Map.of("error", "You cannot unlink your only remaining login method."));
+        }
+
+        methods.remove(target);
+        String newLoginType = String.join(",", methods);
+
+        user.setLoginType(newLoginType);
+        if ("LOCAL".equals(target)) {
+            user.setPassword(null);
+        }
+
+        userRepository.save(user);
+        session.setAttribute("user", user);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", provider + " unlinked successfully.", "loginType", newLoginType));
     }
 }

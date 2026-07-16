@@ -66,6 +66,7 @@ public class NovelService {
         systemSettingRepository.save(setting);
     }
 
+
     public Optional<Rating> getUserRating(Long userId, Long novelId) {
         return ratingRepository.findByUserIdAndNovelId(userId, novelId);
     }

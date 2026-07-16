@@ -55,8 +55,30 @@ public class UserService {
     @Transactional
     public void addUser(User usr){
         resetAutoIncrement();
+        ensureUniqueUsername(usr);
         userRepository.save(usr);
         resetAutoIncrement();
+    }
+
+    private void ensureUniqueUsername(User usr) {
+        if (usr.getUsername() != null && !usr.getUsername().trim().isEmpty()) {
+            return;
+        }
+        String baseName = usr.getName();
+        if (baseName == null || baseName.trim().isEmpty()) {
+            baseName = "user";
+        }
+        String baseUsername = baseName.trim().toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
+        if (baseUsername.isEmpty()) {
+            baseUsername = "user";
+        }
+        String targetUsername = baseUsername;
+        int suffix = 0;
+        while (userRepository.findByUsernameIgnoreCase(targetUsername).isPresent()) {
+            targetUsername = baseUsername + suffix;
+            suffix++;
+        }
+        usr.setUsername(targetUsername);
     }
 
     public Optional<User> getUserByEmail(String email) {
@@ -104,7 +126,20 @@ public class UserService {
         // 5. Delete purchases
         purchaseRepository.deleteByUserId(userId);
 
-        // 6. Delete user record
+        // 6. Delete flake purchases, reviews, and coupon records
+        entityManager.createNativeQuery("DELETE FROM flake_purchases WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM reviews WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM user_used_coupons WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        // 7. Delete user record
         userRepository.deleteById(userId);
         resetAutoIncrement();
     }

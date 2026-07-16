@@ -8,6 +8,8 @@ import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.repository.FlakePurchaseRepository;
 import com.reader.Novel.Reader.service.NovelService;
 
+import com.reader.Novel.Reader.model.Coupon;
+import com.reader.Novel.Reader.repository.CouponRepository;
 import com.reader.Novel.Reader.service.PaymentService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,9 @@ public class NovelRestController {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private CouponRepository couponRepository;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String appBaseUrl;
@@ -289,10 +294,85 @@ public class NovelRestController {
         ));
     }
 
+    @GetMapping("/user/validate-coupon")
+    public ResponseEntity<?> validateCoupon(
+            @RequestParam String code,
+            @RequestParam Integer amount,
+            HttpSession session) {
+        if (isRestricted(session)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
+        }
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please login first."));
+        }
+
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Coupon code is required."));
+        }
+        if (amount == null || amount <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid purchase amount."));
+        }
+
+        String cleanCode = code.toUpperCase().trim();
+        java.util.Optional<Coupon> couponOpt = couponRepository.findByCodeIgnoreCase(cleanCode);
+        if (couponOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid coupon code."));
+        }
+
+        Coupon coupon = couponOpt.get();
+        if (!coupon.getActive()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "This coupon is inactive."));
+        }
+
+        User dbUser = userService.getUserById(loggedInUser.getId());
+        if (dbUser.getUsedCoupons().contains(coupon.getCode().toUpperCase().trim())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "You have already used this coupon."));
+        }
+
+        // Check user restriction: email OR name
+        if (coupon.getAssignedUserEmail() != null && !coupon.getAssignedUserEmail().isEmpty()) {
+            String restricted = coupon.getAssignedUserEmail().trim().toLowerCase();
+            String userEmail = loggedInUser.getEmail() != null ? loggedInUser.getEmail().trim().toLowerCase() : "";
+            String userName = loggedInUser.getName() != null ? loggedInUser.getName().trim().toLowerCase() : "";
+            if (!restricted.equals(userEmail) && !restricted.equals(userName)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "This coupon is not valid for your account."));
+            }
+        }
+
+        // Calculate original price based on package
+        List<FlakePackage> packages = novelService.getAllFlakePackages();
+        double originalPrice = 0.0;
+        if (packages == null || packages.isEmpty()) {
+            originalPrice = amount * 0.01;
+        } else {
+            FlakePackage applicablePack = packages.get(0);
+            for (FlakePackage pack : packages) {
+                if (pack.getAmount() <= amount) {
+                    applicablePack = pack;
+                }
+            }
+            double rate = applicablePack.getPrice() / applicablePack.getAmount();
+            originalPrice = amount * rate;
+        }
+
+        double discount = coupon.getDiscountPercentage();
+        double discountedPrice = originalPrice * (1.0 - (discount / 100.0));
+
+        return ResponseEntity.ok(Map.of(
+            "valid", true,
+            "code", coupon.getCode(),
+            "discountPercentage", discount,
+            "originalPrice", originalPrice,
+            "discountedPrice", discountedPrice
+        ));
+    }
+
     @PostMapping("/user/purchase-flakes")
     public ResponseEntity<?> purchaseFlakes(
             @RequestParam Integer amount,
             @RequestParam(required = false) String gateway,
+            @RequestParam(required = false) String couponCode,
             HttpSession session) {
         if (isRestricted(session)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Platform is in secured mode."));
@@ -311,7 +391,7 @@ public class NovelRestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
         }
         
-        // Calculate price based on standard/custom package pricing
+        // Calculate standard price based on standard/custom package pricing
         List<FlakePackage> packages = novelService.getAllFlakePackages();
         double price = 0.0;
         if (packages == null || packages.isEmpty()) {
@@ -327,10 +407,86 @@ public class NovelRestController {
             price = amount * rate;
         }
 
+        // Validate and apply coupon if present
+        double discountPercent = 0.0;
+        String cleanCoupon = null;
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            cleanCoupon = couponCode.toUpperCase().trim();
+            java.util.Optional<Coupon> couponOpt = couponRepository.findByCodeIgnoreCase(cleanCoupon);
+            if (couponOpt.isPresent()) {
+                Coupon coupon = couponOpt.get();
+                if (coupon.getActive()) {
+                    if (user.getUsedCoupons().contains(cleanCoupon)) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "You have already used this coupon."));
+                    }
+                    boolean restrictedMatched = true;
+                    if (coupon.getAssignedUserEmail() != null && !coupon.getAssignedUserEmail().isEmpty()) {
+                        String restricted = coupon.getAssignedUserEmail().trim().toLowerCase();
+                        String userEmail = user.getEmail() != null ? user.getEmail().trim().toLowerCase() : "";
+                        String userName = user.getName() != null ? user.getName().trim().toLowerCase() : "";
+                        if (!restricted.equals(userEmail) && !restricted.equals(userName)) {
+                            restrictedMatched = false;
+                        }
+                    }
+                    if (restrictedMatched) {
+                        discountPercent = coupon.getDiscountPercentage();
+                    } else {
+                        return ResponseEntity.badRequest().body(Map.of("error", "This coupon is not valid for your account."));
+                    }
+                } else {
+                    return ResponseEntity.badRequest().body(Map.of("error", "This coupon is inactive."));
+                }
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid coupon code."));
+            }
+        }
+
+        if (discountPercent > 0.0) {
+            price = price * (1.0 - (discountPercent / 100.0));
+        }
+
         // Determine active gateway
         String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
         if (activeGateway.isEmpty()) {
-            activeGateway = paymentService.isPayUEnabled() ? "payu" : "mock";
+            activeGateway = paymentService.isRazorpayEnabled() ? "razorpay" : (paymentService.isPayUEnabled() ? "payu" : "mock");
+        }
+
+        if ("mock".equals(activeGateway)) {
+            String role = user.getUser_type();
+            if (!"OWNER".equals(role) && !"ADMIN".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Mock checkout is restricted to Owner and Admin accounts only."));
+            }
+        }
+
+        if ("razorpay".equals(activeGateway) && paymentService.isRazorpayEnabled()) {
+            String txnid = "txn_" + System.currentTimeMillis();
+            // Convert USD price to INR assuming 1 USD = 83 INR
+            double priceInInr = price * 83.0;
+            
+            try {
+                String orderId = paymentService.createRazorpayOrder(priceInInr, txnid);
+                
+                Map<String, Object> responseMap = new java.util.HashMap<>();
+                responseMap.put("success", true);
+                responseMap.put("razorpay", true);
+                responseMap.put("keyId", paymentService.getRazorpayKeyId());
+                responseMap.put("orderId", orderId);
+                responseMap.put("amount", (int) Math.round(priceInInr * 100.0)); // in paise
+                responseMap.put("currency", "INR");
+                responseMap.put("name", "Yuki Tales");
+                responseMap.put("description", "Purchase " + amount + " Snow Flakes");
+                responseMap.put("prefillName", user.getName() != null ? user.getName() : "Reader");
+                responseMap.put("prefillEmail", user.getEmail() != null ? user.getEmail() : "reader@yukitales.com");
+                
+                responseMap.put("udf1", String.valueOf(user.getId()));
+                responseMap.put("udf2", String.valueOf(amount));
+                responseMap.put("udf3", String.valueOf(price));
+                responseMap.put("udf4", cleanCoupon != null ? cleanCoupon : "");
+                
+                return ResponseEntity.ok(responseMap);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Razorpay Order creation failed: " + e.getMessage()));
+            }
         }
 
         if ("payu".equals(activeGateway) && paymentService.isPayUEnabled()) {
@@ -345,17 +501,24 @@ public class NovelRestController {
             String dynamicBaseUrl = systemSettingRepository.findById("app.base_url")
                 .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
                 .orElse(appBaseUrl);
-            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "http://localhost:8080";
+            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "";
+            if (cleanBaseUrl.isEmpty() || "/".equals(cleanBaseUrl)) {
+                cleanBaseUrl = "http://localhost:8080";
+            }
+            if (!cleanBaseUrl.toLowerCase().startsWith("http://") && !cleanBaseUrl.toLowerCase().startsWith("https://")) {
+                cleanBaseUrl = "http://" + cleanBaseUrl;
+            }
             if (cleanBaseUrl.endsWith("/")) {
                 cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
             }
             String surl = cleanBaseUrl + "/api/payment/payu/success";
             String furl = cleanBaseUrl + "/api/payment/payu/failure";
             
-            // Generate the checkout hash
+            // Generate the checkout hash with udf4 as couponCode
             String hash = paymentService.generatePaymentHash(
                 txnid, priceInInr, productinfo, firstname, email,
-                String.valueOf(user.getId()), String.valueOf(amount), String.valueOf(price)
+                String.valueOf(user.getId()), String.valueOf(amount), String.valueOf(price),
+                cleanCoupon != null ? cleanCoupon : ""
             );
             
             Map<String, Object> responseMap = new java.util.HashMap<>();
@@ -376,12 +539,16 @@ public class NovelRestController {
             responseMap.put("udf1", String.valueOf(user.getId()));
             responseMap.put("udf2", String.valueOf(amount));
             responseMap.put("udf3", String.valueOf(price));
+            responseMap.put("udf4", cleanCoupon != null ? cleanCoupon : "");
             
             return ResponseEntity.ok(responseMap);
         }
 
         // Mock Checkout Fallback
         user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + amount);
+        if (cleanCoupon != null) {
+            user.getUsedCoupons().add(cleanCoupon);
+        }
         userService.updateUser(user);
         
         // Save the flake purchase record
@@ -389,6 +556,7 @@ public class NovelRestController {
         flakePurchase.setUserId(user.getId());
         flakePurchase.setAmount(amount);
         flakePurchase.setPrice(price);
+        flakePurchase.setCouponCode(cleanCoupon);
         flakePurchase.setPurchasedAt(java.time.LocalDateTime.now());
         flakePurchaseRepository.save(flakePurchase);
 

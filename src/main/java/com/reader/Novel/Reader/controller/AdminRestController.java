@@ -7,8 +7,10 @@ import com.reader.Novel.Reader.model.Purchase;
 import com.reader.Novel.Reader.model.FlakePackage;
 import com.reader.Novel.Reader.model.Review;
 import com.reader.Novel.Reader.model.Notification;
+import com.reader.Novel.Reader.model.Coupon;
 import com.reader.Novel.Reader.repository.ReviewRepository;
 import com.reader.Novel.Reader.repository.NotificationRepository;
+import com.reader.Novel.Reader.repository.CouponRepository;
 import com.reader.Novel.Reader.service.UserService;
 import com.reader.Novel.Reader.service.NovelService;
 import com.reader.Novel.Reader.service.SseService;
@@ -36,6 +38,9 @@ public class AdminRestController {
     private UserService userService;
 
     @Autowired
+    private com.reader.Novel.Reader.repository.UserRepository userRepository;
+
+    @Autowired
     private NovelService novelService;
 
     @Autowired
@@ -46,6 +51,9 @@ public class AdminRestController {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private CouponRepository couponRepository;
 
     @Autowired
     private com.reader.Novel.Reader.repository.SystemSettingRepository systemSettingRepository;
@@ -67,21 +75,21 @@ public class AdminRestController {
         return false;
     }
 
-    @PostMapping("/self-destruct")
+    @PostMapping("/system-state")
     public ResponseEntity<?> toggleSelfDestruct(HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
         }
         if (!"OWNER".equals(loggedInUser.getUser_type())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only the owner can trigger self-destruct."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
         }
         novelService.toggleSecuredMode();
         boolean current = novelService.isSecuredMode();
         return ResponseEntity.ok(Map.of("success", true, "securedMode", current));
     }
 
-    @GetMapping("/self-destruct/status")
+    @GetMapping("/system-state/status")
     public ResponseEntity<?> getSelfDestructStatus(HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
         if (loggedInUser == null) {
@@ -122,13 +130,13 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify an owner account."));
         }
 
-        // Prevent self-demotion
-        if (loggedInUser.getId().equals(userToModify.getId())) {
+        // Prevent self-demotion (unless you are the OWNER)
+        if (loggedInUser.getId().equals(userToModify.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot demote yourself."));
         }
 
-        // Block assigning the OWNER role
-        if ("OWNER".equals(role)) {
+        // Block assigning the OWNER role (unless you are the OWNER)
+        if ("OWNER".equals(role) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot assign the owner role."));
         }
 
@@ -153,6 +161,7 @@ public class AdminRestController {
     @PostMapping("/users/add")
     public ResponseEntity<?> createUser(
             @RequestParam String name,
+            @RequestParam(required = false) String username,
             @RequestParam String email,
             @RequestParam String password,
             @RequestParam String role,
@@ -182,6 +191,12 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered."));
         }
 
+        if (username != null && !username.trim().isEmpty()) {
+            if (userRepository.findByUsernameIgnoreCase(username.trim()).isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already taken."));
+            }
+        }
+
         // Block assigning the OWNER role
         if ("OWNER".equals(role)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot assign the owner role."));
@@ -193,6 +208,9 @@ public class AdminRestController {
         }
 
         User user = new User(null, name.trim(), email.trim(), com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password), role);
+        if (username != null && !username.trim().isEmpty()) {
+            user.setUsername(username.trim());
+        }
         userService.addUser(user);
 
         try {
@@ -260,6 +278,7 @@ public class AdminRestController {
     public ResponseEntity<?> editUser(
             @PathVariable Long id,
             @RequestParam String name,
+            @RequestParam(required = false) String username,
             @RequestParam String email,
             @RequestParam(required = false) String password,
             @RequestParam String role,
@@ -288,8 +307,8 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot modify an owner account."));
         }
 
-        // Prevent OWNER from demoting themselves or any OWNER demotion
-        if ("OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(role)) {
+        // Prevent OWNER from demoting themselves or any OWNER demotion (unless logged in user is OWNER)
+        if ("OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(role) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot demote an owner."));
         }
 
@@ -298,8 +317,8 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot demote yourself."));
         }
 
-        // Block assigning the OWNER role to non-owner accounts
-        if ("OWNER".equals(role) && !"OWNER".equals(userToModify.getUser_type())) {
+        // Block assigning the OWNER role to non-owner accounts (unless logged in user is OWNER)
+        if ("OWNER".equals(role) && !"OWNER".equals(userToModify.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot assign the owner role."));
         }
 
@@ -312,6 +331,13 @@ public class AdminRestController {
         java.util.Optional<User> existing = userService.getUserByEmail(email.trim());
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email is already registered by another user."));
+        }
+
+        if (username != null && !username.trim().isEmpty()) {
+            java.util.Optional<User> existingUsername = userRepository.findByUsernameIgnoreCase(username.trim());
+            if (existingUsername.isPresent() && !existingUsername.get().getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username is already registered by another user."));
+            }
         }
 
         // Handle primary key ID update if a new ID is provided and different from the current ID
@@ -334,6 +360,9 @@ public class AdminRestController {
         }
 
         userToModify.setName(name.trim());
+        if (username != null && !username.trim().isEmpty()) {
+            userToModify.setUsername(username.trim());
+        }
         userToModify.setEmail(email.trim());
         userToModify.setUser_type(role);
         if (password != null && !password.trim().isEmpty()) {
@@ -379,8 +408,8 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot delete an owner account."));
         }
 
-        // Prevent self-deletion
-        if (loggedInUser.getId().equals(userToDelete.getId())) {
+        // Prevent self-deletion (unless OWNER decides to)
+        if (loggedInUser.getId().equals(userToDelete.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot delete yourself."));
         }
 
@@ -422,7 +451,7 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot ban an owner account."));
         }
 
-        if (loggedInUser.getId().equals(userToBan.getId())) {
+        if (loggedInUser.getId().equals(userToBan.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot ban yourself."));
         }
 
@@ -489,7 +518,7 @@ public class AdminRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cannot timeout an owner account."));
         }
 
-        if (loggedInUser.getId().equals(userToTimeout.getId())) {
+        if (loggedInUser.getId().equals(userToTimeout.getId()) && !"OWNER".equals(loggedInUser.getUser_type())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "You cannot timeout yourself."));
         }
 
@@ -528,7 +557,7 @@ public class AdminRestController {
 
         int count = 0;
         for (Long id : ids) {
-            if (loggedInUser.getId().equals(id)) continue; // skip self
+            if (loggedInUser.getId().equals(id) && !"OWNER".equals(loggedInUser.getUser_type())) continue; // skip self
             User u = userService.getUserById(id);
             if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
                 userService.deleteUser(id);
@@ -567,7 +596,7 @@ public class AdminRestController {
 
         int count = 0;
         for (Long id : ids) {
-            if (loggedInUser.getId().equals(id)) continue; // skip self
+            if (loggedInUser.getId().equals(id) && !"OWNER".equals(loggedInUser.getUser_type())) continue; // skip self
             User u = userService.getUserById(id);
             if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
                 u.setBanned(true);
@@ -644,7 +673,7 @@ public class AdminRestController {
         int count = 0;
         for (Object rawId : rawIds) {
             Long id = Long.parseLong(rawId.toString());
-            if (loggedInUser.getId().equals(id)) continue; // skip self
+            if (loggedInUser.getId().equals(id) && !"OWNER".equals(loggedInUser.getUser_type())) continue; // skip self
             User u = userService.getUserById(id);
             if (u != null && u.getId() != null && !"OWNER".equals(u.getUser_type())) {
                 if (durationMinutes <= 0) {
@@ -1762,44 +1791,71 @@ public class AdminRestController {
         }
     }
 
+
+
+    private String getNovelFolderName(Novel novel) {
+        if (novel == null) return "unknown";
+        String folderName = novel.getTitle();
+        if (folderName == null || folderName.trim().isEmpty()) {
+            folderName = "story_" + novel.getId();
+        } else {
+            folderName = folderName.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+        }
+        return folderName;
+    }
+
+    private String getChapterFolderName(Chapter chapter) {
+        if (chapter == null) return "chapter_unknown";
+        String folderName = "Chapter " + chapter.getChapterNumber();
+        if (chapter.getTitle() != null && !chapter.getTitle().trim().isEmpty()) {
+            folderName += " - " + chapter.getTitle();
+        }
+        return folderName.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+    }
+
     private void syncNovelFoldersAndFiles(Novel novel) {
         if (novel == null || novel.getId() == null) return;
         
         String userDir = System.getProperty("user.dir");
-        Path srcMainDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", "stories", "story_" + novel.getId());
-        Path targetDir = Paths.get(userDir, "target", "classes", "static", "uploads", "stories", "story_" + novel.getId());
-        Path rootBackupDir = Paths.get(userDir, "uploads", "stories", "story_" + novel.getId());
+        String novelFolder = getNovelFolderName(novel);
+        
+        Path srcMainDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", novelFolder);
+        Path targetDir = Paths.get(userDir, "target", "classes", "static", "uploads", novelFolder);
+        Path rootBackupDir = Paths.get(userDir, "uploads", novelFolder);
         
         try {
-            // Create subdirectories
-            Files.createDirectories(srcMainDir.resolve("media"));
-            Files.createDirectories(srcMainDir.resolve("text"));
+            // Create cover picture directories
+            Files.createDirectories(srcMainDir.resolve("cover picture"));
+            Files.createDirectories(targetDir.resolve("cover picture"));
+            Files.createDirectories(rootBackupDir.resolve("cover picture"));
             
-            Files.createDirectories(targetDir.resolve("media"));
-            Files.createDirectories(targetDir.resolve("text"));
-            
-            Files.createDirectories(rootBackupDir.resolve("media"));
-            Files.createDirectories(rootBackupDir.resolve("text"));
-            
-            // Sync description
+            // Sync description to the root of the novel folder
             String desc = novel.getDescription() != null ? novel.getDescription() : "";
-            Files.writeString(srcMainDir.resolve("text").resolve("description.txt"), desc);
-            Files.writeString(targetDir.resolve("text").resolve("description.txt"), desc);
-            Files.writeString(rootBackupDir.resolve("text").resolve("description.txt"), desc);
+            Files.writeString(srcMainDir.resolve("description.txt"), desc);
+            Files.writeString(targetDir.resolve("description.txt"), desc);
+            Files.writeString(rootBackupDir.resolve("description.txt"), desc);
             
             // Sync cover image if local upload
             String coverUrl = novel.getCoverUrl();
-            if (coverUrl != null && coverUrl.startsWith("/uploads/") && !coverUrl.contains("/stories/")) {
+            if (coverUrl != null && coverUrl.startsWith("/uploads/") && !coverUrl.contains("/cover picture/")) {
                 String filename = coverUrl.substring(coverUrl.lastIndexOf("/") + 1);
+                String sourcePath = coverUrl.substring("/uploads/".length());
+                
+                Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", sourcePath);
+                Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", sourcePath);
+                Path rootFile = Paths.get(userDir, "uploads", sourcePath);
+                
+                // Fallback to root uploads/ if not found in subfolder
+                if (!Files.exists(rootFile)) {
+                    srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
+                    targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
+                    rootFile = Paths.get(userDir, "uploads", filename);
+                }
+                
                 String destFilename = "cover_" + filename;
-                
-                Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
-                Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
-                Path rootFile = Paths.get(userDir, "uploads", filename);
-                
-                Path destSrcFile = srcMainDir.resolve("media").resolve(destFilename);
-                Path destTargetFile = targetDir.resolve("media").resolve(destFilename);
-                Path destRootFile = rootBackupDir.resolve("media").resolve(destFilename);
+                Path destSrcFile = srcMainDir.resolve("cover picture").resolve(destFilename);
+                Path destTargetFile = targetDir.resolve("cover picture").resolve(destFilename);
+                Path destRootFile = rootBackupDir.resolve("cover picture").resolve(destFilename);
                 
                 if (Files.exists(srcFile)) {
                     Files.copy(srcFile, destSrcFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -1811,7 +1867,9 @@ public class AdminRestController {
                     Files.copy(rootFile, destRootFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
                 
-                novel.setCoverUrl("/uploads/stories/story_" + novel.getId() + "/media/" + destFilename);
+                // Set the coverUrl URL pointing to the new cover picture folder
+                String webUrlPath = "/uploads/" + novelFolder + "/cover picture/" + destFilename;
+                novel.setCoverUrl(webUrlPath);
                 novelService.saveNovel(novel);
             }
         } catch (IOException e) {
@@ -1827,19 +1885,85 @@ public class AdminRestController {
         syncNovelFoldersAndFiles(novel);
         
         String userDir = System.getProperty("user.dir");
-        Path srcTextDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", "stories", "story_" + novel.getId(), "text");
-        Path targetTextDir = Paths.get(userDir, "target", "classes", "static", "uploads", "stories", "story_" + novel.getId(), "text");
-        Path rootTextDir = Paths.get(userDir, "uploads", "stories", "story_" + novel.getId(), "text");
+        String novelFolder = getNovelFolderName(novel);
+        String chapterFolder = getChapterFolderName(chapter);
         
-        String chapFilename = "chapter_" + chapter.getChapterNumber() + ".txt";
-        String content = chapter.getContent() != null ? chapter.getContent() : "";
+        Path srcTextDir = Paths.get(userDir, "src", "main", "resources", "static", "uploads", novelFolder, chapterFolder);
+        Path targetTextDir = Paths.get(userDir, "target", "classes", "static", "uploads", novelFolder, chapterFolder);
+        Path rootTextDir = Paths.get(userDir, "uploads", novelFolder, chapterFolder);
         
         try {
+            Files.createDirectories(srcTextDir);
+            Files.createDirectories(targetTextDir);
+            Files.createDirectories(rootTextDir);
+            
+            // Sync chapter content images if any
+            String content = chapter.getContent() != null ? chapter.getContent() : "";
+            boolean contentChanged = false;
+            
+            // Scan for matches of pattern "/uploads/...img"
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/uploads/([^\\s\"'>]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(content);
+            StringBuilder sb = new StringBuilder();
+            while (matcher.find()) {
+                String sourcePath = matcher.group(1);
+                // Make sure we don't match a path that is already in the target format
+                String targetIndicator = novelFolder + "/" + chapterFolder + "/";
+                if (!sourcePath.contains(targetIndicator)) {
+                    String filename = sourcePath.substring(sourcePath.lastIndexOf("/") + 1);
+                    
+                    Path srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", sourcePath);
+                    Path targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", sourcePath);
+                    Path rootFile = Paths.get(userDir, "uploads", sourcePath);
+                    
+                    // Fallback to root uploads/ if not found in subfolder
+                    if (!Files.exists(rootFile)) {
+                        srcFile = Paths.get(userDir, "src", "main", "resources", "static", "uploads", filename);
+                        targetFile = Paths.get(userDir, "target", "classes", "static", "uploads", filename);
+                        rootFile = Paths.get(userDir, "uploads", filename);
+                    }
+                    
+                    Path destSrcFile = srcTextDir.resolve(filename);
+                    Path destTargetFile = targetTextDir.resolve(filename);
+                    Path destRootFile = rootTextDir.resolve(filename);
+                    
+                    if (Files.exists(srcFile)) {
+                        Files.copy(srcFile, destSrcFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    if (Files.exists(targetFile)) {
+                        Files.copy(targetFile, destTargetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    if (Files.exists(rootFile)) {
+                        Files.copy(rootFile, destRootFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    
+                    String newUrl = "/uploads/" + novelFolder + "/" + chapterFolder + "/" + filename;
+                    matcher.appendReplacement(sb, newUrl);
+                    contentChanged = true;
+                } else {
+                    matcher.appendReplacement(sb, matcher.group(0));
+                }
+            }
+            matcher.appendTail(sb);
+            
+            if (contentChanged) {
+                content = sb.toString();
+                chapter.setContent(content);
+                novelService.saveChapter(chapter);
+            }
+            
+            String chapFilename = "chapter_" + chapter.getChapterNumber() + ".txt";
             Files.writeString(srcTextDir.resolve(chapFilename), content);
             Files.writeString(targetTextDir.resolve(chapFilename), content);
             Files.writeString(rootTextDir.resolve(chapFilename), content);
+            
+            // Save another file content.txt inside the folder as requested by the user
+            Files.writeString(srcTextDir.resolve("content.txt"), content);
+            Files.writeString(targetTextDir.resolve("content.txt"), content);
+            Files.writeString(rootTextDir.resolve("content.txt"), content);
+            
         } catch (IOException e) {
-            System.err.println("Error synchronizing chapter text file: " + e.getMessage());
+            System.err.println("Error synchronizing chapter files: " + e.getMessage());
         }
     }
 
@@ -1968,6 +2092,10 @@ public class AdminRestController {
         creds.put("payuMerchantKey", systemSettingRepository.findById("payu.merchant.key").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMerchantKey()));
         creds.put("payuMerchantSalt", systemSettingRepository.findById("payu.merchant.salt").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMerchantSalt()));
         creds.put("payuMode", systemSettingRepository.findById("payu.mode").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getPayUMode()));
+        creds.put("razorpayEnabled", systemSettingRepository.findById("razorpay.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(String.valueOf(paymentService.isRazorpayEnabled())));
+        creds.put("razorpayKeyId", systemSettingRepository.findById("razorpay.key.id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayKeyId()));
+        creds.put("razorpayKeySecret", systemSettingRepository.findById("razorpay.key.secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayKeySecret()));
+        creds.put("razorpayMode", systemSettingRepository.findById("razorpay.mode").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayMode()));
 
         return ResponseEntity.ok(creds);
     }
@@ -1992,6 +2120,10 @@ public class AdminRestController {
             @RequestParam(required = false) String payuMerchantKey,
             @RequestParam(required = false) String payuMerchantSalt,
             @RequestParam(required = false) String payuMode,
+            @RequestParam(required = false) String razorpayEnabled,
+            @RequestParam(required = false) String razorpayKeyId,
+            @RequestParam(required = false) String razorpayKeySecret,
+            @RequestParam(required = false) String razorpayMode,
             HttpSession session) {
         
         User loggedInUser = (User) session.getAttribute("user");
@@ -2020,6 +2152,63 @@ public class AdminRestController {
         if (payuMerchantKey != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.merchant.key", payuMerchantKey.trim()));
         if (payuMerchantSalt != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.merchant.salt", payuMerchantSalt.trim()));
         if (payuMode != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("payu.mode", payuMode.trim()));
+        if (razorpayEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.enabled", razorpayEnabled.trim()));
+        if (razorpayKeyId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.key.id", razorpayKeyId.trim()));
+        if (razorpayKeySecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.key.secret", razorpayKeySecret.trim()));
+        if (razorpayMode != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.mode", razorpayMode.trim()));
+
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // GET UI settings
+    @GetMapping("/ui")
+    public ResponseEntity<?> getUiSettings(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        java.util.Map<String, String> settings = new java.util.HashMap<>();
+        settings.put("uiTemplate", systemSettingRepository.findById("ui.template").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("modern"));
+        settings.put("uiTheme", systemSettingRepository.findById("ui.theme").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("midnight"));
+        settings.put("uiColorPrimary", systemSettingRepository.findById("ui.color.primary").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("#5e63b6"));
+        settings.put("uiColorBg", systemSettingRepository.findById("ui.color.bg").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("#0f0f1a"));
+        settings.put("uiColorCard", systemSettingRepository.findById("ui.color.card").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("#181829"));
+        settings.put("uiFontPrimary", systemSettingRepository.findById("ui.font.primary").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("Poppins"));
+
+        return ResponseEntity.ok(settings);
+    }
+
+    // POST UI settings
+    @PostMapping("/ui")
+    public ResponseEntity<?> saveUiSettings(
+            @RequestParam(required = false) String uiTemplate,
+            @RequestParam(required = false) String uiTheme,
+            @RequestParam(required = false) String uiColorPrimary,
+            @RequestParam(required = false) String uiColorBg,
+            @RequestParam(required = false) String uiColorCard,
+            @RequestParam(required = false) String uiFontPrimary,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in."));
+        }
+        String role = loggedInUser.getUser_type();
+        if (!"ADMIN".equals(role) && !"OWNER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied."));
+        }
+
+        if (uiTemplate != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.template", uiTemplate.trim()));
+        if (uiTheme != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.theme", uiTheme.trim()));
+        if (uiColorPrimary != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.color.primary", uiColorPrimary.trim()));
+        if (uiColorBg != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.color.bg", uiColorBg.trim()));
+        if (uiColorCard != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.color.card", uiColorCard.trim()));
+        if (uiFontPrimary != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("ui.font.primary", uiFontPrimary.trim()));
 
         return ResponseEntity.ok(Map.of("success", true));
     }
@@ -2077,5 +2266,97 @@ public class AdminRestController {
         }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Email dispatch initiated successfully for " + recipients.size() + " recipient(s)."));
+    }
+
+    // --- Coupon Management API ---
+    @GetMapping("/coupons")
+    public ResponseEntity<?> getAllCoupons(HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+        return ResponseEntity.ok(couponRepository.findAllByOrderByIdAsc());
+    }
+
+    @PostMapping("/coupons")
+    public ResponseEntity<?> saveCoupon(
+            @RequestParam(required = false) Long id,
+            @RequestParam String code,
+            @RequestParam Double discountPercentage,
+            @RequestParam(required = false) String assignedUserEmail,
+            @RequestParam(required = false) Boolean active,
+            HttpSession session) {
+        
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Coupon code is required."));
+        }
+        if (discountPercentage == null || discountPercentage < 0 || discountPercentage > 100) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Discount percentage must be between 0 and 100."));
+        }
+
+        String cleanCode = code.toUpperCase().trim();
+        String cleanEmail = (assignedUserEmail != null && !assignedUserEmail.trim().isEmpty()) ? assignedUserEmail.trim() : null;
+        boolean cleanActive = (active != null) ? active : true;
+
+        Coupon coupon;
+        if (id != null) {
+            coupon = couponRepository.findById(id).orElse(new Coupon());
+            // Check uniqueness if code is changed
+            if (!cleanCode.equals(coupon.getCode())) {
+                if (couponRepository.findByCodeIgnoreCase(cleanCode).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Coupon code already exists."));
+                }
+            }
+        } else {
+            if (couponRepository.findByCodeIgnoreCase(cleanCode).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Coupon code already exists."));
+            }
+            coupon = new Coupon();
+        }
+
+        coupon.setCode(cleanCode);
+        coupon.setDiscountPercentage(discountPercentage);
+        coupon.setAssignedUserEmail(cleanEmail);
+        coupon.setActive(cleanActive);
+
+        Coupon saved = couponRepository.save(coupon);
+        return ResponseEntity.ok(Map.of("success", true, "coupon", saved, "message", "Coupon saved successfully."));
+    }
+
+    @PostMapping("/coupons/{couponId}/toggle")
+    public ResponseEntity<?> toggleCoupon(@PathVariable Long couponId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        Coupon coupon = couponRepository.findById(couponId).orElse(null);
+        if (coupon == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coupon not found."));
+        }
+
+        coupon.setActive(!coupon.getActive());
+        Coupon saved = couponRepository.save(coupon);
+        return ResponseEntity.ok(Map.of("success", true, "active", saved.getActive(), "message", "Coupon state updated."));
+    }
+
+    @DeleteMapping("/coupons/{couponId}")
+    public ResponseEntity<?> deleteCoupon(@PathVariable Long couponId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || (!"ADMIN".equals(loggedInUser.getUser_type()) && !"OWNER".equals(loggedInUser.getUser_type()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Unauthorized access."));
+        }
+
+        if (!couponRepository.existsById(couponId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coupon not found."));
+        }
+
+        couponRepository.deleteById(couponId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Coupon deleted successfully."));
     }
 }

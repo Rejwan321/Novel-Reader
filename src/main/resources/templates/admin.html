@@ -105,94 +105,20 @@
             font-size: 0.9rem;
             margin-bottom: 6px;
         }
-        /* Excel-like Sheet Styling */
-        .excel-toolbar {
-            background-color: #1e1e30;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-bottom: none;
-            padding: 8px 16px;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
+
+        .theme-preset-card {
+            transition: all 0.3s;
         }
-        .excel-toolbar-btn {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #b2bec3;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .theme-preset-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.03) !important;
         }
-        .excel-toolbar-btn:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: white;
-            border-color: rgba(255, 255, 255, 0.25);
+        .theme-preset-card.active {
+            border-color: var(--theme-primary) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 0 12px rgba(94, 99, 182, 0.3);
         }
-        .excel-table-container {
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-            overflow-x: auto;
-            max-height: 400px;
-        }
-        .excel-table {
-            border-collapse: collapse !important;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 0.85rem;
-            margin: 0;
-            width: 100%;
-        }
-        .excel-table th, .excel-table td {
-            border: 1px solid rgba(255, 255, 255, 0.12) !important;
-            padding: 6px 12px !important;
-            position: relative;
-            outline: none;
-            color: #b2bec3;
-            background-color: #12121e;
-        }
-        .excel-table th {
-            background-color: #1e1e30 !important;
-            color: white !important;
-            font-weight: 500;
-            text-align: left;
-            user-select: none;
-        }
-        .excel-index-col {
-            background-color: #1e1e30 !important;
-            color: #a29bfe !important;
-            font-weight: 600;
-            text-align: center;
-            user-select: none;
-            width: 40px;
-        }
-        .excel-table td.active-cell {
-            outline: 2px solid #2ecc71 !important;
-            outline-offset: -2px;
-            z-index: 10;
-            background-color: rgba(46, 204, 113, 0.05) !important;
-        }
-        .excel-table tr:hover td {
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-        .excel-table th.excel-sortable {
-            cursor: pointer;
-        }
-        .excel-table th.excel-sortable:hover {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            color: #2ecc71 !important;
-        }
-        .excel-text-success {
-            color: #2ecc71 !important;
-            font-weight: bold;
-        }
+
         /* Premium Table Styles for approachable look */
         .table-premium tbody tr {
             transition: background-color 0.25s, transform 0.2s;
@@ -351,6 +277,24 @@
             background-color: rgba(241, 196, 15, 0.22) !important;
             border-color: #f1c40f !important;
         }
+        .btn-action-hide {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #bdc3c7 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        }
+        .btn-action-hide:hover {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            border-color: #bdc3c7 !important;
+        }
+        .btn-action-hidden {
+            background-color: rgba(231, 76, 60, 0.08) !important;
+            color: #e74c3c !important;
+            border: 1px solid rgba(231, 76, 60, 0.25) !important;
+        }
+        .btn-action-hidden:hover {
+            background-color: rgba(231, 76, 60, 0.18) !important;
+            border-color: #e74c3c !important;
+        }
         .genre-suggestion-item {
             padding: 10px 16px;
             cursor: pointer;
@@ -455,21 +399,7 @@
     <!-- Navbar -->
     <div th:replace="~{fragments/Navbar :: navbar}"></div>
 
-    <!-- Secured Mode Banner (OWNER only) -->
-    <div th:if="${securedMode and userRole == 'OWNER'}" class="container mt-5 pt-3">
-        <div class="alert alert-danger border border-danger bg-opacity-10 d-flex align-items-center justify-content-between p-3 rounded-3" style="background-color: rgba(231, 76, 60, 0.08);">
-            <div class="d-flex align-items-center gap-3">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-20 text-danger rounded-circle p-2" style="width: 42px; height: 42px;">
-                    <i class="fa-solid fa-shield-halved fa-lg"></i>
-                </div>
-                <div>
-                    <h4 class="h6 fw-bold text-white mb-1">Secured Mode Active</h4>
-                    <p class="text-muted mb-0 small">All novel listings, chapter reads, bookmarks, and revenue statistics are hidden from non-owner accounts.</p>
-                </div>
-            </div>
-            <span class="badge bg-danger px-3 py-2 text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Secured</span>
-        </div>
-    </div>
+
 
     <!-- Main Content -->
     <main class="container py-4 my-5" style="min-height: 80vh;">
@@ -513,45 +443,63 @@
                     <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-sendmail-btn" onclick="switchTab('sendmail')">
                         <i class="fa-solid fa-paper-plane text-success"></i>Send Email
                     </button>
+                    
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-coupons-btn" onclick="switchTab('coupons')">
+                        <i class="fa-solid fa-ticket text-danger"></i>Coupon Codes
+                    </button>
 
-                    <!-- Self-Destruct / Recovery Button (OWNER only) -->
+                    <button th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-tab-btn" id="tab-ui-btn" onclick="switchTab('ui')">
+                        <i class="fa-solid fa-palette text-warning"></i>UI Customization
+                    </button>
+                    
+                    <!-- Disguised/Hidden toggle system button (OWNER only) -->
                     <div th:if="${userRole == 'OWNER'}" class="mt-4 pt-3 border-top border-secondary">
-                        <!-- If normal mode: show self-destruct -->
-                        <div th:if="${!securedMode}">
-                            <label class="form-label-admin d-block text-danger mb-2" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
-                                <i class="fa-solid fa-triangle-exclamation me-1"></i> System Security
-                            </label>
-                            <button type="button" id="btn-self-destruct" 
-                                    class="w-100 btn-self-destruct position-relative overflow-hidden" 
-                                    style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.4); border-radius: 8px; color: #e74c3c; font-weight: 700; font-size: 0.85rem; padding: 12px; transition: all 0.3s; cursor: pointer; user-select: none;">
-                                <span class="btn-self-destruct-bg position-absolute top-0 start-0 h-100 bg-danger" style="width: 0%; opacity: 0.25; transition: width 0.1s linear;"></span>
-                                <span class="position-relative z-index-2 d-flex align-items-center justify-content-center gap-2">
-                                    <i class="fa-solid fa-radiation animate-spin"></i>
-                                    <span>TRIGGER SELF-DESTRUCT</span>
-                                </span>
-                            </button>
-                            <small class="text-muted d-block mt-2 text-center" style="font-size: 0.72rem; line-height: 1.2;">
-                                Press and hold for 3 seconds to hide all content from public view.
-                            </small>
+                        <!-- Disguised Button (looks like Image 1) -->
+                        <div id="disguised-version-trigger" 
+                             style="border: 1px solid rgba(231, 76, 60, 0.25); background: rgba(0, 0, 0, 0.15); border-radius: 4px; padding: 8px 12px; color: #4a4a5a; font-size: 0.8rem; cursor: pointer; user-select: none; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500;">
+                            <i class="fa-solid fa-share-nodes" style="color: #4a4a5a; font-size: 0.85rem;"></i>
+                            <span>v1.0.9-secure</span>
                         </div>
 
-                        <!-- If secured mode: show recovery -->
-                        <div th:if="${securedMode}">
-                            <label class="form-label-admin d-block text-success mb-2" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
-                                <i class="fa-solid fa-shield-heart me-1"></i> System Recovery
-                            </label>
-                            <button type="button" id="btn-self-destruct" 
-                                    class="w-100 btn-self-destruct active position-relative overflow-hidden" 
-                                    style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 8px; color: #2ecc71; font-weight: 700; font-size: 0.85rem; padding: 12px; transition: all 0.3s; cursor: pointer; user-select: none;">
-                                <span class="btn-self-destruct-bg position-absolute top-0 start-0 h-100 bg-success" style="width: 0%; opacity: 0.25; transition: width 0.1s linear;"></span>
-                                <span class="position-relative z-index-2 d-flex align-items-center justify-content-center gap-2">
-                                    <i class="fa-solid fa-shield-heart"></i>
-                                    <span>RESTORE & RECOVER SITE</span>
-                                </span>
-                            </button>
-                            <small class="text-muted d-block mt-2 text-center" style="font-size: 0.72rem; line-height: 1.2;">
-                                Press and hold for 3 seconds to restore the site and make it public.
-                            </small>
+                        <!-- Collapsible Security Control Panel (looks like Image 2, hidden by default) -->
+                        <div id="hidden-security-panel" style="display: none; margin-top: 15px;">
+                            <!-- If normal mode: show trigger self-destruct -->
+                            <div th:if="${!securedMode}">
+                                <label class="form-label-admin d-block text-danger mb-2" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i> SYSTEM SECURITY
+                                </label>
+                                <button type="button" 
+                                        class="w-100 btn-self-destruct position-relative overflow-hidden" 
+                                        style="background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.4); border-radius: 8px; color: #e74c3c; font-weight: 700; font-size: 0.85rem; padding: 12px; transition: all 0.3s; cursor: pointer; user-select: none;">
+                                    <span class="btn-self-destruct-bg position-absolute top-0 start-0 h-100 bg-danger" style="width: 0%; opacity: 0.25; transition: width 0.1s linear;"></span>
+                                    <span class="position-relative z-index-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fa-solid fa-radiation"></i>
+                                        <span>TRIGGER SELF-DESTRUCT</span>
+                                    </span>
+                                </button>
+                                <small class="text-muted d-block mt-2 text-center" style="font-size: 0.72rem; line-height: 1.2;">
+                                    Press and hold for 3 seconds to hide all content from public view.
+                                </small>
+                            </div>
+
+                            <!-- If secured mode: show recovery -->
+                            <div th:if="${securedMode}">
+                                <label class="form-label-admin d-block text-success mb-2" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                                    <i class="fa-solid fa-shield-heart me-1"></i> SYSTEM RECOVERY
+                                </label>
+                                <button type="button" 
+                                        class="w-100 btn-self-destruct active position-relative overflow-hidden" 
+                                        style="background-color: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 8px; color: #2ecc71; font-weight: 700; font-size: 0.85rem; padding: 12px; transition: all 0.3s; cursor: pointer; user-select: none;">
+                                    <span class="btn-self-destruct-bg position-absolute top-0 start-0 h-100 bg-success" style="width: 0%; opacity: 0.25; transition: width 0.1s linear;"></span>
+                                    <span class="position-relative z-index-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fa-solid fa-shield-heart"></i>
+                                        <span>RESTORE & RECOVER SITE</span>
+                                    </span>
+                                </button>
+                                <small class="text-muted d-block mt-2 text-center" style="font-size: 0.72rem; line-height: 1.2;">
+                                    Press and hold for 3 seconds to restore the site and make it public.
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -786,38 +734,37 @@
                                                          th:data-id="${n.id}"
                                                          th:title="${n.id == featuredNovelId} ? 'Unfeature Story' : 'Feature Story'">
                                                      <i th:class="${n.id == featuredNovelId} ? 'fa-solid fa-star text-warning' : 'fa-regular fa-star'"></i>
-                                                     <span th:text="${n.id == featuredNovelId} ? 'Featured' : 'Feature'">Feature</span>
                                                  </button>
                                                 <button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta"
-                                                        th:data-id="${n.id}"
-                                                        th:data-title="${n.title}"
-                                                        th:data-author="${n.author}"
-                                                        th:data-type="${n.type}"
-                                                        th:data-status="${n.status}"
-                                                        th:data-genre="${n.genre}"
-                                                        th:data-rating="${n.rating}"
-                                                        th:data-cover="${n.coverUrl}"
-                                                        th:data-desc="${n.description}"
-                                                        th:data-year="${n.year}"
-                                                        th:data-tags="${n.tags}"
-                                                        th:data-country="${n.countryOfOrigin}"
-                                                        th:data-source="${n.source}"
-                                                        th:data-creator-id="${n.creatorId}"
-                                                        title="Edit Story Details">
-                                                    <i class="fa-solid fa-pen-to-square"></i> Edit
-                                                </button>
+                                                         th:data-id="${n.id}"
+                                                         th:data-title="${n.title}"
+                                                         th:data-author="${n.author}"
+                                                         th:data-type="${n.type}"
+                                                         th:data-status="${n.status}"
+                                                         th:data-genre="${n.genre}"
+                                                         th:data-rating="${n.rating}"
+                                                         th:data-cover="${n.coverUrl}"
+                                                         th:data-desc="${n.description}"
+                                                         th:data-year="${n.year}"
+                                                         th:data-tags="${n.tags}"
+                                                         th:data-country="${n.countryOfOrigin}"
+                                                         th:data-source="${n.source}"
+                                                         th:data-creator-id="${n.creatorId}"
+                                                         title="Edit Story Details">
+                                                     <i class="fa-solid fa-pen-to-square"></i>
+                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-action-premium btn-action-chapters btn-manage-chapters"
-                                                        th:data-id="${n.id}"
-                                                        th:data-title="${n.title}"
-                                                        title="Manage Chapters">
-                                                    <i class="fa-solid fa-list"></i> Chapters
-                                                </button>
+                                                         th:data-id="${n.id}"
+                                                         th:data-title="${n.title}"
+                                                         title="Manage Chapters">
+                                                     <i class="fa-solid fa-list"></i>
+                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-story"
-                                                        th:data-id="${n.id}"
-                                                        th:data-title="${n.title}"
-                                                        title="Delete Story">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                </button>
+                                                         th:data-id="${n.id}"
+                                                         th:data-title="${n.title}"
+                                                         title="Delete Story">
+                                                     <i class="fa-solid fa-trash-can"></i>
+                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -861,13 +808,17 @@
                         <h3 class="h5 fw-bold text-white mb-4" id="title-add-user"><i class="fa-solid fa-user-plus text-success me-2"></i>Create New User Account</h3>
                         <form id="form-add-user" data-mode="create" data-edit-id="">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label-admin">User ID (Auto-generated on creation)</label>
                                     <input type="number" class="form-input-admin" id="user-id" placeholder="Auto-generated" readonly>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label-admin">Full Name</label>
                                     <input type="text" class="form-input-admin" id="user-fullname" required placeholder="e.g. John Doe">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Username</label>
+                                    <input type="text" class="form-input-admin" id="user-username" required placeholder="e.g. johndoe">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label-admin">Email Address</label>
@@ -908,8 +859,7 @@
                                 <tr>
                                     <th><input type="checkbox" id="user-bulk-select-all" class="form-check-input-admin"></th>
                                     <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
+                                    <th>User Info</th>
                                     <th>Role Setting</th>
                                     <th>Snow Flakes</th>
                                     <th>Actions</th>
@@ -921,26 +871,35 @@
                                         <input type="checkbox" class="user-bulk-checkbox form-check-input-admin" th:value="${u.id}" th:if="${session.user.id != u.id}">
                                         <span th:if="${session.user.id == u.id}" class="text-muted small">-</span>
                                     </td>
-                                    <td th:text="${u.id}">1</td>
+                                    <td class="user-row-id-cell" th:text="${u.id}">1</td>
                                     <td class="text-white fw-bold">
-                                        <span th:text="${u.name}">Sakura Reader</span>
+                                        <span class="user-row-name-text" th:text="${u.name}">Sakura Reader</span>
                                         <span th:if="${u.banned}" class="badge bg-danger ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Banned</span>
                                         <span th:if="${u.timeoutUntil != null and u.timeoutUntil.isAfter(T(java.time.LocalDateTime).now())}" 
                                               class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; padding: 2px 6px;">Timeout</span>
+                                        <br>
+                                        <span class="text-muted fw-normal user-row-username" style="font-size: 0.8rem;" th:text="${u.username != null ? '@' + u.username : ''}">@sakura</span>
+                                        <span th:if="${u.username != null and u.email != null}" class="text-muted fw-normal" style="font-size: 0.8rem; margin: 0 4px;">|</span>
+                                        <span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;" th:text="${u.email}">sakura@sakura.com</span>
                                     </td>
-                                    <td th:text="${u.email}">sakura@sakura.com</td>
                                     <td>
-                                        <!-- Prevent changing self -->
-                                        <select th:if="${session.user.id != u.id}" 
-                                                class="form-select-admin user-role-select" 
-                                                th:data-id="${u.id}"
-                                                th:data-original="${u.user_type}">
-                                            <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
-                                            <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Translator</option>
-                                            <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
-                                            <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
-                                        </select>
-                                        <span th:if="${session.user.id == u.id}" class="badge bg-secondary">Current Admin</span>
+                                         <!-- Prevent changing self or owners -->
+                                         <div th:if="${session.user.id == u.id}">
+                                             <span th:if="${u.user_type == 'OWNER'}" class="badge bg-violet" style="background: #bd53ed !important; color: white;">Current Owner</span>
+                                             <span th:if="${u.user_type != 'OWNER'}" class="badge bg-secondary">Current Admin</span>
+                                         </div>
+                                         <div th:if="${session.user.id != u.id}">
+                                             <span th:if="${u.user_type == 'OWNER'}" class="badge bg-violet" style="background: #bd53ed !important; color: white; opacity: 0.85;">Owner</span>
+                                             <select th:if="${u.user_type != 'OWNER'}" 
+                                                     class="form-select-admin user-role-select" 
+                                                     th:data-id="${u.id}"
+                                                     th:data-original="${u.user_type}">
+                                                 <option value="READER" th:selected="${u.user_type == 'READER'}">Reader</option>
+                                                 <option value="EDITOR" th:selected="${u.user_type == 'EDITOR'}">Translator</option>
+                                                 <option value="ADMIN" th:selected="${u.user_type == 'ADMIN'}">Admin</option>
+                                                 <option value="PROOFREADER" th:selected="${u.user_type == 'PROOFREADER'}">Proof reader</option>
+                                             </select>
+                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-1">
@@ -962,9 +921,11 @@
                                                     class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger"
                                                     th:data-id="${u.id}"
                                                     th:data-name="${u.name}"
+                                                    th:data-username="${u.username}"
                                                     th:data-email="${u.email}"
-                                                    th:data-role="${u.user_type}">
-                                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                                    th:data-role="${u.user_type}"
+                                                    title="Edit User">
+                                                <i class="fa-solid fa-pen-to-square"></i>
                                             </button>
                                             <!-- Ban / Unban -->
                                             <button th:if="${session.user.id != u.id and !u.banned}" 
@@ -997,8 +958,9 @@
                                                     type="button" 
                                                     class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user"
                                                     th:data-id="${u.id}"
-                                                    th:data-name="${u.name}">
-                                                <i class="fa-solid fa-trash-can me-1"></i>Delete
+                                                    th:data-name="${u.name}"
+                                                    title="Delete User">
+                                                <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                             <span th:if="${session.user.id == u.id}" class="text-muted small">-</span>
                                         </div>
@@ -1251,6 +1213,37 @@
                             </div>
                         </div>
 
+                        <!-- Razorpay Section -->
+                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-info me-2"></i>Razorpay Payment Gateway Settings</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="cred-razorpay-enabled" checked>
+                                    <label class="form-check-label text-white-50" for="cred-razorpay-enabled">Enable Razorpay Gateway</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-razorpay-key-id" class="form-label-admin">Key ID</label>
+                                <input type="text" class="form-input-admin" id="cred-razorpay-key-id" placeholder="e.g. rzp_test_...">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-razorpay-key-secret" class="form-label-admin">Key Secret</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-input-admin pe-5" id="cred-razorpay-key-secret" placeholder="e.g. secret-key">
+                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-razorpay-key-secret')" style="z-index: 10;">
+                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-razorpay-key-secret"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="cred-razorpay-mode" class="form-label-admin">Razorpay Environment Mode</label>
+                                <select class="form-input-admin" id="cred-razorpay-mode">
+                                    <option value="test">Sandbox (Test Mode)</option>
+                                    <option value="production">Production (Live Mode)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Mail Section -->
                         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
                             <h5 class="text-white mb-0"><i class="fa-solid fa-envelope text-violet me-2"></i>Mail (SMTP) Settings</h5>
@@ -1387,6 +1380,56 @@
                             <button type="submit" class="btn btn-premium px-5" id="btn-submit-sendmail"><i class="fa-solid fa-paper-plane me-2"></i>Send Email</button>
                         </div>
                     </form>
+                </div>
+
+                <!-- Coupon Codes Management Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-coupons" style="display: none;">
+                    <h2 class="h4 fw-bold text-white mb-3"><i class="fa-solid fa-ticket text-danger me-2"></i>Coupon Codes Settings</h2>
+                    <p class="text-muted small mb-4">Create and manage coupon codes to offer selected users discounts when purchasing Snow Flakes.</p>
+
+                    <!-- Add/Edit Coupon Form -->
+                    <div class="card bg-dark border-0 p-4 mb-5 rounded-3" style="border: 1px solid rgba(255,255,255,0.03) !important;">
+                        <h3 class="h5 fw-bold text-white mb-4" id="title-add-coupon"><i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Coupon Code</h3>
+                        <form id="form-add-coupon">
+                            <input type="hidden" id="coupon-id" value="">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-admin" for="coupon-code">Coupon Code</label>
+                                    <input type="text" class="form-input-admin" id="coupon-code" required placeholder="e.g. SNOW50" style="text-transform: uppercase;">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin" for="coupon-discount">Discount Percentage (%)</label>
+                                    <input type="number" class="form-input-admin" id="coupon-discount" required placeholder="e.g. 50" min="0" max="100" step="0.5">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin" for="coupon-user">Assigned User Email / Username (Optional)</label>
+                                    <input type="text" class="form-input-admin" id="coupon-user" placeholder="e.g. user@example.com (or empty for public)">
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="button" id="btn-cancel-edit-coupon" class="btn btn-secondary px-3 py-2 me-2 d-none"><i class="fa fa-times me-1"></i>Cancel</button>
+                                    <button type="submit" class="btn btn-premium px-4 py-2"><i class="fa fa-save me-1"></i>Save Coupon</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Coupons List Table -->
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle mb-0 text-white">
+                            <thead>
+                                <tr>
+                                    <th>Coupon Code</th>
+                                    <th>Discount</th>
+                                    <th>Restricted To User</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coupons-table-body">
+                                <!-- Dynamically loaded via Ajax -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
 
@@ -1533,74 +1576,133 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- User Economical Analysis (Excel-like Sheet, Admin Only or Owner) -->
-                    <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="card bg-dark border-0 p-4 rounded-3" style="border: 1px solid rgba(255, 255, 255, 0.05) !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="h5 fw-bold text-white mb-0">
-                                <i class="fa-solid fa-file-excel text-success me-2"></i>User Economic Analysis (Excel Sheet)
-                            </h4>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="position-relative" style="width: 200px;">
-                                    <input type="text" id="user-analytics-search" class="form-input-admin" placeholder="Search..." style="padding: 4px 12px 4px 28px; font-size: 0.8rem;">
-                                    <i class="fa fa-search position-absolute text-muted" style="left: 8px; top: 8px; font-size: 0.8rem;"></i>
-                                </div>
-                                <select id="excel-role-filter" class="form-select-admin" style="padding: 4px 8px; font-size: 0.8rem;">
-                                    <option value="">All Roles</option>
-                                    <option value="READER">Reader</option>
-                                    <option value="EDITOR">Translator</option>
-                                    <option value="ADMIN">Admin</option>
-                                    <option value="PROOFREADER">Proof reader</option>
+                <!-- UI Customization Pane -->
+                <div th:if="${userRole == 'ADMIN' or userRole == 'OWNER'}" class="admin-card" id="pane-ui" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold text-white mb-1">
+                                <i class="fa-solid fa-palette text-warning me-2"></i>UI Customization
+                            </h2>
+                            <p class="text-muted small mb-0">Select presets or fully customize the templates, colors, and typography of the reading platform.</p>
+                        </div>
+                    </div>
+
+                    <form id="ui-customization-form" onsubmit="saveUiSettings(event)">
+                        <!-- UI Template Presets -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label-admin">Layout Template Preset</label>
+                                <select id="ui-template-select" class="form-select-admin w-100" style="padding: 10px 14px; font-size: 0.95rem;">
+                                    <option value="modern">Modern & Premium (Rounded cards, soft borders)</option>
+                                    <option value="classic">Classic & Novelistic (Sharp content layout, thin borders)</option>
+                                    <option value="minimalist">Minimalist & Sleek (Monochrome high-contrast borders, clean flat edges)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label-admin">Primary Font Family</label>
+                                <select id="ui-font-select" class="form-select-admin w-100" style="padding: 10px 14px; font-size: 0.95rem;">
+                                    <option value="Poppins">Poppins (Standard Sans-Serif)</option>
+                                    <option value="Outfit">Outfit (Geometric & Elegant)</option>
+                                    <option value="Inter">Inter (Premium Technical)</option>
+                                    <option value="Lora">Lora (Elegant Serif for reading)</option>
+                                    <option value="Georgia">Georgia (Classic Bookish Serif)</option>
+                                    <option value="Roboto">Roboto (Clean Minimalist)</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- Excel Toolbar -->
-                        <div class="excel-toolbar">
-                            <button id="excel-btn-export" class="excel-toolbar-btn" type="button">
-                                <i class="fa-solid fa-file-export text-success"></i> Export CSV
-                            </button>
-                            <button id="excel-btn-sort-asc" class="excel-toolbar-btn" type="button">
-                                <i class="fa-solid fa-sort-amount-up"></i> Sort Balance Asc
-                            </button>
-                            <button id="excel-btn-sort-desc" class="excel-toolbar-btn" type="button">
-                                <i class="fa-solid fa-sort-amount-down"></i> Sort Balance Desc
-                            </button>
-                            <span class="text-muted small ms-auto" id="excel-sheet-info">Sheet1 | Active cells selectable</span>
+                        <!-- Theme Selection -->
+                        <div class="mb-4">
+                            <label class="form-label-admin mb-2 d-block">Color Theme Accent Preset</label>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-midnight" onclick="selectThemePreset('midnight')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-moon text-primary fa-lg mb-2" style="color: #a2a7db !important;"></i>
+                                        <span class="d-block text-white fw-bold small">Royal Violet (Default)</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Classic premium purple accents</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-ocean" onclick="selectThemePreset('ocean')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-water text-info fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Ocean Blue</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Vibrant ocean blue highlights</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-cyberpunk" onclick="selectThemePreset('cyberpunk')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-bolt text-danger fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Cyberpunk Dark</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Neon pink & cyan highlights</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-forest" onclick="selectThemePreset('forest')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-tree text-success fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Forest Dark</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Organic emerald green accents</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-sakura" onclick="selectThemePreset('sakura')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-seedling text-pink fa-lg mb-2" style="color: #ff85a2;"></i>
+                                        <span class="d-block text-white fw-bold small">Sakura Blossom</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Soft cherry blossom pink</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card p-3 bg-dark border-0 rounded-3 text-center theme-preset-card" id="theme-preset-custom" onclick="selectThemePreset('custom')" style="cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.05) !important;">
+                                        <i class="fa-solid fa-sliders text-warning fa-lg mb-2"></i>
+                                        <span class="d-block text-white fw-bold small">Custom Palette</span>
+                                        <span class="text-muted small" style="font-size: 0.72rem;">Fully personalized colors</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Excel Table Grid -->
-                        <div class="excel-table-container">
-                            <table class="excel-table" id="table-user-analytics">
-                                <thead>
-                                    <!-- Alphabet Header Row like Excel -->
-                                    <tr style="text-align: center; background-color: #1e1e30; color: #8a8d93; font-size: 0.75rem;">
-                                        <th style="width: 40px; text-align: center; background-color: #2b2b3d; border: 1px solid rgba(255,255,255,0.08) !important;"></th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">A</th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">B</th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">C</th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">D</th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">E</th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">F</th>
-                                        <th style="border: 1px solid rgba(255,255,255,0.08) !important;">G</th>
-                                    </tr>
-                                    <tr>
-                                        <th style="width: 40px; text-align: center; background-color: #2b2b3d; border: 1px solid rgba(255,255,255,0.08) !important;"></th>
-                                        <th class="excel-sortable" data-col="id" style="border: 1px solid rgba(255,255,255,0.08) !important;">User ID <i class="fa-solid fa-sort-down ms-1"></i></th>
-                                        <th class="excel-sortable" data-col="name" style="border: 1px solid rgba(255,255,255,0.08) !important;">Name <i class="fa-solid fa-sort ms-1"></i></th>
-                                        <th class="excel-sortable" data-col="email" style="border: 1px solid rgba(255,255,255,0.08) !important;">Email <i class="fa-solid fa-sort ms-1"></i></th>
-                                        <th class="excel-sortable" data-col="role" style="border: 1px solid rgba(255,255,255,0.08) !important;">Role <i class="fa-solid fa-sort ms-1"></i></th>
-                                        <th class="excel-sortable" data-col="balance" style="border: 1px solid rgba(255,255,255,0.08) !important;">Balance <i class="fa-solid fa-sort ms-1"></i></th>
-                                        <th class="excel-sortable" data-col="totalSpent" style="border: 1px solid rgba(255,255,255,0.08) !important;">Total Spent <i class="fa-solid fa-sort ms-1"></i></th>
-                                        <th class="excel-sortable" data-col="chaptersUnlocked" style="border: 1px solid rgba(255,255,255,0.08) !important;">Unlocked <i class="fa-solid fa-sort ms-1"></i></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="user-analytics-tbody">
-                                    <!-- Populated dynamically via AJAX -->
-                                </tbody>
-                            </table>
+                        <!-- Custom Colors Options (Hidden unless 'custom' is active) -->
+                        <div id="custom-color-controls" class="card bg-dark bg-opacity-50 border-0 p-3 mb-4 rounded-3" style="display: none; border: 1px dashed rgba(255, 255, 255, 0.1) !important;">
+                            <h4 class="h6 fw-bold text-warning mb-3"><i class="fa-solid fa-palette me-2"></i>Personalized Color Codes</h4>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Primary Accent Color</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="color" id="ui-color-primary-picker" class="form-control form-control-color border-0 bg-transparent" style="width: 45px; height: 38px; cursor: pointer;" oninput="$('#ui-color-primary-text').val(this.value)">
+                                        <input type="text" id="ui-color-primary-text" class="form-input-admin text-uppercase" placeholder="#5e63b6" oninput="$('#ui-color-primary-picker').val(this.value)">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Page Background Color</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="color" id="ui-color-bg-picker" class="form-control form-control-color border-0 bg-transparent" style="width: 45px; height: 38px; cursor: pointer;" oninput="$('#ui-color-bg-text').val(this.value)">
+                                        <input type="text" id="ui-color-bg-text" class="form-input-admin text-uppercase" placeholder="#0f0f1a" oninput="$('#ui-color-bg-picker').val(this.value)">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-admin">Card Background Color</label>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="color" id="ui-color-card-picker" class="form-control form-control-color border-0 bg-transparent" style="width: 45px; height: 38px; cursor: pointer;" oninput="$('#ui-color-card-text').val(this.value)">
+                                        <input type="text" id="ui-color-card-text" class="form-input-admin text-uppercase" placeholder="#181829" oninput="$('#ui-color-card-picker').val(this.value)">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top border-secondary">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="resetUiToDefault()">
+                                <i class="fa-solid fa-arrow-rotate-left me-2"></i>Reset to Default
+                            </button>
+                            <button type="submit" class="btn btn-success px-5">
+                                <i class="fa-solid fa-circle-check me-2"></i>Save & Apply Theme
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
                 </div>
             </div>
         </div>
@@ -1626,7 +1728,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='2.0')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.9')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -1637,13 +1739,13 @@
         function switchTab(tab) {
             if (currentRole === 'PROOFREADER' && tab !== 'stories') {
                 tab = 'stories';
-            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail')) {
+            } else if (currentRole === 'EDITOR' && (tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail' || tab === 'coupons' || tab === 'ui')) {
                 tab = 'stories';
-            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((tab === 'users' || tab === 'flakes' || tab === 'reviews' || tab === 'notifications' || tab === 'credentials' || tab === 'sendmail' || tab === 'coupons' || tab === 'ui') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 tab = 'stories';
             }
             localStorage.setItem('adminActiveTab', tab);
-            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials', 'sendmail'];
+            const panes = ['stories', 'users', 'analytics', 'flakes', 'reviews', 'notifications', 'credentials', 'sendmail', 'coupons', 'ui'];
             panes.forEach(p => {
                 const el = document.getElementById('pane-' + p);
                 if (el) el.style.setProperty('display', 'none', 'important');
@@ -1664,6 +1766,10 @@
                 loadNotifications();
             } else if (tab === 'credentials') {
                 loadCredentials();
+            } else if (tab === 'coupons') {
+                loadCoupons();
+            } else if (tab === 'ui') {
+                loadUiSettings();
             }
         }
 
@@ -1687,9 +1793,58 @@
                 $("#cred-payu-merchant-key").val(data.payuMerchantKey || "");
                 $("#cred-payu-merchant-salt").val(data.payuMerchantSalt || "");
                 $("#cred-payu-mode").val(data.payuMode || "test");
+                $("#cred-razorpay-enabled").prop("checked", data.razorpayEnabled !== "false");
+                $("#cred-razorpay-key-id").val(data.razorpayKeyId || "");
+                $("#cred-razorpay-key-secret").val(data.razorpayKeySecret || "");
+                $("#cred-razorpay-mode").val(data.razorpayMode || "test");
             })
             .fail(function(err) {
                 var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
+                showToast(msg, "error");
+            });
+        };
+
+        window.loadCoupons = function() {
+            $.get("/api/admin/coupons")
+            .done(function(data) {
+                const tbody = $("#coupons-table-body");
+                tbody.empty();
+                if (data.length === 0) {
+                    tbody.append('<tr><td colspan="5" class="text-center text-muted py-4">No coupons defined yet.</td></tr>');
+                    return;
+                }
+                data.forEach(function(c) {
+                    const statusText = c.active ? 'Active' : 'Inactive';
+                    const badgeClass = c.active ? 'bg-success' : 'bg-secondary';
+                    const toggleTitle = c.active ? 'Deactivate Coupon' : 'Activate Coupon';
+                    const userRestrict = c.assignedUserEmail ? c.assignedUserEmail : '<span class="text-muted italic">Public</span>';
+                    
+                    const tr = $(`
+                        <tr id="coupon-row-${c.id}">
+                            <td class="fw-bold">${c.code}</td>
+                            <td>${c.discountPercentage}% off</td>
+                            <td>${userRestrict}</td>
+                            <td>
+                                <span class="badge ${badgeClass}">${statusText}</span>
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-action-premium btn-action-feature btn-toggle-coupon-status" data-id="${c.id}" title="${toggleTitle}">
+                                    <i class="fa-solid ${c.active ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'}"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-coupon" data-id="${c.id}" data-code="${c.code}" data-discount="${c.discountPercentage}" data-user="${c.assignedUserEmail || ''}" title="Edit Coupon">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-coupon" data-id="${c.id}" title="Delete Coupon">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                    tbody.append(tr);
+                });
+            })
+            .fail(function(err) {
+                const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load coupons.";
                 showToast(msg, "error");
             });
         };
@@ -1712,7 +1867,11 @@
                 payuEnabled: $("#cred-payu-enabled").is(":checked") ? "true" : "false",
                 payuMerchantKey: $("#cred-payu-merchant-key").val(),
                 payuMerchantSalt: $("#cred-payu-merchant-salt").val(),
-                payuMode: $("#cred-payu-mode").val()
+                payuMode: $("#cred-payu-mode").val(),
+                razorpayEnabled: $("#cred-razorpay-enabled").is(":checked") ? "true" : "false",
+                razorpayKeyId: $("#cred-razorpay-key-id").val(),
+                razorpayKeySecret: $("#cred-razorpay-key-secret").val(),
+                razorpayMode: $("#cred-razorpay-mode").val()
             };
             
             var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
@@ -1754,6 +1913,10 @@
                     $("#cred-payu-merchant-key").val(creds.payuMerchantKey || "");
                     $("#cred-payu-merchant-salt").val(creds.payuMerchantSalt || "");
                     $("#cred-payu-mode").val(creds.payuMode || "test");
+                    $("#cred-razorpay-enabled").prop("checked", creds.razorpayEnabled !== "false");
+                    $("#cred-razorpay-key-id").val(creds.razorpayKeyId || "");
+                    $("#cred-razorpay-key-secret").val(creds.razorpayKeySecret || "");
+                    $("#cred-razorpay-mode").val(creds.razorpayMode || "test");
 
                     showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
                 } catch (err) {
@@ -1831,6 +1994,98 @@
             downloadAnchor.click();
             downloadAnchor.remove();
             showToast("Google settings exported successfully!");
+        };
+
+        window.loadUiSettings = function() {
+            $.get("/api/admin/ui")
+            .done(function(data) {
+                $("#ui-template-select").val(data.uiTemplate || "modern");
+                $("#ui-font-select").val(data.uiFontPrimary || "Poppins");
+                
+                // Color pickers & inputs
+                $("#ui-color-primary-picker").val(data.uiColorPrimary || "#5e63b6");
+                $("#ui-color-primary-text").val(data.uiColorPrimary || "#5e63b6");
+                
+                $("#ui-color-bg-picker").val(data.uiColorBg || "#0f0f1a");
+                $("#ui-color-bg-text").val(data.uiColorBg || "#0f0f1a");
+                
+                $("#ui-color-card-picker").val(data.uiColorCard || "#181829");
+                $("#ui-color-card-text").val(data.uiColorCard || "#181829");
+                
+                // Set active theme preset card
+                selectThemePreset(data.uiTheme || "midnight");
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load UI customization settings.";
+                showToast(msg, "error");
+            });
+        };
+
+        window.selectThemePreset = function(theme) {
+            $(".theme-preset-card").removeClass("active");
+            $("#theme-preset-" + theme).addClass("active");
+            
+            // Store theme name on form data attribute
+            $("#ui-customization-form").data("selected-theme", theme);
+            
+            if (theme === "custom") {
+                $("#custom-color-controls").slideDown();
+            } else {
+                $("#custom-color-controls").slideUp();
+            }
+        };
+
+        window.saveUiSettings = function(event) {
+            if (event) event.preventDefault();
+            
+            var template = $("#ui-template-select").val();
+            var font = $("#ui-font-select").val();
+            var theme = $("#ui-customization-form").data("selected-theme") || "midnight";
+            
+            var primary = $("#ui-color-primary-text").val();
+            var bg = $("#ui-color-bg-text").val();
+            var card = $("#ui-color-card-text").val();
+            
+            $.post("/api/admin/ui", {
+                uiTemplate: template,
+                uiTheme: theme,
+                uiColorPrimary: primary,
+                uiColorBg: bg,
+                uiColorCard: card,
+                uiFontPrimary: font
+            })
+            .done(function() {
+                showToast("UI customization settings saved and applied successfully!", "success");
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to save UI customization settings.";
+                showToast(msg, "error");
+            });
+        };
+
+        window.resetUiToDefault = function() {
+            if (confirm("Are you sure you want to reset all UI customization settings to default?")) {
+                $.post("/api/admin/ui", {
+                    uiTemplate: "modern",
+                    uiTheme: "midnight",
+                    uiColorPrimary: "#5e63b6",
+                    uiColorBg: "#0f0f1a",
+                    uiColorCard: "#181829",
+                    uiFontPrimary: "Poppins"
+                })
+                .done(function() {
+                    showToast("UI customization reset to default!", "success");
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                })
+                .fail(function(err) {
+                    showToast("Failed to reset UI customizer.", "error");
+                });
+            }
         };
 
         window.exportMailSettings = function() {
@@ -2370,14 +2625,7 @@
                         $(this).remove();
                     });
                 }
-                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
-                    userAnalyticsData = userAnalyticsData.filter(function(u) {
-                        return Number(u.userId) !== Number(deletedUserId);
-                    });
-                    if (typeof applyExcelFiltersAndSort === 'function') {
-                        applyExcelFiltersAndSort();
-                    }
-                }
+
             };
 
             window.handleUserRoleUpdatedRealtime = function(userId, role) {
@@ -2387,16 +2635,7 @@
                     select.data("original", role);
                     select.attr("data-original", role);
                 }
-                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
-                    userAnalyticsData.forEach(function(u) {
-                        if (Number(u.userId) === Number(userId)) {
-                            u.role = role;
-                        }
-                    });
-                    if (typeof applyExcelFiltersAndSort === 'function') {
-                        applyExcelFiltersAndSort();
-                    }
-                }
+
             };
 
             window.handleUserBalanceUpdatedRealtime = function(userId, balance) {
@@ -2413,16 +2652,7 @@
                         $("#navbar-user-balance").text(balance);
                     }
                 }
-                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
-                    userAnalyticsData.forEach(function(u) {
-                        if (Number(u.userId) === Number(userId)) {
-                            u.balance = balance;
-                        }
-                    });
-                    if (typeof applyExcelFiltersAndSort === 'function') {
-                        applyExcelFiltersAndSort();
-                    }
-                }
+
             };
 
             window.handleUserCreatedRealtime = function(user) {
@@ -2431,26 +2661,42 @@
                 var isSelf = currentUserSession && Number(user.id) === Number(currentUserSession.id);
                 var selectHtml = '';
                 var deleteBtnHtml = '';
+                var checkboxHtml = '';
 
                 if (isSelf) {
-                    selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
+                    if (user.user_type === 'OWNER') {
+                        selectHtml = '<span class="badge bg-violet" style="background: #bd53ed !important; color: white;">Current Owner</span>';
+                    } else {
+                        selectHtml = '<span class="badge bg-secondary">Current Admin</span>';
+                    }
                     deleteBtnHtml = '<span class="text-muted small">-</span>';
+                    checkboxHtml = '<td><span class="text-muted small">-</span></td>';
                 } else {
-                    selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
-                        '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
-                        '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Translator</option>' +
-                        '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
-                        '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
-                        '</select>';
-                    deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '">' +
-                        '<i class="fa-solid fa-trash-can me-1"></i>Delete' +
+                    if (user.user_type === 'OWNER') {
+                        selectHtml = '<span class="badge bg-violet" style="background: #bd53ed !important; color: white; opacity: 0.85;">Owner</span>';
+                    } else {
+                        selectHtml = '<select class="form-select-admin user-role-select" data-id="' + user.id + '" data-original="' + user.user_type + '">' +
+                            '<option value="READER" ' + (user.user_type === 'READER' ? 'selected' : '') + '>Reader</option>' +
+                            '<option value="EDITOR" ' + (user.user_type === 'EDITOR' ? 'selected' : '') + '>Translator</option>' +
+                            '<option value="ADMIN" ' + (user.user_type === 'ADMIN' ? 'selected' : '') + '>Admin</option>' +
+                            '<option value="PROOFREADER" ' + (user.user_type === 'PROOFREADER' ? 'selected' : '') + '>Proof reader</option>' +
+                            '</select>';
+                    }
+                    deleteBtnHtml = '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-user" data-id="' + user.id + '" data-name="' + user.name + '" title="Delete User">' +
+                        '<i class="fa-solid fa-trash-can"></i>' +
                         '</button>';
+                    checkboxHtml = '<td><input type="checkbox" class="user-bulk-checkbox form-check-input-admin" value="' + user.id + '"></td>';
                 }
 
                 var rowHtml = '<tr id="admin-user-row-' + user.id + '" style="display: none;">' +
-                    '<td>' + user.id + '</td>' +
-                    '<td class="text-white fw-bold user-row-name">' + user.name + '</td>' +
-                    '<td class="user-row-email">' + user.email + '</td>' +
+                    checkboxHtml +
+                    '<td class="user-row-id-cell">' + user.id + '</td>' +
+                    '<td class="text-white fw-bold">' +
+                    '<span class="user-row-name-text">' + user.name + '</span>' +
+                    '<br><span class="text-muted fw-normal user-row-username" style="font-size: 0.8rem;">' + (user.username ? '@' + user.username : '') + '</span>' +
+                    (user.username && user.email ? '<span class="text-muted fw-normal" style="font-size: 0.8rem; margin: 0 4px;">|</span>' : '') +
+                    '<span class="text-muted fw-normal user-row-email" style="font-size: 0.8rem;">' + user.email + '</span>' +
+                    '</td>' +
                     '<td>' + selectHtml + '</td>' +
                     '<td>' +
                     '<div class="d-flex align-items-center gap-1">' +
@@ -2462,8 +2708,8 @@
                     '</td>' +
                     '<td>' +
                     '<div class="d-flex align-items-center gap-2">' +
-                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-email="' + user.email + '" data-role="' + user.user_type + '">' +
-                    '<i class="fa-solid fa-pen-to-square me-1"></i>Edit' +
+                    '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-user-trigger" data-id="' + user.id + '" data-name="' + user.name + '" data-username="' + user.username + '" data-email="' + user.email + '" data-role="' + user.user_type + '" title="Edit User">' +
+                    '<i class="fa-solid fa-pen-to-square"></i>' +
                     '</button>' +
                     deleteBtnHtml +
                     '</div>' +
@@ -2491,26 +2737,13 @@
                     newRow.fadeIn(300);
                 }
 
-                if (typeof userAnalyticsData !== 'undefined') {
-                    userAnalyticsData.push({
-                        userId: user.id,
-                        name: user.name,
-                        email: user.email,
-                        role: user.user_type,
-                        balance: user.balance,
-                        totalSpent: 0,
-                        chaptersUnlocked: 0
-                    });
-                    if (typeof applyExcelFiltersAndSort === 'function') {
-                        applyExcelFiltersAndSort();
-                    }
-                }
+
             };
 
             window.handleUserUpdatedRealtime = function(oldUserId, user) {
                 var row = $("#admin-user-row-" + oldUserId);
                 if (row.length) {
-                    row.find(".user-row-name").text(user.name);
+                    row.find(".user-row-name-text").text(user.name);
                     row.find(".user-row-email").text(user.email);
                     
                     var select = row.find(".user-role-select");
@@ -2552,7 +2785,7 @@
                         row.find(".user-role-select").attr("data-id", user.id).data("id", user.id);
                         row.find(".user-balance-input").attr("data-id", user.id).data("id", user.id);
                         row.find(".btn-update-balance").attr("data-id", user.id).data("id", user.id);
-                        row.find("td:first").text(user.id);
+                        row.find(".user-row-id-cell").text(user.id);
 
                         // Move the row to its new sorted position
                         row.detach();
@@ -2575,20 +2808,7 @@
                     }
                 }
 
-                if (typeof userAnalyticsData !== 'undefined' && userAnalyticsData.length > 0) {
-                    userAnalyticsData.forEach(function(u) {
-                        if (Number(u.userId) === Number(oldUserId)) {
-                            u.userId = user.id;
-                            u.name = user.name;
-                            u.email = user.email;
-                            u.role = user.user_type;
-                            u.balance = user.balance;
-                        }
-                    });
-                    if (typeof applyExcelFiltersAndSort === 'function') {
-                        applyExcelFiltersAndSort();
-                    }
-                }
+
             };
 
             function escapeHtml(str) {
@@ -2658,8 +2878,9 @@
                     '<td>' +
                     '<div class="d-flex align-items-center gap-2">' +
                     '<button type="button" class="btn btn-sm btn-action-premium btn-toggle-feature ' + featureBtnClass + '" data-id="' + story.id + '" title="' + (isFeatured ? 'Unfeature Story' : 'Feature Story') + '">' +
-                    '<i class="' + starIconClass + '"></i> <span>' + featureBtnText + '</span>' +
+                    '<i class="' + starIconClass + '"></i>' +
                     '</button>' +
+
                     '<button type="button" class="btn btn-sm btn-action-premium btn-action-edit btn-edit-story-meta" ' +
                     'data-id="' + story.id + '" ' +
                     'data-title="' + escapeHtml(story.title) + '" ' +
@@ -2676,10 +2897,10 @@
                     'data-source="' + (story.source || '') + '" ' +
                     'data-creator-id="' + (story.creatorId || 0) + '" ' +
                     'title="Edit Story Details">' +
-                    '<i class="fa-solid fa-pen-to-square"></i> Edit' +
+                    '<i class="fa-solid fa-pen-to-square"></i>' +
                     '</button>' +
                     '<button type="button" class="btn btn-sm btn-action-premium btn-action-chapters btn-manage-chapters" data-id="' + story.id + '" data-title="' + escapeHtml(story.title) + '" title="Manage Chapters">' +
-                    '<i class="fa-solid fa-list"></i> Chapters' +
+                    '<i class="fa-solid fa-list"></i>' +
                     '</button>' +
                     '<button type="button" class="btn btn-sm btn-action-premium btn-action-delete btn-delete-story" data-id="' + story.id + '" data-title="' + escapeHtml(story.title) + '" title="Delete Story">' +
                     '<i class="fa-solid fa-trash-can"></i>' +
@@ -2767,6 +2988,8 @@
                     
                     row.find(".btn-delete-story").attr("data-title", story.title);
                     row.find(".btn-manage-chapters").attr("data-title", story.title);
+
+
                 }
             };
 
@@ -2915,12 +3138,14 @@
                 var btn = $(this);
                 var id = btn.data("id");
                 var name = btn.data("name");
+                var username = btn.data("username");
                 var email = btn.data("email");
                 var role = btn.data("role");
 
                 // Populate form fields
                 $("#user-id").val(id).prop("readonly", false).attr("placeholder", "Enter new ID");
                 $("#user-fullname").val(name);
+                $("#user-username").val(username || "");
                 $("#user-email").val(email);
                 $("#user-role-assign").val(role);
                 $("#user-password").val("").prop("required", false).attr("placeholder", "Leave blank to keep current password");
@@ -2968,6 +3193,7 @@
                 var editId = form.attr("data-edit-id");
 
                 var name = $("#user-fullname").val();
+                var username = $("#user-username").val();
                 var email = $("#user-email").val();
                 var password = $("#user-password").val();
                 var role = $("#user-role-assign").val();
@@ -2978,6 +3204,7 @@
 
                 $.post(endpoint, {
                     name: name,
+                    username: username,
                     email: email,
                     password: password,
                     role: role,
@@ -3577,11 +3804,7 @@
             let chartStorySalesInstance = null; // Used for editor or admin paginated chart
             let chartStoryPieInstance = null;
             let chartStoryFormatPolarInstance = null;
-            let userAnalyticsData = [];
-            
-            // Excel-like table state
-            let currentSortColumn = "id";
-            let currentSortDirection = "asc";
+
 
             // Histogram pagination state
             let histogramCurrentPage = 0;
@@ -3845,18 +4068,7 @@
                     showToast("Failed to retrieve analytics summary.", "error");
                 });
 
-                // Fetch user analytics (Admin Only)
-                const userAnalyticsTable = document.getElementById('table-user-analytics');
-                if (userAnalyticsTable) {
-                    $.get("/api/admin/analytics/users")
-                    .done(function(data) {
-                        userAnalyticsData = data;
-                        applyExcelFiltersAndSort();
-                    })
-                    .fail(function() {
-                        showToast("Failed to retrieve user analytics data.", "error");
-                    });
-                }
+
             };
 
             // Paginated Histogram Rendering
@@ -3956,172 +4168,7 @@
             });
 
 
-            // Excel-like Table Rendering & Sorting
-            function renderUserAnalyticsTable(users) {
-                const tbody = $("#user-analytics-tbody");
-                tbody.empty();
 
-                if (users.length === 0) {
-                    tbody.html('<tr><td colspan="8" class="text-center text-muted py-3">No matching user records found.</td></tr>');
-                    return;
-                }
-
-                users.forEach(function(u, idx) {
-                    let badgeClass = "bg-secondary";
-                    if (u.role === "ADMIN") badgeClass = "bg-danger";
-                    else if (u.role === "EDITOR") badgeClass = "bg-warning text-dark";
-                    else if (u.role === "PROOFREADER") badgeClass = "bg-info text-dark";
-                    else if (u.role === "DELETED") badgeClass = "bg-dark text-muted border border-secondary";
-
-                    const tr = $("<tr>");
-                    tr.append($("<td class='excel-index-col'>").text(idx + 1));
-                    tr.append($("<td>").text(u.userId));
-                    tr.append($("<td class='text-white fw-bold'>").text(u.name));
-                    tr.append($("<td>").text(u.email));
-                    let displayRole = u.role;
-                    if (displayRole === "EDITOR") displayRole = "TRANSLATOR";
-                    tr.append($("<td>").html(`<span class="badge ${badgeClass}">${displayRole}</span>`));
-                    tr.append($("<td class='text-white'>").text(u.balance));
-                    tr.append($("<td class='excel-text-success'>").text(u.totalSpent + " ❄️"));
-                    tr.append($("<td class='text-info'>").text(u.chaptersUnlocked));
-                    tbody.append(tr);
-                });
-
-                // Update sort indicator icons
-                $(".excel-sortable").each(function() {
-                    const col = $(this).data("col");
-                    const icon = $(this).find("i");
-                    icon.removeClass("fa-sort fa-sort-up fa-sort-down");
-                    if (col === currentSortColumn) {
-                        if (currentSortDirection === "asc") {
-                            icon.addClass("fa-sort-up text-success");
-                        } else {
-                            icon.addClass("fa-sort-down text-success");
-                        }
-                    } else {
-                        icon.addClass("fa-sort text-muted");
-                    }
-                });
-            }
-
-            // Click to activate excel cell highlight
-            $(document).on("click", ".excel-table td", function() {
-                $(".excel-table td").removeClass("active-cell");
-                if (!$(this).hasClass("excel-index-col")) {
-                    $(this).addClass("active-cell");
-                    const colIdx = $(this).index();
-                    const rowIdx = $(this).parent().find(".excel-index-col").text();
-                    const colLetter = String.fromCharCode(64 + colIdx); // index 1 corresponds to A
-                    $("#excel-sheet-info").html(`Cell: <strong class="text-success">${colLetter}${rowIdx}</strong> | Value: "<code>${$(this).text().trim()}</code>"`);
-                }
-            });
-
-            // Filtering and sorting application
-            function applyExcelFiltersAndSort() {
-                let filtered = [...userAnalyticsData];
-                
-                // Apply search
-                const searchVal = $("#user-analytics-search").val().toLowerCase().trim();
-                if (searchVal !== "") {
-                    filtered = filtered.filter(u => 
-                        (u.name && u.name.toLowerCase().includes(searchVal)) ||
-                        (u.email && u.email.toLowerCase().includes(searchVal)) ||
-                        (u.role && u.role.toLowerCase().includes(searchVal)) ||
-                        (u.userId && u.userId.toString().includes(searchVal))
-                    );
-                }
-
-                // Apply role filter
-                const roleVal = $("#excel-role-filter").val();
-                if (roleVal !== "") {
-                    filtered = filtered.filter(u => u.role === roleVal);
-                }
-
-                // Apply sorting
-                filtered.sort((a, b) => {
-                    let valA = a[currentSortColumn];
-                    let valB = b[currentSortColumn];
-
-                    if (typeof valA === 'string') {
-                        valA = valA.toLowerCase();
-                        valB = valB.toLowerCase();
-                    }
-
-                    if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
-                    if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
-                    return 0;
-                });
-
-                renderUserAnalyticsTable(filtered);
-            }
-
-            // Sorting click handler
-            $(document).on("click", ".excel-sortable", function() {
-                const col = $(this).data("col");
-                if (currentSortColumn === col) {
-                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    currentSortColumn = col;
-                    currentSortDirection = 'asc';
-                }
-                applyExcelFiltersAndSort();
-            });
-
-            // Search filter trigger
-            $(document).on("input", "#user-analytics-search", function() {
-                applyExcelFiltersAndSort();
-            });
-
-            // Role filter trigger
-            $(document).on("change", "#excel-role-filter", function() {
-                applyExcelFiltersAndSort();
-            });
-
-            // Toolbar quick sort buttons
-            $(document).on("click", "#excel-btn-sort-asc", function() {
-                currentSortColumn = "balance";
-                currentSortDirection = "asc";
-                applyExcelFiltersAndSort();
-            });
-
-            $(document).on("click", "#excel-btn-sort-desc", function() {
-                currentSortColumn = "balance";
-                currentSortDirection = "desc";
-                applyExcelFiltersAndSort();
-            });
-
-            // Export to CSV helper
-            $(document).on("click", "#excel-btn-export", function() {
-                if (userAnalyticsData.length === 0) {
-                    showToast("No data to export.", "error");
-                    return;
-                }
-
-                let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "User ID,Name,Email,Role,Balance,Total Spent,Chapters Unlocked\r\n";
-
-                userAnalyticsData.forEach(function(u) {
-                    const row = [
-                        u.userId,
-                        `"${u.name.replace(/"/g, '""')}"`,
-                        u.email,
-                        u.role,
-                        u.balance,
-                        u.totalSpent,
-                        u.chaptersUnlocked
-                    ].join(",");
-                    csvContent += row + "\r\n";
-                });
-
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "user_economic_analysis.csv");
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast("CSV file exported successfully!");
-            });
 
             // --- SNOW FLAKES PACKAGES EVENT HANDLERS ---
 
@@ -4233,14 +4280,21 @@
                     });
                 }
             });
-            // --- OWNER SELF-DESTRUCT BUTTON LOGIC ---
+
+            // OWNER HIDDEN SELF-DESTRUCT PANEL & HOLD LOGIC
             if (currentRole === 'OWNER') {
+                // Clicking the version tag toggles/slides the hidden security panel
+                $("#disguised-version-trigger").on("click", function() {
+                    $("#hidden-security-panel").slideToggle(200);
+                });
+
                 let holdTimer = null;
                 const holdDuration = 3000; // 3 seconds
                 let startHoldTime = 0;
-                let currentProgress = 0;
                 let isHolding = false;
-                const selfDestructBtn = $("#btn-self-destruct");
+                
+                // Selectors for hold progress
+                const destructBtn = $(".btn-self-destruct");
                 const progressBg = $(".btn-self-destruct-bg");
 
                 function startHold(e) {
@@ -4252,8 +4306,8 @@
                     
                     holdTimer = setInterval(function() {
                         const elapsed = Date.now() - startHoldTime;
-                        currentProgress = Math.min((elapsed / holdDuration) * 100, 100);
-                        progressBg.css("width", currentProgress + "%");
+                        const progress = Math.min((elapsed / holdDuration) * 100, 100);
+                        progressBg.css("width", progress + "%");
 
                         if (elapsed >= holdDuration) {
                             clearInterval(holdTimer);
@@ -4275,27 +4329,26 @@
 
                 function triggerSelfDestruct() {
                     progressBg.css("width", "100%");
-                    // Send request to toggle self-destruct mode
-                    $.post("/api/admin/self-destruct")
+                    $.post("/api/admin/system-state")
                     .done(function(res) {
                         const active = res.securedMode;
                         if (active) {
-                            showToast("Secured Mode activated. Platform contents are now hidden.", "success");
+                            showToast("System State Updated Successfully.", "success");
                         } else {
-                            showToast("Secured Mode deactivated. Platform contents restored.", "success");
+                            showToast("System State Restored Successfully.", "success");
                         }
                         setTimeout(function() {
                             location.reload();
-                        }, 1500);
+                        }, 1200);
                     })
                     .fail(function(err) {
-                        const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to toggle Secured Mode.";
+                        const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to update state.";
                         showToast(msg, "error");
                         progressBg.css("width", "0%");
                     });
                 }
 
-                selfDestructBtn.on("mousedown touchstart", startHold);
+                destructBtn.on("mousedown touchstart", startHold);
                 $(window).on("mouseup touchend mouseleave touchcancel", endHold);
             }
 
@@ -4319,6 +4372,10 @@
                 var payuMerchantKey = $("#cred-payu-merchant-key").val();
                 var payuMerchantSalt = $("#cred-payu-merchant-salt").val();
                 var payuMode = $("#cred-payu-mode").val();
+                var razorpayEnabled = $("#cred-razorpay-enabled").is(":checked") ? "true" : "false";
+                var razorpayKeyId = $("#cred-razorpay-key-id").val();
+                var razorpayKeySecret = $("#cred-razorpay-key-secret").val();
+                var razorpayMode = $("#cred-razorpay-mode").val();
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
@@ -4337,7 +4394,11 @@
                     payuEnabled: payuEnabled,
                     payuMerchantKey: payuMerchantKey,
                     payuMerchantSalt: payuMerchantSalt,
-                    payuMode: payuMode
+                    payuMode: payuMode,
+                    razorpayEnabled: razorpayEnabled,
+                    razorpayKeyId: razorpayKeyId,
+                    razorpayKeySecret: razorpayKeySecret,
+                    razorpayMode: razorpayMode
                 })
                 .done(function(res) {
                     showToast("Credentials saved successfully!");
@@ -4506,13 +4567,96 @@
                 });
             });
 
+            // --- COUPON CODES EVENT HANDLERS ---
+            $("#form-add-coupon").submit(function(e) {
+                e.preventDefault();
+                const id = $("#coupon-id").val();
+                const code = $("#coupon-code").val().toUpperCase().trim();
+                const discount = $("#coupon-discount").val();
+                const userEmail = $("#coupon-user").val().trim();
+
+                $.post("/api/admin/coupons", {
+                    id: id || null,
+                    code: code,
+                    discountPercentage: discount,
+                    assignedUserEmail: userEmail || null
+                })
+                .done(function(res) {
+                    showToast(res.message || "Coupon saved successfully.", "success");
+                    $("#form-add-coupon")[0].reset();
+                    $("#coupon-id").val("");
+                    $("#title-add-coupon").html('<i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Coupon Code');
+                    $("#btn-cancel-edit-coupon").addClass("d-none");
+                    loadCoupons();
+                })
+                .fail(function(err) {
+                    const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to save coupon.";
+                    showToast(msg, "error");
+                });
+            });
+
+            $("#btn-cancel-edit-coupon").click(function() {
+                $("#form-add-coupon")[0].reset();
+                $("#coupon-id").val("");
+                $("#title-add-coupon").html('<i class="fa-solid fa-plus-circle text-success me-2"></i>Create New Coupon Code');
+                $(this).addClass("d-none");
+            });
+
+            $(document).on("click", ".btn-toggle-coupon-status", function() {
+                const id = $(this).data("id");
+                $.post("/api/admin/coupons/" + id + "/toggle")
+                .done(function(res) {
+                    showToast(res.message || "Coupon status toggled.", "success");
+                    loadCoupons();
+                })
+                .fail(function(err) {
+                    const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to toggle status.";
+                    showToast(msg, "error");
+                });
+            });
+
+            $(document).on("click", ".btn-edit-coupon", function() {
+                const id = $(this).data("id");
+                const code = $(this).data("code");
+                const discount = $(this).data("discount");
+                const user = $(this).data("user");
+
+                $("#coupon-id").val(id);
+                $("#coupon-code").val(code);
+                $("#coupon-discount").val(discount);
+                $("#coupon-user").val(user);
+
+                $("#title-add-coupon").html('<i class="fa-solid fa-edit text-warning me-2"></i>Edit Coupon Code');
+                $("#btn-cancel-edit-coupon").removeClass("d-none");
+                $("#title-add-coupon")[0].scrollIntoView({ behavior: 'smooth' });
+            });
+
+            $(document).on("click", ".btn-delete-coupon", function() {
+                if (!confirm("Are you sure you want to delete this coupon code?")) {
+                    return;
+                }
+                const id = $(this).data("id");
+                $.ajax({
+                    url: "/api/admin/coupons/" + id,
+                    type: "DELETE"
+                })
+                .done(function(res) {
+                    showToast(res.message || "Coupon deleted successfully.", "success");
+                    loadCoupons();
+                })
+                .fail(function(err) {
+                    const msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to delete coupon.";
+                    showToast(msg, "error");
+                });
+            });
+
             // Restore last active tab if present
             const activeTab = localStorage.getItem('adminActiveTab') || 'stories';
             if (currentRole === 'PROOFREADER' && activeTab !== 'stories') {
                 switchTab('stories');
-            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail')) {
+            } else if (currentRole === 'EDITOR' && (activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail' || activeTab === 'coupons' || activeTab === 'ui')) {
                 switchTab('stories');
-            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
+            } else if ((activeTab === 'users' || activeTab === 'flakes' || activeTab === 'reviews' || activeTab === 'notifications' || activeTab === 'credentials' || activeTab === 'sendmail' || activeTab === 'coupons' || activeTab === 'ui') && currentRole !== 'ADMIN' && currentRole !== 'OWNER') {
                 switchTab('stories');
             } else {
                 switchTab(activeTab);

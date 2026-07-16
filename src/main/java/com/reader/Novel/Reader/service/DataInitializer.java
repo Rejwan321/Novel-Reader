@@ -52,6 +52,54 @@ public class DataInitializer implements CommandLineRunner {
         try {
             jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS DECRYPT_PASSWORD FOR 'com.reader.Novel.Reader.util.PasswordUtils.decryptForH2'");
             
+            // Ensure username column exists
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
+
+            // De-duplicate users (by email and username)
+            java.util.List<java.util.Map<String, Object>> allUsers = jdbcTemplate.queryForList("SELECT id, email, username FROM reader_internal ORDER BY id ASC");
+            java.util.Set<String> seenEmails = new java.util.HashSet<>();
+            java.util.Set<String> seenUsernames = new java.util.HashSet<>();
+            for (java.util.Map<String, Object> uMap : allUsers) {
+                Long id = ((Number) uMap.get("id")).longValue();
+                String email = (String) uMap.get("email");
+                String username = (String) uMap.get("username");
+                
+                boolean duplicate = false;
+                if (email != null) {
+                    String emailClean = email.trim().toLowerCase();
+                    if (seenEmails.contains(emailClean)) {
+                        duplicate = true;
+                    } else {
+                        seenEmails.add(emailClean);
+                    }
+                }
+                if (username != null) {
+                    String usernameClean = username.trim().toLowerCase();
+                    if (seenUsernames.contains(usernameClean)) {
+                        duplicate = true;
+                    } else {
+                        seenUsernames.add(usernameClean);
+                    }
+                }
+                
+                if (duplicate) {
+                    System.out.println("Deleting duplicate user ID " + id + " (email: " + email + ", username: " + username + ")");
+                    jdbcTemplate.update("DELETE FROM bookmarks WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM ratings WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM notifications WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM comments WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM purchases WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM flake_purchases WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM reviews WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM user_used_coupons WHERE user_id = ?", id);
+                    jdbcTemplate.update("DELETE FROM reader_internal WHERE id = ?", id);
+                }
+            }
+
+            // Apply unique constraints to prevent future duplicates
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD CONSTRAINT IF NOT EXISTS UC_email UNIQUE(email)");
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD CONSTRAINT IF NOT EXISTS UC_username UNIQUE(username)");
+            
             // Ensure comments table has reports_count column
             jdbcTemplate.execute("ALTER TABLE comments ADD COLUMN IF NOT EXISTS reports_count INT DEFAULT 0 NOT NULL");
 
@@ -76,11 +124,12 @@ public class DataInitializer implements CommandLineRunner {
             // Safe migration of any regular users occupying system IDs (0, 1, 3)
             for (Long sysId : new Long[]{0L, 1L, 3L}) {
                 String sysEmail = sysId == 0L ? "sakura" : (sysId == 1L ? "admin" : "editor");
+                String sysFullEmail = sysId == 0L ? "sakura@yukitales.com" : (sysId == 1L ? "admin@yukitales.com" : "editor@yukitales.com");
                 java.util.List<java.util.Map<String, Object>> conflictingUsers = jdbcTemplate.queryForList(
                     "SELECT id, email FROM reader_internal WHERE id = ?", sysId);
                 if (!conflictingUsers.isEmpty()) {
                     String email = (String) conflictingUsers.get(0).get("email");
-                    if (!sysEmail.equals(email)) {
+                    if (!sysEmail.equalsIgnoreCase(email) && !sysFullEmail.equalsIgnoreCase(email)) {
                         // Conflicting regular user! Move them to a high ID
                         Long newId = 1000L + sysId;
                         while (!jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = ?", newId).isEmpty()) {
@@ -99,6 +148,27 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
 
+            // Restore owner/admin if they were moved to ID 1000/1001
+            java.util.List<java.util.Map<String, Object>> movedOwner = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1000 AND (email = 'sakura@yukitales.com' OR username = 'sakura')");
+            if (!movedOwner.isEmpty()) {
+                jdbcTemplate.update("UPDATE bookmarks SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE purchases SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE ratings SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE comments SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE notifications SET user_id = 0 WHERE user_id = 1000");
+                jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = 1000");
+            }
+            
+            java.util.List<java.util.Map<String, Object>> movedAdmin = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1001 AND (email = 'admin@yukitales.com' OR username = 'admin')");
+            if (!movedAdmin.isEmpty()) {
+                jdbcTemplate.update("UPDATE bookmarks SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE purchases SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE ratings SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE comments SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE notifications SET user_id = 1 WHERE user_id = 1001");
+                jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = 1001");
+            }
+
             // Ensure H2 auto-increment sequence restarts at 200 to avoid future conflicts
             jdbcTemplate.execute("ALTER TABLE reader_internal ALTER COLUMN id RESTART WITH 200");
 
@@ -109,50 +179,61 @@ public class DataInitializer implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('email_migration_done', 'true')");
                 System.out.println("One-time email subscription migration executed successfully.");
             }
+
+            // One-time username column migration
+            jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
+            java.util.List<java.util.Map<String, Object>> usernameMigrated = jdbcTemplate.queryForList("SELECT setting_value FROM system_settings WHERE setting_key = 'username_migration_done'");
+            if (usernameMigrated.isEmpty()) {
+                java.util.List<java.util.Map<String, Object>> migrationUsers = jdbcTemplate.queryForList("SELECT id, email FROM reader_internal");
+                java.util.Set<String> takenUsernames = new java.util.HashSet<>();
+                for (java.util.Map<String, Object> uMap : migrationUsers) {
+                    Long id = ((Number) uMap.get("id")).longValue();
+                    String currentEmail = (String) uMap.get("email");
+                    if (currentEmail == null || currentEmail.trim().isEmpty()) {
+                        continue;
+                    }
+                    String baseUsername;
+                    String finalEmail = currentEmail;
+                    if (!currentEmail.contains("@")) {
+                        baseUsername = currentEmail.trim();
+                        finalEmail = baseUsername.toLowerCase() + "@yukitales.com";
+                    } else {
+                        baseUsername = currentEmail.split("@")[0].trim();
+                    }
+                    
+                    String targetUsername = baseUsername;
+                    int suffix = 0;
+                    while (takenUsernames.contains(targetUsername.toLowerCase())) {
+                        targetUsername = baseUsername + suffix;
+                        suffix++;
+                    }
+                    takenUsernames.add(targetUsername.toLowerCase());
+                    jdbcTemplate.update("UPDATE reader_internal SET username = ?, email = ? WHERE id = ?", targetUsername, finalEmail, id);
+                }
+                jdbcTemplate.update("INSERT INTO system_settings (setting_key, setting_value) VALUES ('username_migration_done', 'true')");
+                System.out.println("One-time username database migration completed successfully.");
+            }
             
             // Ensure owner exists with ID 0
-            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'sakura'");
-            String sakuraHashed = PasswordUtils.hashPassword("sakura");
+            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 0");
             if (owners.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (0, 'System Owner', 'sakura', ?, 'OWNER', 100)", sakuraHashed);
-            } else {
-                Long currentOwnerId = ((Number) owners.get(0).get("id")).longValue();
-                if (currentOwnerId != 0L) {
-                    jdbcTemplate.update("UPDATE reader_internal SET id = 0 WHERE id = ?", currentOwnerId);
-                }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'OWNER', name = 'System Owner', password = ? WHERE email = 'sakura'", sakuraHashed);
+                String sakuraHashed = PasswordUtils.hashPassword("sakura");
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (0, 'Sakura Sakura', 'sakura', 'sakura@yukitales.com', ?, 'OWNER', 100)", sakuraHashed);
             }
 
             // Ensure admin exists with ID 1
-            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'admin'");
-            String adminHashed = PasswordUtils.hashPassword("admin");
+            java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1");
             if (admins.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (1, 'System Admin', 'admin', ?, 'ADMIN', 100)", adminHashed);
-            } else {
-                Long currentAdminId = ((Number) admins.get(0).get("id")).longValue();
-                if (currentAdminId != 1L) {
-                    jdbcTemplate.update("UPDATE reader_internal SET id = 1 WHERE id = ?", currentAdminId);
-                }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'ADMIN', name = 'System Admin', password = ? WHERE email = 'admin'", adminHashed);
+                String adminHashed = PasswordUtils.hashPassword("admin");
+                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (1, 'Admin Admin', 'admin', 'admin@yukitales.com', ?, 'ADMIN', 100)", adminHashed);
             }
 
-            // Ensure editor exists with ID 3
-            java.util.List<java.util.Map<String, Object>> editorsList = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE email = 'editor'");
-            String editorHashed = PasswordUtils.hashPassword("editor");
-            if (editorsList.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, email, password, user_type, balance) VALUES (3, 'System Translator', 'editor', ?, 'EDITOR', 100)", editorHashed);
-            } else {
-                Long currentEditorId = ((Number) editorsList.get(0).get("id")).longValue();
-                if (currentEditorId != 3L) {
-                    jdbcTemplate.update("UPDATE reader_internal SET id = 3 WHERE id = ?", currentEditorId);
-                }
-                jdbcTemplate.update("UPDATE reader_internal SET user_type = 'EDITOR', name = 'System Translator', password = ? WHERE email = 'editor'", editorHashed);
-            }
+
 
             // Create the view named READER for H2 console users
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
             jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
-            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
+            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, username, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
 
             // Create the H2 database user admin/admin with admin privileges
             jdbcTemplate.execute("CREATE USER IF NOT EXISTS admin PASSWORD 'admin'");
@@ -161,12 +242,12 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY = TRUE");
         }
 
-        Long editorId = 3L;
+        Long ownerId = 0L;
 
-        // Migrate/update creatorId for all existing novels to match the new roles
+        // Migrate/update creatorId for all existing novels to match the owner
         for (Novel n : novelRepository.findAll()) {
             boolean updated = false;
-            Long targetCreatorId = editorId;
+            Long targetCreatorId = ownerId;
             if (n.getCreatorId() == null || !n.getCreatorId().equals(targetCreatorId)) {
                 n.setCreatorId(targetCreatorId);
                 updated = true;
