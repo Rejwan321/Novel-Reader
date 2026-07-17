@@ -774,12 +774,13 @@ $(document).ready(function() {
         var btn = $(this);
         var novelId = btn.data("id");
         var card = $("#bookmark-card-" + novelId);
+        var col = card.closest(".col");
 
         $.post("/api/bookmarks/toggle", { novelId: novelId })
         .done(function(res) {
             showToast("Removed from bookshelf.");
-            card.fadeOut(400, function() {
-                card.remove();
+            col.fadeOut(400, function() {
+                col.remove();
                 
                 // Update dynamic bookshelf count text
                 var count = $(".bookshelf-card").length;
