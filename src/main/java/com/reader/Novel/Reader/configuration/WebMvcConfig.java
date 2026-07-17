@@ -7,6 +7,15 @@ import java.io.File;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private UserStatusInterceptor userStatusInterceptor;
+
+    @Override
+    public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry) {
+        registry.addInterceptor(userStatusInterceptor)
+                .excludePathPatterns("/static/**", "/css/**", "/js/**", "/scripts/**", "/uploads/**", "/favicon.ico", "/api/realtime/**");
+    }
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String userDir = System.getProperty("user.dir");
@@ -19,6 +28,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         }
 
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadsPath);
+                .addResourceLocations("file:" + uploadsPath)
+                .setCachePeriod(31536000); // 1 year cache period for cover images
+
+        registry.addResourceHandler("/static/**", "/css/**", "/js/**", "/scripts/**")
+                .addResourceLocations("classpath:/static/", "classpath:/static/css/", "classpath:/static/js/", "classpath:/static/scripts/")
+                .setCachePeriod(86400); // 24 hours cache period for style sheets and scripts
     }
 }

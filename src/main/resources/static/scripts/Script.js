@@ -32,6 +32,16 @@ $(document).ready(function() {
         showToast("Please sign in or register to access this page.", "info");
     }
 
+    // Check for PayU payment redirect parameters
+    if (urlParams.get('payment') === 'success') {
+        showToast("Payment successful! Snow Flakes added to your wallet.", "success");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('payment') === 'failure') {
+        var reason = urlParams.get('reason') || "Transaction declined/cancelled.";
+        showToast("Payment failed: " + reason, "error");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // Initialize search filter UI states from hidden inputs on page load
     var initType = $("#search-filter-type-val").val() || "ALL";
     var initGenre = $("#search-filter-genre-val").val() || "ALL";
@@ -278,9 +288,9 @@ $(document).ready(function() {
         $("#search-form").submit();
     });
 
-    // Real-time search dropdown suggestions on typing 1+ characters
+    // Real-time search dropdown suggestions on typing 1+ characters or focus
     var searchTimeout = null;
-    $(".search-bar .input").on("input", function() {
+    $(".search-bar .input").on("focus input", function() {
         var query = $(this).val().trim();
         var dropdown = $("#search-results-dropdown");
         
@@ -409,17 +419,18 @@ $(document).ready(function() {
                             hasItems = true;
                             var label = typeLabels[key] || key;
                             html += '<div class="search-group-header">' + label + '</div>';
+                            html += '<div class="search-results-card-container">';
                             list.slice(0, 5).forEach(function(item) {
-                                var ratingText = item.rating ? ' (★ ' + parseFloat(item.rating).toFixed(1) + ')' : '';
-                                var meta = (item.status || "ONGOING") + ratingText;
-                                html += '<a href="/novel/' + item.id + '" class="search-result-item">' +
-                                        '  <img src="' + (item.coverUrl || '/uploads/default-cover.jpg') + '" class="search-result-img" alt="">' +
-                                        '  <div class="search-result-info">' +
-                                        '    <div class="search-result-title">' + item.title + '</div>' +
-                                        '    <div class="search-result-meta">' + meta + '</div>' +
+                                html += '<a href="/novel/' + item.id + '" class="search-result-card">' +
+                                        '  <div class="search-result-card-img-wrapper">' +
+                                        '    <img src="' + (item.coverUrl || '/uploads/default-cover.jpg') + '" class="search-result-card-img" alt="">' +
+                                        '  </div>' +
+                                        '  <div class="search-result-card-info">' +
+                                        '    <div class="search-result-card-title">' + item.title + '</div>' +
                                         '  </div>' +
                                         '</a>';
                             });
+                            html += '</div>';
                         }
                     });
                     
@@ -451,6 +462,63 @@ $(document).ready(function() {
             }, 250);
         } else {
             dropdown.addClass("d-none").empty();
+        }
+    });
+
+    $(".search-bar .input").on("keydown", function(e) {
+        var dropdown = $("#search-results-dropdown");
+        if (dropdown.hasClass("d-none")) return;
+
+        var items = dropdown.find(".search-result-card, .search-badge-item, .search-action-item, .search-results-footer");
+        if (items.length === 0) return;
+
+        var activeIndex = -1;
+        items.each(function(index, el) {
+            if ($(el).hasClass("highlighted-item")) {
+                activeIndex = index;
+            }
+        });
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            items.removeClass("highlighted-item");
+            var nextIndex = (activeIndex + 1) % items.length;
+            var nextItem = $(items[nextIndex]);
+            nextItem.addClass("highlighted-item");
+            
+            // Scroll into view
+            var container = dropdown[0];
+            var elem = nextItem[0];
+            if (elem.offsetTop < container.scrollTop) {
+                container.scrollTop = elem.offsetTop;
+            } else if (elem.offsetTop + elem.offsetHeight > container.scrollTop + container.clientHeight) {
+                container.scrollTop = elem.offsetTop + elem.offsetHeight - container.clientHeight;
+            }
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            items.removeClass("highlighted-item");
+            var prevIndex = (activeIndex - 1 + items.length) % items.length;
+            var prevItem = $(items[prevIndex]);
+            prevItem.addClass("highlighted-item");
+            
+            // Scroll into view
+            var container = dropdown[0];
+            var elem = prevItem[0];
+            if (elem.offsetTop < container.scrollTop) {
+                container.scrollTop = elem.offsetTop;
+            } else if (elem.offsetTop + elem.offsetHeight > container.scrollTop + container.clientHeight) {
+                container.scrollTop = elem.offsetTop + elem.offsetHeight - container.clientHeight;
+            }
+        } else if (e.key === "Enter") {
+            if (activeIndex !== -1) {
+                e.preventDefault();
+                var href = $(items[activeIndex]).attr("href");
+                if (href && href !== "#") {
+                    window.location.href = href;
+                } else {
+                    $(items[activeIndex])[0].click();
+                }
+            }
         }
     });
 
@@ -487,26 +555,106 @@ $(document).ready(function() {
 
     // --- AJAX Authentication Operations ---
 
-    // Login Form Submit
+    // Transition for forgot password
+    $(document).on("click", "#link-forgot-password", function(e) {
+        e.preventDefault();
+        $("#login-credentials-section").hide();
+        $("#login-forgot-request-section").fadeIn();
+    });
+
+    $(document).on("click", "#link-forgot-back-to-login", function(e) {
+        e.preventDefault();
+        $("#login-forgot-request-section").hide();
+        $("#login-credentials-section").fadeIn();
+    });
+
+    $(document).on("click", "#link-forgot-reset-back-to-login", function(e) {
+        e.preventDefault();
+        $("#login-forgot-reset-section").hide();
+        $("#login-credentials-section").fadeIn();
+    });
+
+    // Login Form Submit (handles standard login, forgot request, and forgot reset)
     $("#login-form-modal").submit(function(e) {
         e.preventDefault();
-        var email = $("#login-email").val();
-        var password = $("#login-password").val();
 
-        $.post("/api/auth/login", {
-            email: email,
-            password: password
-        })
-        .done(function(res) {
-            showToast("Welcome back, " + res.user.name + "!");
-            setTimeout(function() {
-                location.reload();
-            }, 1200);
-        })
-        .fail(function(err) {
-            var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Invalid login credentials.";
-            showToast(msg, "error");
-        });
+        if ($("#login-credentials-section").is(":visible")) {
+            var email = $("#login-email").val();
+            var password = $("#login-password").val();
+            var rememberMe = $("#login-remember-me").is(":checked");
+
+            if (!email || !email.trim() || !password) {
+                showToast("Email and password are required.", "warning");
+                return;
+            }
+
+            $.post("/api/auth/login", {
+                email: email,
+                password: password,
+                rememberMe: rememberMe
+            })
+            .done(function(res) {
+                showToast("Welcome back, " + res.user.name + "!");
+                setTimeout(function() {
+                    location.reload();
+                }, 1200);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Invalid login credentials.";
+                showToast(msg, "error");
+            });
+        } 
+        else if ($("#login-forgot-request-section").is(":visible")) {
+            var email = $("#forgot-email").val();
+            if (!email || !email.trim()) {
+                showToast("Email is required to request reset code.", "warning");
+                return;
+            }
+
+            showToast("Sending reset code...", "info");
+            $.post("/api/auth/forgot-password/request", {
+                email: email
+            })
+            .done(function(res) {
+                showToast(res.message);
+                $("#login-forgot-request-section").hide();
+                $("#login-forgot-reset-section").fadeIn();
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to send verification code.";
+                showToast(msg, "error");
+            });
+        } 
+        else if ($("#login-forgot-reset-section").is(":visible")) {
+            var email = $("#forgot-email").val();
+            var otp = $("#forgot-otp").val();
+            var newPassword = $("#forgot-new-password").val();
+
+            if (!otp || !otp.trim() || !newPassword) {
+                showToast("Verification code and new password are required.", "warning");
+                return;
+            }
+
+            showToast("Resetting password...", "info");
+            $.post("/api/auth/forgot-password/reset", {
+                email: email,
+                otp: otp,
+                newPassword: newPassword
+            })
+            .done(function(res) {
+                showToast(res.message);
+                setTimeout(function() {
+                    $("#login-forgot-reset-section").hide();
+                    $("#login-credentials-section").fadeIn();
+                    $("#login-email").val(email);
+                    $("#login-password").val("");
+                }, 1500);
+            })
+            .fail(function(err) {
+                var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to reset password.";
+                showToast(msg, "error");
+            });
+        }
     });
 
     // Signup Form Submit
@@ -645,7 +793,7 @@ $(document).ready(function() {
 
 
     // --- Client-Side Snappy Filter Engine (Home Page) ---
-    var selectedType = $("#search-filter-type-val").val() || "ALL";
+    var selectedType = $("#search-filter-type-val").val() || "NOVEL";
     var selectedGenre = $("#search-filter-genre-val").val() || "ALL";
     var itemsPerPage = 12;
     var currentPage = 1;
@@ -987,30 +1135,132 @@ $(document).ready(function() {
         purchaseModal.show();
     });
 
+    var appliedCouponCode = null;
+    var couponDiscountPercent = 0;
+
+    // Helper to dynamically build a form and redirect to PayU checkout page
+    function redirectToPayU(res) {
+        var form = document.createElement("form");
+        form.method = "POST";
+        form.action = res.actionUrl;
+
+        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3", "udf4"];
+        fields.forEach(function(field) {
+            if (res[field] !== undefined) {
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = field;
+                input.value = res[field];
+                form.appendChild(input);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Helper to open Razorpay overlay checkout form
+    function openRazorpayCheckout(res, btn, inputField) {
+        var options = {
+            "key": res.keyId,
+            "amount": res.amount,
+            "currency": res.currency,
+            "name": res.name,
+            "description": res.description,
+            "order_id": res.orderId,
+            "handler": function (response){
+                btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Verifying...');
+                $.post("/api/payment/razorpay/verify", {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    udf1: res.udf1,
+                    udf2: res.udf2,
+                    udf3: res.udf3,
+                    udf4: res.udf4
+                }).done(function(verifyRes) {
+                    showToast("Payment successful! " + res.description + " credited.");
+                    $("#navbar-user-balance").text(verifyRes.newBalance);
+                    
+                    if (inputField) {
+                        inputField.val('');
+                        $("#custom-flakes-price-display").text("$0.00");
+                    }
+                    
+                    var modalEl = document.getElementById('purchaseFlakesModal');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) {
+                        modal.hide();
+                    }
+                }).fail(function(verifyErr) {
+                    var msg = verifyErr.responseJSON && verifyErr.responseJSON.error ? verifyErr.responseJSON.error : "Signature verification failed.";
+                    showToast(msg, "error");
+                }).always(function() {
+                    if (inputField) {
+                        btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+                    } else {
+                        btn.prop("disabled", false).text("Purchase");
+                    }
+                });
+            },
+            "prefill": {
+                "name": res.prefillName,
+                "email": res.prefillEmail,
+                "contact": "9999999999"
+            },
+            "theme": {
+                "color": "#1a1538"
+            },
+            "modal": {
+                "ondismiss": function() {
+                    if (inputField) {
+                        btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
+                    } else {
+                        btn.prop("disabled", false).text("Purchase");
+                    }
+                }
+            }
+        };
+        try {
+            var rzp1 = new Razorpay(options);
+            rzp1.open();
+        } catch (e) {
+            console.error("Razorpay open failed:", e);
+            showToast("Failed to initialize Razorpay payment.", "error");
+        }
+    }
     $(document).on("click", ".btn-purchase-pack", function(e) {
         e.preventDefault();
         var btn = $(this);
         var amount = btn.data("amount");
+        var gatewayVal = $("input[name='paymentGateway']:checked").val();
+        var gateway = (gatewayVal !== undefined) ? gatewayVal : "";
+        var coupon = appliedCouponCode || ($("#coupon-code-input").length ? $("#coupon-code-input").val().toUpperCase().trim() : "");
 
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
 
-        $.post("/api/user/purchase-flakes", { amount: amount })
+        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.payu) {
+                redirectToPayU(res);
+            } else if (res.razorpay) {
+                openRazorpayCheckout(res, btn, null);
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).text("Purchase");
             }
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
             showToast(msg, "error");
-        })
-        .always(function() {
             btn.prop("disabled", false).text("Purchase");
         });
     });
@@ -1027,29 +1277,34 @@ $(document).ready(function() {
         }
         
         var packages = window.flakePackages || [];
+        var price = 0.0;
         if (packages.length === 0) {
             // Default rate fallback if packages list is empty
-            var price = amount * 0.01;
-            display.text("$" + price.toFixed(2));
-            return;
-        }
-        
-        // Sort ascending by amount
-        var sortedPacks = [...packages].sort(function(a, b) {
-            return a.amount - b.amount;
-        });
-        
-        // Find closest package that is <= amount
-        var applicablePack = sortedPacks[0];
-        for (var i = 0; i < sortedPacks.length; i++) {
-            if (sortedPacks[i].amount <= amount) {
-                applicablePack = sortedPacks[i];
+            price = amount * 0.01;
+        } else {
+            // Sort ascending by amount
+            var sortedPacks = [...packages].sort(function(a, b) {
+                return a.amount - b.amount;
+            });
+            
+            // Find closest package that is <= amount
+            var applicablePack = sortedPacks[0];
+            for (var i = 0; i < sortedPacks.length; i++) {
+                if (sortedPacks[i].amount <= amount) {
+                    applicablePack = sortedPacks[i];
+                }
             }
+            
+            var rate = applicablePack.price / applicablePack.amount;
+            price = amount * rate;
         }
-        
-        var rate = applicablePack.price / applicablePack.amount;
-        var price = amount * rate;
-        display.text("$" + price.toFixed(2));
+
+        if (appliedCouponCode && couponDiscountPercent > 0) {
+            var discounted = price * (1.0 - (couponDiscountPercent / 100.0));
+            display.html('<span class="text-decoration-line-through text-muted fs-6" style="margin-right: 5px;">$' + price.toFixed(2) + '</span>$' + discounted.toFixed(2));
+        } else {
+            display.text("$" + price.toFixed(2));
+        }
     }
 
     $(document).on("input change keyup", "#custom-flakes-input", function() {
@@ -1067,31 +1322,84 @@ $(document).ready(function() {
             return;
         }
         
+        var gatewayVal = $("input[name='paymentGateway']:checked").val();
+        var gateway = (gatewayVal !== undefined) ? gatewayVal : "";
+        var coupon = appliedCouponCode || ($("#coupon-code-input").length ? $("#coupon-code-input").val().toUpperCase().trim() : "");
         btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-2"></i>Processing...');
         
-        $.post("/api/user/purchase-flakes", { amount: amount })
+        $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
-            showToast(res.message);
-            $("#navbar-user-balance").text(res.newBalance);
-            
-            // Clear input
-            input.val('');
-            $("#custom-flakes-price-display").text("$0.00");
-            
-            // Close modal
-            var modalEl = document.getElementById('purchaseFlakesModal');
-            var modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) {
-                modal.hide();
+            if (res.payu) {
+                redirectToPayU(res);
+            } else if (res.razorpay) {
+                openRazorpayCheckout(res, btn, input);
+            } else {
+                showToast(res.message);
+                $("#navbar-user-balance").text(res.newBalance);
+                
+                // Clear input
+                input.val('');
+                $("#custom-flakes-price-display").text("$0.00");
+                
+                // Close modal
+                var modalEl = document.getElementById('purchaseFlakesModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
             }
         })
         .fail(function(err) {
             var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to purchase Snow Flakes.";
             showToast(msg, "error");
-        })
-        .always(function() {
             btn.prop("disabled", false).html('<i class="fa-solid fa-credit-card me-2"></i>Purchase Custom');
         });
+    });
+
+    // Apply Coupon Code Click Logic
+    $(document).on("click", "#btn-apply-coupon", function(e) {
+        e.preventDefault();
+        var code = $("#coupon-code-input").val().toUpperCase().trim();
+        var amount = parseInt($("#custom-flakes-input").val()) || 100;
+        var msgDiv = $("#coupon-validation-msg");
+
+        if (!code) {
+            msgDiv.show().removeClass("text-success").addClass("text-danger").text("Please enter a coupon code.");
+            return;
+        }
+
+        $.get("/api/user/validate-coupon", { code: code, amount: amount })
+        .done(function(res) {
+            if (res.valid) {
+                appliedCouponCode = res.code;
+                couponDiscountPercent = res.discountPercentage;
+                msgDiv.show().removeClass("text-danger").addClass("text-success")
+                    .text("Coupon '" + res.code + "' applied! " + res.discountPercentage + "% discount.");
+                updateCustomFlakesPrice();
+            }
+        })
+        .fail(function(err) {
+            appliedCouponCode = null;
+            couponDiscountPercent = 0;
+            var errMsg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Invalid coupon code.";
+            msgDiv.show().removeClass("text-success").addClass("text-danger").text(errMsg);
+            updateCustomFlakesPrice();
+        });
+    });
+
+    // Clear coupon selection on modal hidden
+    $(document).ready(function() {
+        var modalEl = document.getElementById('purchaseFlakesModal');
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                $("#coupon-code-input").val("");
+                $("#coupon-validation-msg").hide().text("");
+                appliedCouponCode = null;
+                couponDiscountPercent = 0;
+                $("#custom-flakes-price-display").text("$0.00");
+            });
+        }
     });
 
     // Toggle feature/highlight novel
@@ -1115,6 +1423,8 @@ $(document).ready(function() {
             btn.prop("disabled", false);
         });
     });
+
+
 
     // Autocomplete for Genres in Admin panel
     const ALL_GENRES = [

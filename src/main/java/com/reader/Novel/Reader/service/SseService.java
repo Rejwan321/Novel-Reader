@@ -55,6 +55,14 @@ public class SseService {
                     userEmitters.remove(userId);
                 }
             }
+        } else {
+            userEmitters.forEach((id, list) -> {
+                if (list.remove(emitter)) {
+                    if (list.isEmpty()) {
+                        userEmitters.remove(id);
+                    }
+                }
+            });
         }
         if (chapterId != null) {
             List<SseEmitter> list = chapterEmitters.get(chapterId);
@@ -64,6 +72,14 @@ public class SseService {
                     chapterEmitters.remove(chapterId);
                 }
             }
+        } else {
+            chapterEmitters.forEach((id, list) -> {
+                if (list.remove(emitter)) {
+                    if (list.isEmpty()) {
+                        chapterEmitters.remove(id);
+                    }
+                }
+            });
         }
     }
 
@@ -111,7 +127,7 @@ public class SseService {
             }
         }
         for (SseEmitter f : failed) {
-            globalEmitters.remove(f);
+            removeEmitter(f, null, null);
         }
     }
 
@@ -126,7 +142,7 @@ public class SseService {
             }
         }
         for (SseEmitter f : failed) {
-            globalEmitters.remove(f);
+            removeEmitter(f, null, null);
         }
     }
 }

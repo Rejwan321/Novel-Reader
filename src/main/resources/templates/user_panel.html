@@ -192,8 +192,9 @@
                 <!-- Sidebar Column -->
                 <div class="col-12 col-md-3 mb-4 mb-md-0">
                     <div class="d-flex align-items-center mb-4 pb-3 border-bottom border-secondary">
-                        <div class="rounded-circle bg-violet d-flex align-items-center justify-content-center text-white me-3" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: 600;">
-                            <span th:text="${#strings.substring(currentUser.name, 0, 1).toUpperCase()}">U</span>
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white me-3" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: 600; overflow: hidden; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1);">
+                            <img th:if="${currentUser.profilePictureUrl != null and currentUser.profilePictureUrl != ''}" th:src="${currentUser.profilePictureUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                            <span th:if="${currentUser.profilePictureUrl == null or currentUser.profilePictureUrl == ''}" th:text="${#strings.substring(currentUser.name, 0, 1).toUpperCase()}">U</span>
                         </div>
                         <div>
                             <h3 class="h6 fw-bold text-white mb-0 font-outfit" th:text="${currentUser.name}">User Name</h3>
@@ -243,13 +244,56 @@
 
                         <form id="form-user-settings">
                             <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label text-muted">Account Name</label>
-                                    <input type="text" class="form-control user-input" th:value="${currentUser.name}" readonly disabled>
+                                <div class="col-12 mb-4 d-flex align-items-center gap-4 pb-4 border-bottom border-secondary">
+                                    <div class="position-relative" style="width: 80px; height: 80px;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white border-0" style="width: 80px; height: 80px; font-size: 2.2rem; font-weight: 600; overflow: hidden; background: rgba(255,255,255,0.05); border: 2.5px solid #5e63b6 !important;" id="avatar-preview-container">
+                                            <img id="avatar-preview-img" th:if="${currentUser.profilePictureUrl != null and currentUser.profilePictureUrl != ''}" th:src="${currentUser.profilePictureUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <span id="avatar-placeholder-text" th:if="${currentUser.profilePictureUrl == null or currentUser.profilePictureUrl == ''}" th:text="${#strings.substring(currentUser.name, 0, 1).toUpperCase()}">U</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="h6 fw-bold text-white mb-2 font-outfit">Profile Picture</h3>
+                                        <input type="file" id="avatar-file-input" accept="image/*" style="display: none;" onchange="previewAndLoadAvatar(this)">
+                                        <button type="button" class="btn btn-premium btn-sm px-3" onclick="$('#avatar-file-input').click()">
+                                            <i class="fa-solid fa-upload me-2"></i>Upload Image
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm px-3 ms-2" onclick="removeAvatar()">
+                                            <i class="fa-solid fa-trash me-2"></i>Remove
+                                        </button>
+                                        <div class="form-text text-muted font-size-xs mt-2" style="font-size: 0.75rem;">Recommended: Square image, max 2MB.</div>
+                                    </div>
                                 </div>
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label text-muted">Account Email</label>
-                                    <input type="text" class="form-control user-input" th:value="${currentUser.email}" readonly disabled>
+                                <div class="col-12 col-md-4">
+                                     <label class="form-label text-muted" for="settings-name">Display Name</label>
+                                     <input type="text" class="form-control user-input" id="settings-name" th:value="${currentUser.name}" placeholder="Enter display name" required>
+                                 </div>
+                                 <div class="col-12 col-md-4">
+                                     <label class="form-label text-muted" for="settings-username">Username</label>
+                                     <input type="text" class="form-control user-input" id="settings-username" th:value="${currentUser.username}" placeholder="Enter username" required>
+                                 </div>
+                                 <div class="col-12 col-md-4">
+                                     <label class="form-label text-muted" for="settings-email">Account Email</label>
+                                     <input type="text" class="form-control user-input" id="settings-email" th:value="${currentUser.email}" placeholder="Enter email address" required>
+                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label text-muted" for="settings-bio">About Me (Bio)</label>
+                                    <textarea class="form-control user-input" id="settings-bio" rows="2" placeholder="Tell us about yourself..." th:text="${currentUser.bio}"></textarea>
+                                </div>
+
+                                <div class="col-12 mt-4 pt-2 border-top border-secondary">
+                                    <h3 class="h6 fw-bold text-white mb-3 font-outfit">Change Password</h3>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label text-muted" for="settings-current-password">Current Password</label>
+                                    <input type="password" class="form-control user-input" id="settings-current-password" placeholder="Enter current password">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label text-muted" for="settings-new-password">New Password</label>
+                                    <input type="password" class="form-control user-input" id="settings-new-password" placeholder="Min. 6 characters">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label text-muted" for="settings-confirm-password">Confirm New Password</label>
+                                    <input type="password" class="form-control user-input" id="settings-confirm-password" placeholder="Confirm new password">
                                 </div>
 
                                 <div class="col-12 mt-4">
@@ -327,8 +371,13 @@
                                                  data-logo_alignment="left">
                                             </div>
                                         </div>
-                                        <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="text-success small fw-bold">
-                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'GOOGLE')}" class="d-flex align-items-center justify-content-end gap-2">
+                                            <span class="text-success small fw-bold">
+                                                <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-2" style="font-size: 0.72rem; line-height: 1.2;" onclick="unlinkProvider('GOOGLE')">
+                                                <i class="fa-solid fa-unlink me-1"></i>Unlink
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -355,8 +404,13 @@
                                                 <i class="fa-brands fa-discord me-1"></i>Link Discord
                                             </a>
                                         </div>
-                                        <div th:if="${#strings.contains(currentUser.loginType, 'DISCORD')}" class="text-success small fw-bold">
-                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        <div th:if="${#strings.contains(currentUser.loginType, 'DISCORD')}" class="d-flex align-items-center justify-content-end gap-2">
+                                            <span class="text-success small fw-bold">
+                                                <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-2" style="font-size: 0.72rem; line-height: 1.2;" onclick="unlinkProvider('DISCORD')">
+                                                <i class="fa-solid fa-unlink me-1"></i>Unlink
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -380,8 +434,13 @@
                                     <button th:if="${!#strings.contains(currentUser.loginType, 'LOCAL')}" type="button" class="btn btn-sm btn-outline-info px-3" data-bs-toggle="modal" data-bs-target="#linkPasswordModal">
                                         <i class="fa-solid fa-key me-1"></i>Link Password
                                     </button>
-                                    <div th:if="${#strings.contains(currentUser.loginType, 'LOCAL')}" class="text-success small fw-bold">
-                                        <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                    <div th:if="${#strings.contains(currentUser.loginType, 'LOCAL')}" class="d-flex align-items-center justify-content-end gap-2">
+                                        <span class="text-success small fw-bold">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Active & Linked
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 ms-2" style="font-size: 0.72rem; line-height: 1.2;" onclick="unlinkProvider('LOCAL')">
+                                            <i class="fa-solid fa-unlink me-1"></i>Unlink
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -548,7 +607,7 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='1.8')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.9')}"></script>
     <script>
         $(document).ready(function() {
             // Load initial notifications
@@ -563,31 +622,119 @@
                 }
             });
 
+            window.previewAndLoadAvatar = function(input) {
+                if (input.files && input.files[0]) {
+                    var file = input.files[0];
+                    if (file.size > 2 * 1024 * 1024) {
+                        showToast("Image size must be less than 2MB.", "error");
+                        input.value = "";
+                        return;
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var dataUrl = e.target.result;
+                        
+                        var img = $('#avatar-preview-img');
+                        if (img.length === 0) {
+                            $('#avatar-preview-container').html('<img id="avatar-preview-img" style="width: 100%; height: 100%; object-fit: cover;">');
+                            img = $('#avatar-preview-img');
+                        }
+                        img.attr('src', dataUrl).show();
+                        $('#avatar-placeholder-text').hide();
+                        
+                        $('#form-user-settings').data('profile-pic-base64', dataUrl);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            window.removeAvatar = function() {
+                var nameInput = $('#form-user-settings').find('input').first();
+                var name = nameInput.length > 0 ? nameInput.val() : "U";
+                var initials = (name || "U").substring(0, 1).toUpperCase();
+                $('#avatar-preview-container').html('<span id="avatar-placeholder-text">' + initials + '</span>');
+                $('#avatar-file-input').val('');
+                $('#form-user-settings').data('profile-pic-base64', '');
+            };
+
             // Settings form submit
             $('#form-user-settings').submit(function(e) {
                 e.preventDefault();
                 var btn = $('#btn-save-settings');
                 btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Saving...');
 
+                var name = $('#settings-name').val();
+                var username = $('#settings-username').val();
+                var email = $('#settings-email').val();
+                var bio = $('#settings-bio').val();
+                var currentPassword = $('#settings-current-password').val();
+                var newPassword = $('#settings-new-password').val();
+                var confirmPassword = $('#settings-confirm-password').val();
+
+                if (newPassword && newPassword.trim() !== '') {
+                    if (newPassword !== confirmPassword) {
+                        showToast("New passwords do not match.", "error");
+                        btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
+                        return;
+                    }
+                    if (newPassword.length < 6) {
+                        showToast("New password must be at least 6 characters.", "error");
+                        btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
+                        return;
+                    }
+                }
+
                 var subscribedToUpdates = $('#settings-updates-checkbox').is(':checked');
                 var subscribedToMentions = $('#settings-mentions-checkbox').is(':checked');
                 var updatesEmail = $('#settings-updates-email').val();
-
-                $.post('/api/user/settings', {
+                
+                var profilePictureUrl = $('#form-user-settings').data('profile-pic-base64');
+                var dataPayload = {
                     subscribedToUpdates: subscribedToUpdates,
                     subscribedToMentions: subscribedToMentions,
-                    updatesEmail: updatesEmail
-                }).done(function(res) {
-                    showToast("Notification settings saved successfully!");
+                    updatesEmail: updatesEmail,
+                    name: name,
+                    username: username,
+                    email: email,
+                    bio: bio
+                };
+                if (profilePictureUrl !== undefined) {
+                    dataPayload.profilePictureUrl = profilePictureUrl;
+                }
+                if (newPassword && newPassword.trim() !== '') {
+                    dataPayload.currentPassword = currentPassword;
+                    dataPayload.newPassword = newPassword;
+                }
+
+                $.post('/api/user/settings', dataPayload)
+                .done(function(res) {
+                    showToast("Profile settings saved successfully!", "success");
                     btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
-                    
-                    // Reload updates count on navbar if any logic depends on it
-                    updateNavbarUnreadBadge();
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
                 }).fail(function(err) {
                     showToast("Error saving settings: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
                     btn.prop('disabled', false).html('<i class="fa-solid fa-save me-2"></i>Save Preferences');
                 });
             });
+            window.unlinkProvider = function(provider) {
+                var providerName = provider === 'LOCAL' ? 'Password' : (provider.charAt(0) + provider.slice(1).toLowerCase());
+                if (!confirm("Are you sure you want to unlink " + providerName + " login from your account? This action cannot be undone.")) {
+                    return;
+                }
+                
+                $.post("/api/auth/unlink", { provider: provider })
+                .done(function(res) {
+                    showToast(providerName + " unlinked successfully!", "success");
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                })
+                .fail(function(err) {
+                    showToast("Unlinking failed: " + (err.responseJSON ? err.responseJSON.error : "Unknown error"), "error");
+                });
+            };
 
             // Active Tab Query Param Check
             var urlParams = new URLSearchParams(window.location.search);

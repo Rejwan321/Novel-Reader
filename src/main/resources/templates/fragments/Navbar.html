@@ -6,10 +6,120 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
     <title>Novel Reader</title>
 </head>
 <body>
 <div th:fragment="navbar">
+
+    <!-- Dynamic Custom UI System Styles -->
+    <style id="dynamic-ui-styles" th:inline="css">
+        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap');
+        
+        :root {
+            /* Theme overrides */
+            [# th:if="${uiTheme == 'cyberpunk'}"]
+                --theme-primary: #ff007f !important;
+                --bg-dark: #0a0a12 !important;
+                --card-bg: #121225 !important;
+                --theme-dgreen: #e0006f !important;
+                --theme-fgreen: #ff66b2 !important;
+                --theme-blue: #00ffff !important;
+                --theme-yellow: #00ff66 !important;
+            [/]
+            [# th:if="${uiTheme == 'midnight'}"]
+                --theme-primary: #5e63b6 !important;
+                --bg-dark: #0f0f1a !important;
+                --card-bg: #181829 !important;
+                --theme-dgreen: #474b94 !important;
+                --theme-fgreen: #a2a7db !important;
+                --theme-blue: #6db5e8 !important;
+                --theme-yellow: #f0d737 !important;
+            [/]
+            [# th:if="${uiTheme == 'ocean'}"]
+                --theme-primary: #3b82f6 !important;
+                --bg-dark: #0b0f19 !important;
+                --card-bg: #151e30 !important;
+                --theme-dgreen: #2563eb !important;
+                --theme-fgreen: #60a5fa !important;
+                --theme-blue: #06b6d4 !important;
+                --theme-yellow: #f59e0b !important;
+            [/]
+            [# th:if="${uiTheme == 'forest'}"]
+                --theme-primary: #10b981 !important;
+                --bg-dark: #0b0f0b !important;
+                --card-bg: #141f14 !important;
+                --theme-dgreen: #047857 !important;
+                --theme-fgreen: #34d399 !important;
+                --theme-blue: #06b6d4 !important;
+                --theme-yellow: #eab308 !important;
+            [/]
+            [# th:if="${uiTheme == 'sakura'}"]
+                --theme-primary: #f472b6 !important;
+                --bg-dark: #1c0d12 !important;
+                --card-bg: #2c161d !important;
+                --theme-dgreen: #db2777 !important;
+                --theme-fgreen: #f9a8d4 !important;
+                --theme-blue: #38bdf8 !important;
+                --theme-yellow: #f59e0b !important;
+            [/]
+            [# th:if="${uiTheme == 'custom'}"]
+                --theme-primary: [(${uiColorPrimary})] !important;
+                --bg-dark: [(${uiColorBg})] !important;
+                --card-bg: [(${uiColorCard})] !important;
+                --theme-dgreen: [(${uiColorPrimary})]d0 !important;
+                --theme-fgreen: [(${uiColorPrimary})]80 !important;
+            [/]
+
+            /* Font Overrides */
+            [# th:if="${uiFontPrimary == 'Poppins'}"]
+                --font-poppins: 'Poppins', sans-serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Outfit'}"]
+                --font-poppins: 'Outfit', sans-serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Inter'}"]
+                --font-poppins: 'Inter', sans-serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Lora'}"]
+                --font-poppins: 'Lora', serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Georgia'}"]
+                --font-poppins: 'Georgia', serif !important;
+            [/]
+            [# th:if="${uiFontPrimary == 'Roboto'}"]
+                --font-poppins: 'Roboto', sans-serif !important;
+            [/]
+            
+            /* Always map outfit variable to secondary fonts */
+            --font-outfit: var(--font-poppins) !important;
+        }
+
+        body {
+            font-family: var(--font-poppins) !important;
+            background-color: var(--bg-dark) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Template Border Radius Rules */
+        [# th:if="${uiTemplate == 'classic'}"]
+            .admin-card, .card, .btn, .form-input-admin, .form-select-admin {
+                border-radius: 4px !important;
+            }
+        [/]
+        [# th:if="${uiTemplate == 'minimalist'}"]
+            .admin-card, .card, .btn, .form-input-admin, .form-select-admin {
+                border-radius: 0px !important;
+                border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            }
+        [/]
+        [# th:if="${uiTemplate == 'modern'}"]
+            .admin-card, .card {
+                border-radius: 16px !important;
+            }
+        [/]
+    </style>
+
 <div class="sticky-top" style="z-index: 1040;">
 <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
@@ -44,7 +154,7 @@
                     <div class="search-bar">
                         <form id="search-form" action="/" method="get">
                             <input type="text" name="search" class="input" placeholder="Search..." th:value="${param.search}">
-                            <input type="hidden" name="type" id="search-filter-type-val" th:value="${param.type != null ? param.type : 'ALL'}">
+                            <input type="hidden" name="type" id="search-filter-type-val" th:value="${param.type != null ? param.type : 'NOVEL'}">
                             <input type="hidden" name="genre" id="search-filter-genre-val" th:value="${param.genre != null ? param.genre : 'ALL'}">
                             <input type="hidden" name="year" id="search-filter-year-val" th:value="${param.year != null ? param.year : 'ALL'}">
                             <input type="hidden" name="sort" id="search-filter-sort-val" th:value="${param.sort != null ? param.sort : 'POPULARITY'}">
@@ -54,7 +164,7 @@
                             <input type="hidden" name="source" id="search-filter-source-val" th:value="${param.source != null ? param.source : 'ALL'}">
                             <input type="hidden" name="editor" id="search-filter-editor-val" th:value="${param.editor != null ? param.editor : 'ALL'}">
                         </form>
-                        <i class="fa-solid fa-sliders" id="search-filter-icon-btn" title="Filter Options" style="display: none;"></i>
+                        <i class="fa-solid fa-filter" id="search-filter-icon-btn" title="Filter Options" style="display: none;"></i>
                         <i class="fa fa-search" aria-hidden="true" id="search-icon-btn"></i>
                     </div>
                     <!-- Real-time Search Dropdown Menu -->
@@ -219,7 +329,8 @@
                             <i class="fa-solid fa-snowflake ms-2" style="color: #00e5ff;"></i>
                         </span>
                         <button class="btn btn-profile-dropdown dropdown-toggle position-relative" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-user-circle me-1"></i>
+                            <img th:if="${session.user.profilePictureUrl != null and session.user.profilePictureUrl != ''}" th:src="${session.user.profilePictureUrl}" class="rounded-circle me-1" style="width: 24px; height: 24px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.2);">
+                            <i th:if="${session.user.profilePictureUrl == null or session.user.profilePictureUrl == ''}" class="fa fa-user-circle me-1"></i>
                             <span th:if="${session.user.user_type == 'OWNER'}">Owner Panel</span>
                             <span th:if="${session.user.user_type == 'ADMIN'}">Admin Panel</span>
                             <span th:if="${session.user.user_type == 'EDITOR'}">Translator Panel</span>
@@ -272,6 +383,32 @@
             <div class="modal-body py-4">
                 <p class="text-muted font-size-sm mb-4">Select a Snow Flakes package to unlock premium chapters instantly. Secure mock checkout.</p>
                 
+                <!-- Payment Method Toggle -->
+                <div id="payment-gateway-selector-container" class="d-flex flex-wrap justify-content-center gap-3 mb-4 pb-3 border-bottom border-secondary d-none" style="opacity: 0.85; border-color: rgba(255, 255, 255, 0.08) !important;">
+                    <span class="text-white-50 small w-100 text-center mb-2">Select Payment Gateway:</span>
+                    
+                    <div class="form-check form-check-inline" id="gateway-option-payu-container">
+                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-payu" value="payu" checked>
+                        <label class="form-check-label text-white" for="gateway-payu" style="cursor: pointer;">
+                            <i class="fa-solid fa-credit-card text-success me-1"></i>PayU Checkout (UPI / NetBanking / Cards)
+                        </label>
+                    </div>
+
+                    <div class="form-check form-check-inline" id="gateway-option-razorpay-container">
+                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-razorpay" value="razorpay">
+                        <label class="form-check-label text-white" for="gateway-razorpay" style="cursor: pointer;">
+                            <i class="fa-solid fa-credit-card text-info me-1"></i>Razorpay Checkout (UPI / NetBanking / Cards)
+                        </label>
+                    </div>
+
+                    <div class="form-check form-check-inline" id="gateway-option-mock-container" th:if="${session.user != null and (session.user.user_type == 'OWNER' or session.user.user_type == 'ADMIN')}">
+                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-mock" value="mock">
+                        <label class="form-check-label text-white" for="gateway-mock" style="cursor: pointer;">
+                            <i class="fa-solid fa-flask text-warning me-1"></i>Mock Checkout (Free Testing)
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="row g-3">
                     <!-- Dynamic Packs from Database -->
                     <div th:each="pack : ${flakePackages}" class="col-12 col-md-6 col-lg-3">
@@ -322,6 +459,30 @@
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coupon Code Section -->
+                <div class="row mt-4 justify-content-center">
+                    <div class="col-12 col-md-10">
+                        <div class="card p-3 border-0 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05) !important;">
+                            <h3 class="h6 fw-bold text-white mb-2 font-outfit">
+                                <i class="fa-solid fa-ticket text-danger me-2"></i>Apply Coupon Code
+                            </h3>
+                            <p class="text-muted small mb-3">Have a discount coupon code? Enter it below to get a discount on checkout.</p>
+                            
+                            <div class="row g-2 align-items-center justify-content-center">
+                                <div class="col-auto">
+                                    <input type="text" id="coupon-code-input" class="form-control bg-dark text-white border-secondary text-center fw-bold" placeholder="e.g. OFFER20" style="max-width: 220px; border-radius: 8px; text-transform: uppercase;">
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-premium btn-sm px-4" id="btn-apply-coupon" style="padding-top: 7px; padding-bottom: 7px;">
+                                        <i class="fa-solid fa-check me-2"></i>Apply
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="coupon-validation-msg" class="small text-center mt-2" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
@@ -389,9 +550,11 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script th:inline="javascript">
 window.flakePackages = [[${flakePackages}]];
+window.currentUser = [[${session.user != null ? session.user : null}]];
 $(document).ready(function() {
     // Star rating interactions
     $(document).on('click', '.star-select-btn', function() {
@@ -418,6 +581,55 @@ $(document).ready(function() {
         if (loggedInUser) {
             $('#review-name').val(loggedInUser);
         }
+    });
+
+    // Fetch payment gateways configuration when purchase flakes modal is shown
+    $('#purchaseFlakesModal').on('show.bs.modal', function () {
+        var userRole = [[${session.user != null ? session.user.user_type : ''}]];
+        $.get("/api/payment/config")
+            .done(function(config) {
+                var showSelector = false;
+                var payuActive = false;
+                var razorpayActive = false;
+
+                if (config.payuEnabled) {
+                    $("#gateway-option-payu-container").show();
+                    payuActive = true;
+                    showSelector = true;
+                } else {
+                    $("#gateway-option-payu-container").hide();
+                }
+
+                if (config.razorpayEnabled) {
+                    $("#gateway-option-razorpay-container").show();
+                    razorpayActive = true;
+                    showSelector = true;
+                } else {
+                    $("#gateway-option-razorpay-container").hide();
+                }
+
+                // Default check priority: Razorpay -> PayU -> Mock
+                if (razorpayActive) {
+                    $("#gateway-razorpay").prop("checked", true);
+                } else if (payuActive) {
+                    $("#gateway-payu").prop("checked", true);
+                } else {
+                    $("#gateway-mock").prop("checked", true);
+                }
+
+                var isPrivileged = (userRole === 'OWNER' || userRole === 'ADMIN');
+                if (showSelector && isPrivileged) {
+                    $("#payment-gateway-selector-container").removeClass("d-none");
+                } else {
+                    $("#payment-gateway-selector-container").addClass("d-none");
+                }
+            })
+            .fail(function() {
+                $("#gateway-option-payu-container").hide();
+                $("#gateway-option-razorpay-container").hide();
+                $("#gateway-mock").prop("checked", true);
+                $("#payment-gateway-selector-container").addClass("d-none");
+            });
     });
 
     // AJAX form submission
