@@ -315,11 +315,11 @@ public class CommentRestController {
 
         Comment comment = commentOpt.get();
         String role = loggedInUser.getUser_type();
-        
         boolean isAdminOrOwner = "ADMIN".equals(role) || "OWNER".equals(role);
+        boolean isAuthor = comment.getUser().getId().equals(loggedInUser.getId());
 
-        if (!isAdminOrOwner) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not have permission to delete this comment. Only admins can delete comments."));
+        if (!isAdminOrOwner && !isAuthor) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not have permission to delete this comment. Only admins or the original author can delete comments."));
         }
 
         Long chapterId = comment.getChapterId();
