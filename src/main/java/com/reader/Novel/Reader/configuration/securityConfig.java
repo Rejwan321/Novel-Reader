@@ -28,4 +28,9 @@ public class securityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public org.springframework.security.provisioning.InMemoryUserDetailsManager userDetailsService() {
+        return new org.springframework.security.provisioning.InMemoryUserDetailsManager();
+    }
 }
