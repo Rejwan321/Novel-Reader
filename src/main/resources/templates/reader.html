@@ -341,7 +341,7 @@
     </footer>
 
     <!-- Scripts -->
-    <script th:src="@{/scripts/Script.js(v='1.8')}"></script>
+    <script th:src="@{/scripts/Script.js(v='2.9')}"></script>
     <script th:inline="javascript">
         // Convert HTML content to formatted plain text for editing
         function htmlToPlainText(html) {
@@ -548,20 +548,19 @@
                 
                 var date = new Date(comment.createdAt);
                 var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
-                var canDelete = (currentUserId && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
+                var canDelete = (currentUserId !== null && currentUserId !== undefined && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
                 var deleteBtnHtml = canDelete ? 
                     '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
                 
-                var canEdit = (currentUserId && currentUserId === author.id);
+                var canEdit = (currentUserId !== null && currentUserId !== undefined && currentUserId === author.id);
                 var editBtnHtml = canEdit ? 
                     '<button class="comment-action-btn btn-edit-comment-action" data-id="' + comment.id + '" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : '';
                 
                 var reportBtnHtml = 
                     '<button class="comment-action-btn btn-report-comment-action" data-id="' + comment.id + '" title="Report NSFW"><i class="fa-solid fa-circle-exclamation text-danger"></i> Report</button>';
 
-                var liked = comment.likedUserIds && comment.likedUserIds.indexOf(currentUserId) !== -1;
-                var disliked = comment.dislikedUserIds && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
+                var liked = comment.likedUserIds && currentUserId !== null && currentUserId !== undefined && comment.likedUserIds.indexOf(currentUserId) !== -1;
+                var disliked = comment.dislikedUserIds && currentUserId !== null && currentUserId !== undefined && comment.dislikedUserIds.indexOf(currentUserId) !== -1;
                 
                 var likeClass = liked ? 'btn-liked' : '';
                 var dislikeClass = disliked ? 'btn-disliked' : '';
@@ -578,10 +577,14 @@
                     '  <i class="fa-solid fa-reply"></i> Reply' +
                     '</button>';
                 
+                var avatarHtml = (author.profilePictureUrl && author.profilePictureUrl.trim() !== '') ?
+                    '    <div class="comment-avatar" style="background: none; padding: 0; overflow: hidden;"><img src="' + author.profilePictureUrl + '" style="width: 100%; height: 100%; object-fit: cover;"></div>' :
+                    '    <div class="comment-avatar">' + initials + '</div>';
+
                 var cardHtml = 
                     '<div class="comment-card" id="comment-card-' + comment.id + '">' +
                     '  <div class="d-flex gap-3">' +
-                    '    <div class="comment-avatar">' + initials + '</div>' +
+                    avatarHtml +
                     '    <div class="flex-grow-1">' +
                     '      <div class="comment-header">' +
                     '        <div class="comment-meta">' +
@@ -779,7 +782,7 @@
             // Toggle reply form
             $(document).on('click', '.btn-reply-comment-action', function(e) {
                 e.preventDefault();
-                if (!currentUserId) {
+                if (currentUserId === null || currentUserId === undefined) {
                     alert("Please login to post replies.");
                     return;
                 }
@@ -853,7 +856,7 @@
             // Like comment handler
             $(document).on('click', '.btn-like-comment-action', function(e) {
                 e.preventDefault();
-                if (!currentUserId) {
+                if (currentUserId === null || currentUserId === undefined) {
                     alert("Please login to like comments.");
                     return;
                 }
@@ -890,7 +893,7 @@
             // Dislike comment handler
             $(document).on('click', '.btn-dislike-comment-action', function(e) {
                 e.preventDefault();
-                if (!currentUserId) {
+                if (currentUserId === null || currentUserId === undefined) {
                     alert("Please login to dislike comments.");
                     return;
                 }

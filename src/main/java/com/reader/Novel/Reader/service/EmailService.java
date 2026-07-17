@@ -237,4 +237,37 @@ public class EmailService {
             e.printStackTrace();
         }
     }
+
+    @Async
+    public void sendGreetingEmailAsync(String recipientEmail, String userName) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
+            System.err.println("JavaMailSender not configured. Skipping greeting email.");
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            String activeFrom = getFromAddress();
+            message.setFrom(activeFrom);
+            message.setTo(recipientEmail);
+            message.setSubject("Welcome to Yuki Tales, " + userName + "!");
+            message.setText(String.format(
+                "Dear %s,\n\n" +
+                "Welcome to Yuki Tales! We are absolutely thrilled to have you join our reading community.\n\n" +
+                "On Yuki Tales, you can read the latest light novels and comics, save your reading progress with bookmarks, buy reading currency (flakes), and share your thoughts in the comment sections.\n\n" +
+                "Feel free to explore your User Panel to customize your profile, set a profile picture, and configure your email notifications.\n\n" +
+                "Happy reading!\n\n" +
+                "Best regards,\n" +
+                "The Yuki Tales Team",
+                userName
+            ));
+
+            activeSender.send(message);
+            System.out.println("Greeting welcome email sent successfully to: " + recipientEmail);
+        } catch (Exception e) {
+            System.err.println("Failed to send greeting email to " + recipientEmail + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

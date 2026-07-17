@@ -66,6 +66,7 @@ public class NovelService {
         systemSettingRepository.save(setting);
     }
 
+
     public Optional<Rating> getUserRating(Long userId, Long novelId) {
         return ratingRepository.findByUserIdAndNovelId(userId, novelId);
     }
@@ -163,6 +164,10 @@ public class NovelService {
     }
 
     public Chapter saveChapter(Chapter chapter) {
+        if (chapter.getContent() != null && chapter.getContent().contains("<")) {
+            String cleanContent = org.jsoup.Jsoup.clean(chapter.getContent(), org.jsoup.safety.Safelist.relaxed());
+            chapter.setContent(cleanContent);
+        }
         return chapterRepository.save(chapter);
     }
 
