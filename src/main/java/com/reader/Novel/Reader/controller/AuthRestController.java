@@ -249,6 +249,13 @@ public class AuthRestController {
         }
 
         User user = userOpt.get();
+        
+        // Silent upgrade from legacy AES encrypted password to secure BCrypt hash
+        if (user.getPassword() != null && !user.getPassword().startsWith("$2")) {
+            String newHashedPassword = com.reader.Novel.Reader.util.PasswordUtils.hashPassword(password);
+            user.setPassword(newHashedPassword);
+            userRepository.save(user);
+        }
         if (Boolean.TRUE.equals(user.getBanned())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Your account has been banned."));
         }
