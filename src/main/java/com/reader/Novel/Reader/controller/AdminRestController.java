@@ -762,6 +762,31 @@ public class AdminRestController {
         return ResponseEntity.ok(Map.of("success", true, "novel", saved));
     }
 
+    private boolean isValidImageSignature(byte[] bytes) {
+        if (bytes == null || bytes.length < 4) {
+            return false;
+        }
+        // PNG Signature: 89 50 4E 47
+        if (bytes[0] == (byte) 0x89 && bytes[1] == (byte) 0x50 && bytes[2] == (byte) 0x4E && bytes[3] == (byte) 0x47) {
+            return true;
+        }
+        // JPEG/JPG Signature: FF D8 FF
+        if (bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xD8 && bytes[2] == (byte) 0xFF) {
+            return true;
+        }
+        // GIF Signature: 47 49 46 38 ('GIF8')
+        if (bytes[0] == (byte) 0x47 && bytes[1] == (byte) 0x49 && bytes[2] == (byte) 0x46 && bytes[3] == (byte) 0x38) {
+            return true;
+        }
+        // WEBP Signature: RIFF....WEBP (offset 0: 'RIFF', offset 8: 'WEBP')
+        if (bytes.length >= 12 &&
+            bytes[0] == (byte) 'R' && bytes[1] == (byte) 'I' && bytes[2] == (byte) 'F' && bytes[3] == (byte) 'F' &&
+            bytes[8] == (byte) 'W' && bytes[9] == (byte) 'E' && bytes[10] == (byte) 'B' && bytes[11] == (byte) 'P') {
+            return true;
+        }
+        return false;
+    }
+
     // 2.5. Upload story cover image (ADMIN & EDITOR)
     @PostMapping("/stories/upload-cover")
     public ResponseEntity<?> uploadCover(
@@ -792,6 +817,10 @@ public class AdminRestController {
         }
 
         try {
+            byte[] bytes = file.getBytes();
+            if (!isValidImageSignature(bytes)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid file signature. Only PNG, JPEG, GIF, and WEBP images are allowed."));
+            }
             String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
@@ -811,8 +840,6 @@ public class AdminRestController {
             Path srcFile = srcDir.resolve(uniqueName);
             Path rootFile = rootUploadsDir.resolve(uniqueName);
 
-            // Write files
-            byte[] bytes = file.getBytes();
             Files.write(srcFile, bytes);
             Files.write(rootFile, bytes);
 
@@ -852,6 +879,10 @@ public class AdminRestController {
         }
 
         try {
+            byte[] bytes = file.getBytes();
+            if (!isValidImageSignature(bytes)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid file signature. Only PNG, JPEG, GIF, and WEBP images are allowed."));
+            }
             String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
@@ -869,7 +900,6 @@ public class AdminRestController {
             Path srcFile = srcDir.resolve(uniqueName);
             Path rootFile = rootUploadsDir.resolve(uniqueName);
 
-            byte[] bytes = file.getBytes();
             Files.write(srcFile, bytes);
             Files.write(rootFile, bytes);
 

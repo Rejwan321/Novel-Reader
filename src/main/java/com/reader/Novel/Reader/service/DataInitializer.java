@@ -50,7 +50,6 @@ public class DataInitializer implements CommandLineRunner {
 
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY = FALSE");
         try {
-            jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS DECRYPT_PASSWORD FOR 'com.reader.Novel.Reader.util.PasswordUtils.decryptForH2'");
             
             // Ensure username column exists
             jdbcTemplate.execute("ALTER TABLE reader_internal ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
@@ -233,7 +232,7 @@ public class DataInitializer implements CommandLineRunner {
             // Create the view named READER for H2 console users
             jdbcTemplate.execute("DROP TABLE IF EXISTS READER CASCADE");
             jdbcTemplate.execute("DROP VIEW IF EXISTS READER");
-            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, username, email, name, DECRYPT_PASSWORD(password) AS password, user_type FROM reader_internal");
+            jdbcTemplate.execute("CREATE VIEW READER AS SELECT id, balance, username, email, name, password, user_type FROM reader_internal");
 
             // Create the H2 database user admin/admin with admin privileges
             jdbcTemplate.execute("CREATE USER IF NOT EXISTS admin PASSWORD 'admin'");
