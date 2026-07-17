@@ -136,9 +136,79 @@ public class CommentRestController {
     }
 
     @GetMapping("/chapters/{chapterId}/comments")
-    public ResponseEntity<List<Comment>> getComments(@PathVariable Long chapterId) {
+    public ResponseEntity<?> getComments(@PathVariable Long chapterId, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+        boolean isAdminOrOwner = false;
+        if (loggedInUser != null) {
+            String role = loggedInUser.getUser_type();
+            isAdminOrOwner = "ADMIN".equals(role) || "OWNER".equals(role);
+        }
+
         List<Comment> comments = commentRepository.findByChapterIdAndParentIsNullOrderByCreatedAtAsc(chapterId);
-        return ResponseEntity.ok(comments);
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Comment c : comments) {
+            if (Boolean.TRUE.equals(c.getDeleted()) && !isAdminOrOwner) {
+                // Check if it has any active replies
+                boolean hasActiveReplies = false;
+                if (c.getReplies() != null) {
+                    for (Comment r : c.getReplies()) {
+                        if (!Boolean.TRUE.equals(r.getDeleted())) {
+                            hasActiveReplies = true;
+                            break;
+                        }
+                    }
+                }
+                if (!hasActiveReplies) {
+                    continue;
+                }
+            }
+            result.add(mapComment(c, isAdminOrOwner));
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    private Map<String, Object> mapComment(Comment c, boolean isAdminOrOwner) {
+        Map<String, Object> map = new java.util.HashMap<>();
+        map.put("id", c.getId());
+        map.put("chapterId", c.getChapterId());
+        map.put("createdAt", c.getCreatedAt());
+        map.put("likedUserIds", c.getLikedUserIds() != null ? new java.util.ArrayList<>(c.getLikedUserIds()) : java.util.Collections.emptyList());
+        map.put("dislikedUserIds", c.getDislikedUserIds() != null ? new java.util.ArrayList<>(c.getDislikedUserIds()) : java.util.Collections.emptyList());
+        map.put("reportsCount", c.getReportsCount());
+        map.put("deleted", c.getDeleted());
+
+        if (c.getUser() != null) {
+            Map<String, Object> uMap = new java.util.HashMap<>();
+            uMap.put("id", c.getUser().getId());
+            uMap.put("name", c.getUser().getName());
+            uMap.put("username", c.getUser().getUsername());
+            uMap.put("user_type", c.getUser().getUser_type());
+            uMap.put("profilePictureUrl", c.getUser().getProfilePictureUrl());
+            map.put("user", uMap);
+        }
+
+        if (Boolean.TRUE.equals(c.getDeleted())) {
+            if (isAdminOrOwner) {
+                map.put("content", "[Deleted] " + c.getContent());
+            } else {
+                map.put("content", "This comment has been deleted.");
+            }
+        } else {
+            map.put("content", c.getContent());
+        }
+
+        List<Map<String, Object>> replyMaps = new java.util.ArrayList<>();
+        if (c.getReplies() != null) {
+            for (Comment reply : c.getReplies()) {
+                if (Boolean.TRUE.equals(reply.getDeleted()) && !isAdminOrOwner) {
+                    continue;
+                }
+                replyMaps.add(mapComment(reply, isAdminOrOwner));
+            }
+        }
+        map.put("replies", replyMaps);
+
+        return map;
     }
 
     @PostMapping("/chapters/{chapterId}/comments")
@@ -324,7 +394,8 @@ public class CommentRestController {
 
         Long chapterId = comment.getChapterId();
         Long commentIdVal = comment.getId();
-        commentRepository.delete(comment);
+        comment.setDeleted(true);
+        commentRepository.save(comment);
         sseService.sendCommentEvent(chapterId, "comment_deleted", Map.of("commentId", commentIdVal));
         return ResponseEntity.ok(Map.of("success", true, "message", "Comment deleted successfully."));
     }

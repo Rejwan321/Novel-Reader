@@ -171,7 +171,7 @@ public class CommentRestControllerTest {
     }
 
     @Test
-    public void testDeleteParentCommentCascadesToReplies() throws Exception {
+    public void testDeleteParentCommentSoftDeletes() throws Exception {
         // Change user role to ADMIN so they have permission to delete comments
         testUser.setUser_type("ADMIN");
         testUser = userRepository.save(testUser);
@@ -200,11 +200,12 @@ public class CommentRestControllerTest {
         entityManager.flush();
         entityManager.clear();
 
-        // Verify parent is deleted
-        assertFalse(commentRepository.findById(parentComment.getId()).isPresent());
+        // Verify parent is soft-deleted
+        Comment deletedParent = commentRepository.findById(parentComment.getId()).orElseThrow();
+        assertTrue(deletedParent.getDeleted());
 
-        // Verify reply is also deleted (cascading / orphan removal)
-        assertFalse(commentRepository.findById(replyId).isPresent());
+        // Verify reply is still present in database (not cascading physical delete since parent is soft-deleted)
+        assertTrue(commentRepository.findById(replyId).isPresent());
     }
 
     @Test
