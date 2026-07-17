@@ -548,7 +548,7 @@
                 
                 var date = new Date(comment.createdAt);
                 var formattedTime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                var canDelete = (currentUserId !== null && currentUserId !== undefined && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER'));
+                var canDelete = (currentUserId !== null && currentUserId !== undefined && (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER' || currentUserId === author.id));
                 var deleteBtnHtml = canDelete ? 
                     '<button class="btn-delete-comment btn-delete-comment-action" data-id="' + comment.id + '" title="Delete comment"><i class="fa-solid fa-trash-can"></i></button>' : '';
                 
