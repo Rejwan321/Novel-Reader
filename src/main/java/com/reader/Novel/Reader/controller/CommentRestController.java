@@ -394,10 +394,21 @@ public class CommentRestController {
 
         Long chapterId = comment.getChapterId();
         Long commentIdVal = comment.getId();
-        comment.setDeleted(true);
-        commentRepository.save(comment);
-        sseService.sendCommentEvent(chapterId, "comment_deleted", Map.of("commentId", commentIdVal));
-        return ResponseEntity.ok(Map.of("success", true, "message", "Comment deleted successfully."));
+
+        if (Boolean.TRUE.equals(comment.getDeleted())) {
+            if (isAdminOrOwner) {
+                commentRepository.delete(comment);
+                sseService.sendCommentEvent(chapterId, "comment_deleted", Map.of("commentId", commentIdVal));
+                return ResponseEntity.ok(Map.of("success", true, "message", "Comment permanently deleted."));
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only admins or owners can permanently delete comments."));
+            }
+        } else {
+            comment.setDeleted(true);
+            commentRepository.save(comment);
+            sseService.sendCommentEvent(chapterId, "comment_deleted", Map.of("commentId", commentIdVal));
+            return ResponseEntity.ok(Map.of("success", true, "message", "Comment deleted successfully."));
+        }
     }
 
     @PutMapping("/comments/{commentId}")

@@ -204,8 +204,22 @@ public class CommentRestControllerTest {
         Comment deletedParent = commentRepository.findById(parentComment.getId()).orElseThrow();
         assertTrue(deletedParent.getDeleted());
 
-        // Verify reply is still present in database (not cascading physical delete since parent is soft-deleted)
-        assertTrue(commentRepository.findById(replyId).isPresent());
+        // Delete parent comment again via API to permanently delete it
+        mockMvc.perform(delete("/api/comments/" + parentComment.getId())
+                .session(session))
+                .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Verify parent is permanently deleted
+        assertFalse(commentRepository.findById(parentComment.getId()).isPresent());
+
+        // Verify reply is still present (it was orphaned/not cascaded since we did permanent delete manually on parent)
+        // Wait, does hibernate delete orphan replies when parent is physically deleted?
+        // Yes, `@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)` will physically delete replies when the parent is physically deleted!
+        // So the replyId should NOT be present in the DB now!
+        assertFalse(commentRepository.findById(replyId).isPresent());
     }
 
     @Test
