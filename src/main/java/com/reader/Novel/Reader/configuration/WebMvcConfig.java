@@ -28,6 +28,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         }
 
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadsPath);
+                .addResourceLocations("file:" + uploadsPath)
+                .setCachePeriod(31536000); // 1 year cache period for cover images
+
+        registry.addResourceHandler("/static/**", "/css/**", "/js/**", "/scripts/**")
+                .addResourceLocations("classpath:/static/", "classpath:/static/css/", "classpath:/static/js/", "classpath:/static/scripts/")
+                .setCachePeriod(86400); // 24 hours cache period for style sheets and scripts
     }
 }
