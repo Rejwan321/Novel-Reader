@@ -780,8 +780,13 @@ $(document).ready(function() {
             showToast("Removed from bookshelf.");
             card.fadeOut(400, function() {
                 card.remove();
+                
+                // Update dynamic bookshelf count text
+                var count = $(".bookshelf-card").length;
+                $("#bookshelf-count-text").text("You have saved " + count + " " + (count === 1 ? "series" : "series") + " to your collection.");
+
                 // Check if bookshelf is now completely empty
-                if ($(".bookshelf-card").length === 0) {
+                if (count === 0) {
                     location.reload(); // Reload to trigger empty state block
                 }
             });

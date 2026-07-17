@@ -29,7 +29,7 @@
             <h1 class="h2 fw-bold text-white mb-2 font-outfit">
                 <i class="fa-solid fa-book-bookmark text-violet me-2"></i>My Bookshelf
             </h1>
-            <p class="text-muted" th:text="'You have saved ' + ${bookmarks.size()} + ' series to your collection.'">You have saved 0 series to your collection.</p>
+            <p id="bookshelf-count-text" class="text-muted" th:text="'You have saved ' + ${bookmarks.size()} + ' series to your collection.'">You have saved 0 series to your collection.</p>
         </header>
 
         <!-- Bookshelf Grid -->
