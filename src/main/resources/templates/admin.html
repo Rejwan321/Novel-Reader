@@ -1182,36 +1182,7 @@
                             </div>
                         </div>
 
-                        <!-- PayU Section -->
-                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-success me-2"></i>PayU Payment Gateway Settings</h5>
-                        <div class="row g-3 mb-4">
-                            <div class="col-12">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="cred-payu-enabled" checked>
-                                    <label class="form-check-label text-white-50" for="cred-payu-enabled">Enable PayU Gateway</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="cred-payu-merchant-key" class="form-label-admin">Merchant Key (API Key)</label>
-                                <input type="text" class="form-input-admin" id="cred-payu-merchant-key" placeholder="e.g. EbzvKE">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="cred-payu-merchant-salt" class="form-label-admin">Merchant Salt (API Salt)</label>
-                                <div class="position-relative">
-                                    <input type="password" class="form-input-admin pe-5" id="cred-payu-merchant-salt" placeholder="e.g. QmovYILTgz5XYKUeon3hEoS0v6onGrx4">
-                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-payu-merchant-salt')" style="z-index: 10;">
-                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-payu-merchant-salt"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <label for="cred-payu-mode" class="form-label-admin">PayU Environment Mode</label>
-                                <select class="form-input-admin" id="cred-payu-mode">
-                                    <option value="test">Sandbox (Test Mode)</option>
-                                    <option value="production">Production (Live Mode)</option>
-                                </select>
-                            </div>
-                        </div>
+
 
                         <!-- Razorpay Section -->
                         <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-info me-2"></i>Razorpay Payment Gateway Settings</h5>
@@ -1789,10 +1760,6 @@
                 $("#cred-mail-sender").val(data.mailSender || "");
                 $("#cred-mail-recipient").val(data.mailRecipient || "");
                 $("#cred-app-base-url").val(data.appBaseUrl || "");
-                $("#cred-payu-enabled").prop("checked", data.payuEnabled !== "false");
-                $("#cred-payu-merchant-key").val(data.payuMerchantKey || "");
-                $("#cred-payu-merchant-salt").val(data.payuMerchantSalt || "");
-                $("#cred-payu-mode").val(data.payuMode || "test");
                 $("#cred-razorpay-enabled").prop("checked", data.razorpayEnabled !== "false");
                 $("#cred-razorpay-key-id").val(data.razorpayKeyId || "");
                 $("#cred-razorpay-key-secret").val(data.razorpayKeySecret || "");
@@ -1864,10 +1831,6 @@
                 mailSender: $("#cred-mail-sender").val(),
                 mailRecipient: $("#cred-mail-recipient").val(),
                 appBaseUrl: $("#cred-app-base-url").val(),
-                payuEnabled: $("#cred-payu-enabled").is(":checked") ? "true" : "false",
-                payuMerchantKey: $("#cred-payu-merchant-key").val(),
-                payuMerchantSalt: $("#cred-payu-merchant-salt").val(),
-                payuMode: $("#cred-payu-mode").val(),
                 razorpayEnabled: $("#cred-razorpay-enabled").is(":checked") ? "true" : "false",
                 razorpayKeyId: $("#cred-razorpay-key-id").val(),
                 razorpayKeySecret: $("#cred-razorpay-key-secret").val(),
@@ -1909,10 +1872,6 @@
                     $("#cred-mail-sender").val(creds.mailSender || "");
                     $("#cred-mail-recipient").val(creds.mailRecipient || "");
                     $("#cred-app-base-url").val(creds.appBaseUrl || "");
-                    $("#cred-payu-enabled").prop("checked", creds.payuEnabled !== "false");
-                    $("#cred-payu-merchant-key").val(creds.payuMerchantKey || "");
-                    $("#cred-payu-merchant-salt").val(creds.payuMerchantSalt || "");
-                    $("#cred-payu-mode").val(creds.payuMode || "test");
                     $("#cred-razorpay-enabled").prop("checked", creds.razorpayEnabled !== "false");
                     $("#cred-razorpay-key-id").val(creds.razorpayKeyId || "");
                     $("#cred-razorpay-key-secret").val(creds.razorpayKeySecret || "");
@@ -4368,10 +4327,6 @@
                 var mailSender = $("#cred-mail-sender").val();
                 var mailRecipient = $("#cred-mail-recipient").val();
                 var appBaseUrl = $("#cred-app-base-url").val();
-                var payuEnabled = $("#cred-payu-enabled").is(":checked") ? "true" : "false";
-                var payuMerchantKey = $("#cred-payu-merchant-key").val();
-                var payuMerchantSalt = $("#cred-payu-merchant-salt").val();
-                var payuMode = $("#cred-payu-mode").val();
                 var razorpayEnabled = $("#cred-razorpay-enabled").is(":checked") ? "true" : "false";
                 var razorpayKeyId = $("#cred-razorpay-key-id").val();
                 var razorpayKeySecret = $("#cred-razorpay-key-secret").val();
@@ -4391,10 +4346,6 @@
                     mailSender: mailSender,
                     mailRecipient: mailRecipient,
                     appBaseUrl: appBaseUrl,
-                    payuEnabled: payuEnabled,
-                    payuMerchantKey: payuMerchantKey,
-                    payuMerchantSalt: payuMerchantSalt,
-                    payuMode: payuMode,
                     razorpayEnabled: razorpayEnabled,
                     razorpayKeyId: razorpayKeyId,
                     razorpayKeySecret: razorpayKeySecret,

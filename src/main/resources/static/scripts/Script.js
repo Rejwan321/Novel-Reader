@@ -1144,26 +1144,7 @@ $(document).ready(function() {
     var appliedCouponCode = null;
     var couponDiscountPercent = 0;
 
-    // Helper to dynamically build a form and redirect to PayU checkout page
-    function redirectToPayU(res) {
-        var form = document.createElement("form");
-        form.method = "POST";
-        form.action = res.actionUrl;
 
-        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3", "udf4"];
-        fields.forEach(function(field) {
-            if (res[field] !== undefined) {
-                var input = document.createElement("input");
-                input.type = "hidden";
-                input.name = field;
-                input.value = res[field];
-                form.appendChild(input);
-            }
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-    }
 
     // Helper to open Razorpay overlay checkout form
     function openRazorpayCheckout(res, btn, inputField) {
@@ -1247,9 +1228,7 @@ $(document).ready(function() {
 
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
-            if (res.payu) {
-                redirectToPayU(res);
-            } else if (res.razorpay) {
+            if (res.razorpay) {
                 openRazorpayCheckout(res, btn, null);
             } else {
                 showToast(res.message);
@@ -1335,9 +1314,7 @@ $(document).ready(function() {
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
-            if (res.payu) {
-                redirectToPayU(res);
-            } else if (res.razorpay) {
+            if (res.razorpay) {
                 openRazorpayCheckout(res, btn, input);
             } else {
                 showToast(res.message);
