@@ -33,7 +33,7 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 
 ### 💳 Monetization & Coupons
 * **Digital Snow Flakes:** Internal token economy for purchasing and unlocking premium chapters.
-* **Payment Gateways:** Standardized integrations for **PayU** and **Razorpay**, with a local **Mock Checkout** option restricted to admin/owner accounts.
+* **Payment Gateways:** Standardized integrations for **Razorpay**, with a local **Mock Checkout** option restricted to admin/owner accounts.
 * **Coupon System:** System-wide discount coupons with support for percentage-off rates and strict restrictions by user email/username.
 
 ---
