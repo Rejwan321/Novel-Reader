@@ -385,9 +385,11 @@ public class AuthRestController {
             boolean isNewUser = !userOpt.isPresent();
             user.setSubscribedToUpdates(true);
             user.setUpdatesEmail(email);
-            userService.addUser(user);
             if (isNewUser) {
+                userService.addUser(user);
                 emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
+            } else {
+                userService.updateUser(user);
             }
 
             if (Boolean.TRUE.equals(user.getBanned())) {
