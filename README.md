@@ -97,31 +97,4 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 
 ---
 
-## 🌐 Production Deployment
 
-Yuki Tales is optimized to run behind a reverse proxy (e.g. Nginx, Cloudflare Tunnel) with Spring Boot's forward-headers-strategy.
-
-### systemd Service Setup
-You can run the application as a background service on Linux using `systemd`. Create a service file under `~/.config/systemd/user/yuki-tales.service`:
-
-```ini
-[Unit]
-Description=Yuki Tales Spring Boot Application
-After=network.target
-
-[Service]
-WorkingDirectory=/home/sakura/test-cloudflare/yuki-tales
-ExecStart=/usr/bin/java -jar target/Novel-Reader-0.0.1-SNAPSHOT.jar
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=default.target
-```
-
-Manage the service using systemctl:
-```bash
-systemctl --user enable yuki-tales
-systemctl --user start yuki-tales
-systemctl --user status yuki-tales
-```
