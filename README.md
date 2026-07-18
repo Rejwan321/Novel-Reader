@@ -21,19 +21,19 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 * **BCrypt Migration:** Automatic, silent user password upgrade from legacy AES encryption to modern `BCryptPasswordEncoder` on login.
 * **XSS Mitigation:** Integrated `jsoup` HTML sanitization on all chapter publication paths to strip malicious scripts and event handlers.
 * **Malicious File Protection:** Strict magic-bytes file signature checking for PNG, JPEG, GIF, and WEBP image uploads to block disguised web shells.
-* **Secured System Mode:** Toggleable self-destruct/secure mode restricts platform editing dynamically, manageable only by the `OWNER`.
+* **Secured System Mode:** Toggleable self-destruct/secure mode restricts platform editing dynamically, manageable only by the `ADMIN`.
 
 ### 💬 Real-Time Comments & Soft-Deletion
 * **Threaded Comment Feed:** Real-time commenting and nested replies powered by Server-Sent Events (SSE).
 * **Smart Soft-Deletion:**
   * Deleted comments display a placeholder (`This comment has been deleted.`) to preserve reply trees for standard users.
   * Parent comments with no active replies are completely filtered out.
-  * Administrators and Owners can view soft-deleted comments clearly highlighted with `[Deleted]` prefixes and original text.
-  * **Permanent Deletion:** Administrators and Owners can click delete on a soft-deleted comment to remove it permanently from the database.
+  * Administrators can view soft-deleted comments clearly highlighted with `[Deleted]` prefixes and original text.
+  * **Permanent Deletion:** Administrators can click delete on a soft-deleted comment to remove it permanently from the database.
 
 ### 💳 Monetization & Coupons
 * **Digital Snow Flakes:** Internal token economy for purchasing and unlocking premium chapters.
-* **Payment Gateways:** Standardized integrations for **Razorpay**, with a local **Mock Checkout** option restricted to admin/owner accounts.
+* **Payment Gateways:** Standardized integrations for **Razorpay**, with a local **Mock Checkout** option restricted to admin accounts.
 * **Coupon System:** System-wide discount coupons with support for percentage-off rates and strict restrictions by user email/username.
 
 ---
