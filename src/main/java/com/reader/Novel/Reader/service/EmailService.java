@@ -270,4 +270,57 @@ public class EmailService {
             e.printStackTrace();
         }
     }
+
+    @Async
+    public void sendSignupNotificationEmailAsync(String newUserName, String newUserUsername, String newUserEmail, String newUserRole) {
+        JavaMailSender activeSender = getDynamicMailSender();
+        if (activeSender == null) {
+            System.err.println("JavaMailSender not configured. Skipping signup notification email.");
+            return;
+        }
+
+        boolean signupNotificationEnabled = systemSettingRepository.findById("signup.notification.enabled")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+
+        if (!signupNotificationEnabled) {
+            return;
+        }
+
+        String signupRecipient = systemSettingRepository.findById("signup.notification.email")
+                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
+                .orElse(getToAddress());
+
+        if (signupRecipient == null || signupRecipient.trim().isEmpty()) {
+            System.err.println("No recipient configured for signup notification. Skipping email.");
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            String activeFrom = getFromAddress();
+            message.setFrom(activeFrom);
+            message.setTo(signupRecipient.trim());
+            message.setSubject("[Yuki Tales] New User Signup Alert");
+            message.setText(String.format(
+                "Hello,\n\n" +
+                "A new user has just registered on Yuki Tales:\n\n" +
+                "Name: %s\n" +
+                "Username: %s\n" +
+                "Email: %s\n" +
+                "Role: %s\n" +
+                "Time: %s\n\n" +
+                "Best regards,\n" +
+                "Yuki Tales System Alerts",
+                newUserName, newUserUsername, newUserEmail, newUserRole, java.time.LocalDateTime.now().toString()
+            ));
+
+            activeSender.send(message);
+            System.out.println("Signup notification email sent successfully to: " + signupRecipient);
+        } catch (Exception e) {
+            System.err.println("Failed to send signup notification email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

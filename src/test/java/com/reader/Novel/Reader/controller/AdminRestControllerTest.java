@@ -212,4 +212,22 @@ public class AdminRestControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("No story IDs provided."));
     }
+
+    @Test
+    public void testSignupNotificationCredentials() throws Exception {
+        // Save via POST
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/admin/credentials")
+                .session(adminSession)
+                .param("signupNotificationEnabled", "true")
+                .param("signupNotificationEmail", "signup-alert-recipient@gmail.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        // Retrieve via GET
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/admin/credentials")
+                .session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.signupNotificationEnabled").value("true"))
+                .andExpect(jsonPath("$.signupNotificationEmail").value("signup-alert-recipient@gmail.com"));
+    }
 }

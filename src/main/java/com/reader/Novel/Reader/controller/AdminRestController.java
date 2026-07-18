@@ -2126,6 +2126,8 @@ public class AdminRestController {
         creds.put("razorpayKeyId", systemSettingRepository.findById("razorpay.key.id").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayKeyId()));
         creds.put("razorpayKeySecret", systemSettingRepository.findById("razorpay.key.secret").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayKeySecret()));
         creds.put("razorpayMode", systemSettingRepository.findById("razorpay.mode").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(paymentService.getRazorpayMode()));
+        creds.put("signupNotificationEnabled", systemSettingRepository.findById("signup.notification.enabled").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse("false"));
+        creds.put("signupNotificationEmail", systemSettingRepository.findById("signup.notification.email").map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue).orElse(""));
 
         return ResponseEntity.ok(creds);
     }
@@ -2154,6 +2156,8 @@ public class AdminRestController {
             @RequestParam(required = false) String razorpayKeyId,
             @RequestParam(required = false) String razorpayKeySecret,
             @RequestParam(required = false) String razorpayMode,
+            @RequestParam(required = false) String signupNotificationEnabled,
+            @RequestParam(required = false) String signupNotificationEmail,
             HttpSession session) {
         
         User loggedInUser = (User) session.getAttribute("user");
@@ -2182,6 +2186,8 @@ public class AdminRestController {
         if (razorpayKeyId != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.key.id", razorpayKeyId.trim()));
         if (razorpayKeySecret != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.key.secret", razorpayKeySecret.trim()));
         if (razorpayMode != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("razorpay.mode", razorpayMode.trim()));
+        if (signupNotificationEnabled != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("signup.notification.enabled", signupNotificationEnabled.trim()));
+        if (signupNotificationEmail != null) systemSettingRepository.save(new com.reader.Novel.Reader.model.SystemSetting("signup.notification.email", signupNotificationEmail.trim()));
 
         return ResponseEntity.ok(Map.of("success", true));
     }
