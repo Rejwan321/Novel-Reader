@@ -508,7 +508,7 @@ nav.navbar {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; /* Hide standard scrollbar */
-    padding: 10px 0;
+    padding: 10px 48px;
 }
 
 .new-novels-div::-webkit-scrollbar {
@@ -575,7 +575,7 @@ nav.navbar {
     top: 50%;
     transform: translateY(-50%);
     z-index: 100;
-    pointer-events: auto;
+    pointer-events: none;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -583,7 +583,12 @@ nav.navbar {
     align-items: center;
     justify-content: center;
     transition: background-color 0.3s, opacity 0.3s;
-    opacity: 0.6;
+    opacity: 0;
+}
+
+.new-novels-container:hover .new-novel-scroll-btn {
+    opacity: 0.7;
+    pointer-events: auto;
 }
 
 .new-novel-scroll-btn:hover {
@@ -593,11 +598,11 @@ nav.navbar {
 }
 
 .scroll-btn-left {
-    left: 5px;
+    left: 8px;
 }
 
 .scroll-btn-right {
-    right: 5px;
+    right: 8px;
 }
 
 /* Most Recently Updated chapters grid */
