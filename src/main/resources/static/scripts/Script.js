@@ -774,14 +774,20 @@ $(document).ready(function() {
         var btn = $(this);
         var novelId = btn.data("id");
         var card = $("#bookmark-card-" + novelId);
+        var col = card.closest(".col");
 
         $.post("/api/bookmarks/toggle", { novelId: novelId })
         .done(function(res) {
             showToast("Removed from bookshelf.");
-            card.fadeOut(400, function() {
-                card.remove();
+            col.fadeOut(400, function() {
+                col.remove();
+                
+                // Update dynamic bookshelf count text
+                var count = $(".bookshelf-card").length;
+                $("#bookshelf-count-text").text("You have saved " + count + " " + (count === 1 ? "series" : "series") + " to your collection.");
+
                 // Check if bookshelf is now completely empty
-                if ($(".bookshelf-card").length === 0) {
+                if (count === 0) {
                     location.reload(); // Reload to trigger empty state block
                 }
             });
@@ -1138,26 +1144,7 @@ $(document).ready(function() {
     var appliedCouponCode = null;
     var couponDiscountPercent = 0;
 
-    // Helper to dynamically build a form and redirect to PayU checkout page
-    function redirectToPayU(res) {
-        var form = document.createElement("form");
-        form.method = "POST";
-        form.action = res.actionUrl;
 
-        var fields = ["key", "txnid", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl", "hash", "service_provider", "udf1", "udf2", "udf3", "udf4"];
-        fields.forEach(function(field) {
-            if (res[field] !== undefined) {
-                var input = document.createElement("input");
-                input.type = "hidden";
-                input.name = field;
-                input.value = res[field];
-                form.appendChild(input);
-            }
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-    }
 
     // Helper to open Razorpay overlay checkout form
     function openRazorpayCheckout(res, btn, inputField) {
@@ -1241,9 +1228,7 @@ $(document).ready(function() {
 
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
-            if (res.payu) {
-                redirectToPayU(res);
-            } else if (res.razorpay) {
+            if (res.razorpay) {
                 openRazorpayCheckout(res, btn, null);
             } else {
                 showToast(res.message);
@@ -1329,9 +1314,7 @@ $(document).ready(function() {
         
         $.post("/api/user/purchase-flakes", { amount: amount, gateway: gateway, couponCode: coupon })
         .done(function(res) {
-            if (res.payu) {
-                redirectToPayU(res);
-            } else if (res.razorpay) {
+            if (res.razorpay) {
                 openRazorpayCheckout(res, btn, input);
             } else {
                 showToast(res.message);

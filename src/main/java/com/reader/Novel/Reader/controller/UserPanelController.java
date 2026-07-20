@@ -156,11 +156,24 @@ public class UserPanelController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
         }
 
-        if (name != null && !name.trim().isEmpty()) {
-            user.setName(name.trim());
+        if (name != null) {
+            String cleanName = name.trim();
+            if (cleanName.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Name cannot be empty."));
+            }
+            if (cleanName.length() < 2 || cleanName.length() > 50) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Name must be between 2 and 50 characters."));
+            }
+            user.setName(cleanName);
         }
-        if (username != null && !username.trim().isEmpty()) {
+        if (username != null) {
             String cleanUsername = username.trim();
+            if (cleanUsername.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username cannot be empty."));
+            }
+            if (cleanUsername.length() < 3 || cleanUsername.length() > 30) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username must be between 3 and 30 characters."));
+            }
             if (!cleanUsername.matches("^[a-zA-Z0-9_.-]+$")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username can only contain letters, numbers, dots, dashes, and underscores."));
             }
@@ -170,9 +183,12 @@ public class UserPanelController {
             }
             user.setUsername(cleanUsername);
         }
-        if (email != null && !email.trim().isEmpty()) {
+        if (email != null) {
             String cleanEmail = email.trim();
-            if (!cleanEmail.contains("@") || !cleanEmail.contains(".")) {
+            if (cleanEmail.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email cannot be empty."));
+            }
+            if (!cleanEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Please enter a valid email address."));
             }
             Optional<User> existingEmail = userRepository.findByEmailIgnoreCase(cleanEmail);

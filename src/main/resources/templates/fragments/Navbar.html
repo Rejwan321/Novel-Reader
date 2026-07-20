@@ -386,16 +386,8 @@
                 <!-- Payment Method Toggle -->
                 <div id="payment-gateway-selector-container" class="d-flex flex-wrap justify-content-center gap-3 mb-4 pb-3 border-bottom border-secondary d-none" style="opacity: 0.85; border-color: rgba(255, 255, 255, 0.08) !important;">
                     <span class="text-white-50 small w-100 text-center mb-2">Select Payment Gateway:</span>
-                    
-                    <div class="form-check form-check-inline" id="gateway-option-payu-container">
-                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-payu" value="payu" checked>
-                        <label class="form-check-label text-white" for="gateway-payu" style="cursor: pointer;">
-                            <i class="fa-solid fa-credit-card text-success me-1"></i>PayU Checkout (UPI / NetBanking / Cards)
-                        </label>
-                    </div>
-
                     <div class="form-check form-check-inline" id="gateway-option-razorpay-container">
-                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-razorpay" value="razorpay">
+                        <input class="form-check-input payment-gateway-radio" type="radio" name="paymentGateway" id="gateway-razorpay" value="razorpay" checked>
                         <label class="form-check-label text-white" for="gateway-razorpay" style="cursor: pointer;">
                             <i class="fa-solid fa-credit-card text-info me-1"></i>Razorpay Checkout (UPI / NetBanking / Cards)
                         </label>
@@ -589,16 +581,7 @@ $(document).ready(function() {
         $.get("/api/payment/config")
             .done(function(config) {
                 var showSelector = false;
-                var payuActive = false;
                 var razorpayActive = false;
-
-                if (config.payuEnabled) {
-                    $("#gateway-option-payu-container").show();
-                    payuActive = true;
-                    showSelector = true;
-                } else {
-                    $("#gateway-option-payu-container").hide();
-                }
 
                 if (config.razorpayEnabled) {
                     $("#gateway-option-razorpay-container").show();
@@ -608,11 +591,9 @@ $(document).ready(function() {
                     $("#gateway-option-razorpay-container").hide();
                 }
 
-                // Default check priority: Razorpay -> PayU -> Mock
+                // Default check priority: Razorpay -> Mock
                 if (razorpayActive) {
                     $("#gateway-razorpay").prop("checked", true);
-                } else if (payuActive) {
-                    $("#gateway-payu").prop("checked", true);
                 } else {
                     $("#gateway-mock").prop("checked", true);
                 }
@@ -625,7 +606,6 @@ $(document).ready(function() {
                 }
             })
             .fail(function() {
-                $("#gateway-option-payu-container").hide();
                 $("#gateway-option-razorpay-container").hide();
                 $("#gateway-mock").prop("checked", true);
                 $("#payment-gateway-selector-container").addClass("d-none");

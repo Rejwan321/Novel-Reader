@@ -171,7 +171,7 @@ public class CommentRestControllerTest {
     }
 
     @Test
-    public void testDeleteParentCommentCascadesToReplies() throws Exception {
+    public void testDeleteParentCommentSoftDeletes() throws Exception {
         // Change user role to ADMIN so they have permission to delete comments
         testUser.setUser_type("ADMIN");
         testUser = userRepository.save(testUser);
@@ -200,10 +200,25 @@ public class CommentRestControllerTest {
         entityManager.flush();
         entityManager.clear();
 
-        // Verify parent is deleted
+        // Verify parent is soft-deleted
+        Comment deletedParent = commentRepository.findById(parentComment.getId()).orElseThrow();
+        assertTrue(deletedParent.getDeleted());
+
+        // Delete parent comment again via API to permanently delete it
+        mockMvc.perform(delete("/api/comments/" + parentComment.getId())
+                .session(session))
+                .andExpect(status().isOk());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Verify parent is permanently deleted
         assertFalse(commentRepository.findById(parentComment.getId()).isPresent());
 
-        // Verify reply is also deleted (cascading / orphan removal)
+        // Verify reply is still present (it was orphaned/not cascaded since we did permanent delete manually on parent)
+        // Wait, does hibernate delete orphan replies when parent is physically deleted?
+        // Yes, `@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)` will physically delete replies when the parent is physically deleted!
+        // So the replyId should NOT be present in the DB now!
         assertFalse(commentRepository.findById(replyId).isPresent());
     }
 

@@ -448,7 +448,7 @@ public class NovelRestController {
         // Determine active gateway
         String activeGateway = (gateway != null) ? gateway.toLowerCase() : "";
         if (activeGateway.isEmpty()) {
-            activeGateway = paymentService.isRazorpayEnabled() ? "razorpay" : (paymentService.isPayUEnabled() ? "payu" : "mock");
+            activeGateway = paymentService.isRazorpayEnabled() ? "razorpay" : "mock";
         }
 
         if ("mock".equals(activeGateway)) {
@@ -487,61 +487,6 @@ public class NovelRestController {
             } catch (Exception e) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Razorpay Order creation failed: " + e.getMessage()));
             }
-        }
-
-        if ("payu".equals(activeGateway) && paymentService.isPayUEnabled()) {
-            String txnid = "txn_" + System.currentTimeMillis();
-            // Convert USD price to INR assuming 1 USD = 83 INR
-            double priceInInr = price * 83.0;
-            String productinfo = "Purchase " + amount + " Snow Flakes";
-            String firstname = user.getName() != null && !user.getName().trim().isEmpty() ? user.getName().trim() : "Reader";
-            String email = user.getEmail() != null && !user.getEmail().trim().isEmpty() ? user.getEmail().trim() : "reader@yukitales.com";
-            
-            // Build callback URLs
-            String dynamicBaseUrl = systemSettingRepository.findById("app.base_url")
-                .map(com.reader.Novel.Reader.model.SystemSetting::getSettingValue)
-                .orElse(appBaseUrl);
-            String cleanBaseUrl = dynamicBaseUrl != null ? dynamicBaseUrl.trim() : "";
-            if (cleanBaseUrl.isEmpty() || "/".equals(cleanBaseUrl)) {
-                cleanBaseUrl = "http://localhost:8080";
-            }
-            if (!cleanBaseUrl.toLowerCase().startsWith("http://") && !cleanBaseUrl.toLowerCase().startsWith("https://")) {
-                cleanBaseUrl = "http://" + cleanBaseUrl;
-            }
-            if (cleanBaseUrl.endsWith("/")) {
-                cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
-            }
-            String surl = cleanBaseUrl + "/api/payment/payu/success";
-            String furl = cleanBaseUrl + "/api/payment/payu/failure";
-            
-            // Generate the checkout hash with udf4 as couponCode
-            String hash = paymentService.generatePaymentHash(
-                txnid, priceInInr, productinfo, firstname, email,
-                String.valueOf(user.getId()), String.valueOf(amount), String.valueOf(price),
-                cleanCoupon != null ? cleanCoupon : ""
-            );
-            
-            Map<String, Object> responseMap = new java.util.HashMap<>();
-            responseMap.put("success", true);
-            responseMap.put("payu", true);
-            responseMap.put("key", paymentService.getPayUMerchantKey());
-            responseMap.put("txnid", txnid);
-            responseMap.put("amount", String.format(java.util.Locale.US, "%.2f", priceInInr));
-            responseMap.put("productinfo", productinfo);
-            responseMap.put("firstname", firstname);
-            responseMap.put("email", email);
-            responseMap.put("phone", "9999999999");
-            responseMap.put("surl", surl);
-            responseMap.put("furl", furl);
-            responseMap.put("hash", hash);
-            responseMap.put("service_provider", "payu_paisa");
-            responseMap.put("actionUrl", paymentService.getPayUActionUrl());
-            responseMap.put("udf1", String.valueOf(user.getId()));
-            responseMap.put("udf2", String.valueOf(amount));
-            responseMap.put("udf3", String.valueOf(price));
-            responseMap.put("udf4", cleanCoupon != null ? cleanCoupon : "");
-            
-            return ResponseEntity.ok(responseMap);
         }
 
         // Mock Checkout Fallback

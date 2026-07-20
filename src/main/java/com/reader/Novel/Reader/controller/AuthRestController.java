@@ -385,9 +385,11 @@ public class AuthRestController {
             boolean isNewUser = !userOpt.isPresent();
             user.setSubscribedToUpdates(true);
             user.setUpdatesEmail(email);
-            userService.addUser(user);
             if (isNewUser) {
+                userService.addUser(user);
                 emailService.sendGreetingEmailAsync(user.getEmail(), user.getName());
+            } else {
+                userService.updateUser(user);
             }
 
             if (Boolean.TRUE.equals(user.getBanned())) {
@@ -717,8 +719,13 @@ public class AuthRestController {
                 }
             }
 
-            // Delete source user
+            // Update source user's email to a unique dummy value to avoid constraint conflict before deletion
+            sourceUser.setEmail("merged_" + java.util.UUID.randomUUID().toString() + "_" + sourceUser.getEmail());
+            userRepository.saveAndFlush(sourceUser);
+
+            // Delete source user to clear email
             userRepository.delete(sourceUser);
+            userRepository.flush();
 
             // Update target user
             targetUser.setEmail(email);
