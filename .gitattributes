@@ -1,2 +1,3 @@
-/mvnw text eol=lf
-*.cmd text eol=crlf
+/mvnw text eol=lf linguist-vendored
+*.cmd text eol=crlf linguist-vendored
+admin_output.html linguist-generated=true
