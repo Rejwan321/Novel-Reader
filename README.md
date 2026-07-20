@@ -98,3 +98,11 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 
 5. **Access the application:**
    Navigate to [http://localhost:8080](http://localhost:8080).
+
+---
+
+## 🔒 Copyright & Ownership
+
+Copyright © 2026 Yuki Tales. All Rights Reserved.
+
+This software and its associated documentation are proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
