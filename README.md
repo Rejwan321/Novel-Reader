@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![Database](https://img.shields.io/badge/Database-H2-orange.svg)](https://www.h2database.com/)
 
-Yuki Tales is a premium, high-performance web platform designed for hosting, reading, and managing web novels and vertical comics. Built with an optimized Spring Boot backend and a sleek, responsive Thymeleaf & Bootstrap frontend, it delivers an immersive reading experience with customizable layouts, real-time interactions, and secure premium content unlocking.
+Yuki Tales is a premium, high-performance web platform designed for hosting, reading, and managing web novels and vertical comics. Built with an optimized Spring Boot backend and a sleek, responsive Thymeleaf & Bootstrap frontend, it delivers an immersive reading experience with customizable layouts, real-time interactions, dynamic themes, and secure premium content unlocking.
 
 ---
 
@@ -13,8 +13,13 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 
 ### 📖 Immersive Reading Layout
 * **Fluid Viewports:** Fully responsive reader UI adapting flawlessly to mobile, tablet, and desktop screens.
-* **Canvas Lock:** Zoom-locking controls to guarantee layout stability.
-* **Reader Settings:** Toggleable fonts, sizes, line heights, and custom themes (Light, Sepia, Dark/OLED).
+* **Canvas Lock:** Zoom-locking controls to guarantee layout stability across touch devices.
+* **Reader Settings:** Toggleable fonts, sizes, line heights, and custom reader themes (Light, Sepia, Dark/OLED).
+* **Horizontal Carousels:** Smooth story sliders with touch support, auto-fading scroll controls, and layout margin offsets.
+
+### 🎨 Customization & UI Themes
+* **Dynamic Theme Engine:** System-wide palette selector allowing readers to switch between themes (**Default Violet**, **Ocean Blue**, **Forest Green**, and **Sakura Pink**).
+* **Responsive Design:** Optimized layout with glassmorphism overlays and CSS micro-animations.
 
 ### 🛡️ Enterprise-Grade Security Hardening
 * **Secure Authentication:** Implemented Spring Security filter chains with session-fixation protection.
@@ -30,7 +35,7 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
   * Administrators can view soft-deleted comments clearly highlighted with `[Deleted]` prefixes and original text.
   * **Permanent Deletion:** Administrators can click delete on a soft-deleted comment to remove it permanently from the database.
 
-### 💳 Monetization & Coupons
+### 💳 Monetization & Alerts
 * **Digital Snow Flakes:** Internal token economy for purchasing and unlocking premium chapters.
 * **Payment Gateways:** Standardized integrations for **Razorpay**, with a local **Mock Checkout** option restricted to admin accounts.
 * **Coupon System:** System-wide discount coupons with support for percentage-off rates and strict restrictions by user email/username.
@@ -97,4 +102,6 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 
 ---
 
+## 📄 License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
