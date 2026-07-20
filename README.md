@@ -2,7 +2,6 @@
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Java Version](https://img.shields.io/badge/Java-21-blue.svg)](https://openjdk.org/projects/jdk/21/)
-[![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![Database](https://img.shields.io/badge/Database-H2-orange.svg)](https://www.h2database.com/)
 
 Yuki Tales is a premium, high-performance web platform designed for hosting, reading, and managing web novels and vertical comics. Built with an optimized Spring Boot backend and a sleek, responsive Thymeleaf & Bootstrap frontend, it delivers an immersive reading experience with customizable layouts, real-time interactions, dynamic themes, and secure premium content unlocking.
@@ -99,9 +98,3 @@ Yuki Tales is a premium, high-performance web platform designed for hosting, rea
 
 5. **Access the application:**
    Navigate to [http://localhost:8080](http://localhost:8080).
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
