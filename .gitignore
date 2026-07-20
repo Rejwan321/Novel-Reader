@@ -36,3 +36,5 @@ build/
 data/
 uploads/
 *.log
+admin_output.html
+scratch/

@@ -1182,36 +1182,7 @@
                             </div>
                         </div>
 
-                        <!-- PayU Section -->
-                        <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-success me-2"></i>PayU Payment Gateway Settings</h5>
-                        <div class="row g-3 mb-4">
-                            <div class="col-12">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="cred-payu-enabled" checked>
-                                    <label class="form-check-label text-white-50" for="cred-payu-enabled">Enable PayU Gateway</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="cred-payu-merchant-key" class="form-label-admin">Merchant Key (API Key)</label>
-                                <input type="text" class="form-input-admin" id="cred-payu-merchant-key" placeholder="e.g. EbzvKE">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="cred-payu-merchant-salt" class="form-label-admin">Merchant Salt (API Salt)</label>
-                                <div class="position-relative">
-                                    <input type="password" class="form-input-admin pe-5" id="cred-payu-merchant-salt" placeholder="e.g. QmovYILTgz5XYKUeon3hEoS0v6onGrx4">
-                                    <button type="button" class="btn btn-sm text-muted position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent" onclick="toggleCredentialsVisibility('cred-payu-merchant-salt')" style="z-index: 10;">
-                                        <i class="fa-solid fa-eye text-white-50" id="eye-cred-payu-merchant-salt"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <label for="cred-payu-mode" class="form-label-admin">PayU Environment Mode</label>
-                                <select class="form-input-admin" id="cred-payu-mode">
-                                    <option value="test">Sandbox (Test Mode)</option>
-                                    <option value="production">Production (Live Mode)</option>
-                                </select>
-                            </div>
-                        </div>
+
 
                         <!-- Razorpay Section -->
                         <h5 class="text-white border-bottom border-secondary pb-2 mb-3"><i class="fa-solid fa-credit-card text-info me-2"></i>Razorpay Payment Gateway Settings</h5>
@@ -1281,6 +1252,16 @@
                             <div class="col-md-6">
                                 <label for="cred-mail-recipient" class="form-label-admin">Recipient Address (Admin Email)</label>
                                 <input type="email" class="form-input-admin" id="cred-mail-recipient" placeholder="e.g. admin@gmail.com">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="cred-signup-notification-enabled">
+                                    <label class="form-check-label text-white-50" for="cred-signup-notification-enabled">Enable Sign-up Notifications</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cred-signup-notification-email" class="form-label-admin">Sign-up Notification Recipient Email</label>
+                                <input type="email" class="form-input-admin" id="cred-signup-notification-email" placeholder="e.g. signup-alerts@gmail.com">
                             </div>
                         </div>
 
@@ -1728,7 +1709,7 @@
         const currentUserSession = /*[[${session.user}]]*/ null;
         const currentRole = /*[[${userRole}]]*/ 'READER';
     </script>
-    <script th:src="@{/scripts/Script.js(v='2.9')}"></script>
+    <script th:src="@{/scripts/Script.js(v='3.0')}"></script>
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
@@ -1789,14 +1770,12 @@
                 $("#cred-mail-sender").val(data.mailSender || "");
                 $("#cred-mail-recipient").val(data.mailRecipient || "");
                 $("#cred-app-base-url").val(data.appBaseUrl || "");
-                $("#cred-payu-enabled").prop("checked", data.payuEnabled !== "false");
-                $("#cred-payu-merchant-key").val(data.payuMerchantKey || "");
-                $("#cred-payu-merchant-salt").val(data.payuMerchantSalt || "");
-                $("#cred-payu-mode").val(data.payuMode || "test");
                 $("#cred-razorpay-enabled").prop("checked", data.razorpayEnabled !== "false");
                 $("#cred-razorpay-key-id").val(data.razorpayKeyId || "");
                 $("#cred-razorpay-key-secret").val(data.razorpayKeySecret || "");
                 $("#cred-razorpay-mode").val(data.razorpayMode || "test");
+                $("#cred-signup-notification-enabled").prop("checked", data.signupNotificationEnabled !== "false");
+                $("#cred-signup-notification-email").val(data.signupNotificationEmail || "");
             })
             .fail(function(err) {
                 var msg = err.responseJSON && err.responseJSON.error ? err.responseJSON.error : "Failed to load credentials.";
@@ -1864,14 +1843,12 @@
                 mailSender: $("#cred-mail-sender").val(),
                 mailRecipient: $("#cred-mail-recipient").val(),
                 appBaseUrl: $("#cred-app-base-url").val(),
-                payuEnabled: $("#cred-payu-enabled").is(":checked") ? "true" : "false",
-                payuMerchantKey: $("#cred-payu-merchant-key").val(),
-                payuMerchantSalt: $("#cred-payu-merchant-salt").val(),
-                payuMode: $("#cred-payu-mode").val(),
                 razorpayEnabled: $("#cred-razorpay-enabled").is(":checked") ? "true" : "false",
                 razorpayKeyId: $("#cred-razorpay-key-id").val(),
                 razorpayKeySecret: $("#cred-razorpay-key-secret").val(),
-                razorpayMode: $("#cred-razorpay-mode").val()
+                razorpayMode: $("#cred-razorpay-mode").val(),
+                signupNotificationEnabled: $("#cred-signup-notification-enabled").is(":checked") ? "true" : "false",
+                signupNotificationEmail: $("#cred-signup-notification-email").val()
             };
             
             var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(creds, null, 4));
@@ -1909,14 +1886,12 @@
                     $("#cred-mail-sender").val(creds.mailSender || "");
                     $("#cred-mail-recipient").val(creds.mailRecipient || "");
                     $("#cred-app-base-url").val(creds.appBaseUrl || "");
-                    $("#cred-payu-enabled").prop("checked", creds.payuEnabled !== "false");
-                    $("#cred-payu-merchant-key").val(creds.payuMerchantKey || "");
-                    $("#cred-payu-merchant-salt").val(creds.payuMerchantSalt || "");
-                    $("#cred-payu-mode").val(creds.payuMode || "test");
                     $("#cred-razorpay-enabled").prop("checked", creds.razorpayEnabled !== "false");
                     $("#cred-razorpay-key-id").val(creds.razorpayKeyId || "");
                     $("#cred-razorpay-key-secret").val(creds.razorpayKeySecret || "");
                     $("#cred-razorpay-mode").val(creds.razorpayMode || "test");
+                    $("#cred-signup-notification-enabled").prop("checked", creds.signupNotificationEnabled !== "false");
+                    $("#cred-signup-notification-email").val(creds.signupNotificationEmail || "");
 
                     showToast("Credentials imported to form. Click 'Save Credentials' to save changes.", "info");
                 } catch (err) {
@@ -2095,7 +2070,9 @@
                 mailUsername: $("#cred-mail-username").val(),
                 mailPassword: $("#cred-mail-password").val(),
                 mailSender: $("#cred-mail-sender").val(),
-                mailRecipient: $("#cred-mail-recipient").val()
+                mailRecipient: $("#cred-mail-recipient").val(),
+                signupNotificationEnabled: $("#cred-signup-notification-enabled").is(":checked") ? "true" : "false",
+                signupNotificationEmail: $("#cred-signup-notification-email").val()
             };
             
             var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mailSettings, null, 4));
@@ -2126,14 +2103,18 @@
                     var password = config.mailPassword || config.password || "";
                     var sender = config.mailSender || config.sender || "";
                     var recipient = config.mailRecipient || config.recipient || "";
+                    var signupEnabled = config.signupNotificationEnabled || "";
+                    var signupEmail = config.signupNotificationEmail || "";
 
-                    if (host || port || username || password || sender || recipient) {
+                    if (host || port || username || password || sender || recipient || signupEnabled || signupEmail) {
                         if (host) $("#cred-mail-host").val(host);
                         if (port) $("#cred-mail-port").val(port);
                         if (username) $("#cred-mail-username").val(username);
                         if (password) $("#cred-mail-password").val(password);
                         if (sender) $("#cred-mail-sender").val(sender);
                         if (recipient) $("#cred-mail-recipient").val(recipient);
+                        if (signupEnabled) $("#cred-signup-notification-enabled").prop("checked", signupEnabled !== "false");
+                        if (signupEmail) $("#cred-signup-notification-email").val(signupEmail);
                         showToast("Mail settings imported to form. Click 'Save Credentials' to save.", "success");
                     } else {
                         showToast("Could not find any SMTP/Mail settings in the JSON config.", "warning");
@@ -4368,14 +4349,12 @@
                 var mailSender = $("#cred-mail-sender").val();
                 var mailRecipient = $("#cred-mail-recipient").val();
                 var appBaseUrl = $("#cred-app-base-url").val();
-                var payuEnabled = $("#cred-payu-enabled").is(":checked") ? "true" : "false";
-                var payuMerchantKey = $("#cred-payu-merchant-key").val();
-                var payuMerchantSalt = $("#cred-payu-merchant-salt").val();
-                var payuMode = $("#cred-payu-mode").val();
                 var razorpayEnabled = $("#cred-razorpay-enabled").is(":checked") ? "true" : "false";
                 var razorpayKeyId = $("#cred-razorpay-key-id").val();
                 var razorpayKeySecret = $("#cred-razorpay-key-secret").val();
                 var razorpayMode = $("#cred-razorpay-mode").val();
+                var signupNotificationEnabled = $("#cred-signup-notification-enabled").is(":checked") ? "true" : "false";
+                var signupNotificationEmail = $("#cred-signup-notification-email").val();
 
                 $.post("/api/admin/credentials", {
                     googleClientId: googleClientId,
@@ -4391,14 +4370,12 @@
                     mailSender: mailSender,
                     mailRecipient: mailRecipient,
                     appBaseUrl: appBaseUrl,
-                    payuEnabled: payuEnabled,
-                    payuMerchantKey: payuMerchantKey,
-                    payuMerchantSalt: payuMerchantSalt,
-                    payuMode: payuMode,
                     razorpayEnabled: razorpayEnabled,
                     razorpayKeyId: razorpayKeyId,
                     razorpayKeySecret: razorpayKeySecret,
-                    razorpayMode: razorpayMode
+                    razorpayMode: razorpayMode,
+                    signupNotificationEnabled: signupNotificationEnabled,
+                    signupNotificationEmail: signupNotificationEmail
                 })
                 .done(function(res) {
                     showToast("Credentials saved successfully!");
