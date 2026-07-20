@@ -213,13 +213,6 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println("One-time username database migration completed successfully.");
             }
             
-            // Ensure owner exists with ID 0
-            java.util.List<java.util.Map<String, Object>> owners = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 0");
-            if (owners.isEmpty()) {
-                String sakuraHashed = PasswordUtils.hashPassword("sakura");
-                jdbcTemplate.update("INSERT INTO reader_internal (id, name, username, email, password, user_type, balance) VALUES (0, 'Sakura Sakura', 'sakura', 'sakura@yukitales.com', ?, 'OWNER', 100)", sakuraHashed);
-            }
-
             // Ensure admin exists with ID 1
             java.util.List<java.util.Map<String, Object>> admins = jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 1");
             if (admins.isEmpty()) {
@@ -241,12 +234,14 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY = TRUE");
         }
 
-        Long ownerId = 0L;
+        Long targetCreatorId = 1L; // Fallback default to admin user ID 1
+        if (jdbcTemplate.queryForList("SELECT id FROM reader_internal WHERE id = 0").size() > 0) {
+            targetCreatorId = 0L;
+        }
 
-        // Migrate/update creatorId for all existing novels to match the owner
+        // Migrate/update creatorId for all existing novels to match the creator
         for (Novel n : novelRepository.findAll()) {
             boolean updated = false;
-            Long targetCreatorId = ownerId;
             if (n.getCreatorId() == null || !n.getCreatorId().equals(targetCreatorId)) {
                 n.setCreatorId(targetCreatorId);
                 updated = true;

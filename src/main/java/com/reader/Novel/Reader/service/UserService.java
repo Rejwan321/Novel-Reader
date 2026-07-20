@@ -37,6 +37,9 @@ public class UserService {
     @Autowired
     private com.reader.Novel.Reader.repository.NotificationRepository notificationRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -56,8 +59,17 @@ public class UserService {
     public void addUser(User usr){
         resetAutoIncrement();
         ensureUniqueUsername(usr);
+        boolean isNew = (usr.getId() == null);
         userRepository.save(usr);
         resetAutoIncrement();
+        
+        if (isNew) {
+            try {
+                emailService.sendSignupNotificationEmailAsync(usr.getName(), usr.getUsername(), usr.getEmail(), usr.getUser_type());
+            } catch (Exception e) {
+                System.err.println("Error sending signup alert email: " + e.getMessage());
+            }
+        }
     }
 
     private void ensureUniqueUsername(User usr) {

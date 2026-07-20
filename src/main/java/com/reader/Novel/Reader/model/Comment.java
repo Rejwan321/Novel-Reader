@@ -52,6 +52,9 @@ public class Comment {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer reportsCount = 0;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean deleted = false;
+
     public Comment() {
     }
 
